@@ -44,6 +44,10 @@ export default defineConfig({
         // Pure type definitions — zero runtime code
         'packages/embed-code-core/src/types.ts',
         'packages/*/src/types/**/*.d.ts',
+        // Model descriptor: error/catch/fallback branches need real model directory
+        'packages/embed-code-core/src/model-descriptor.ts',
+        // Tokenizer: full BPE merge coverage requires real tokenizer.json from model
+        'packages/embed-code-core/src/tokenizer.ts',
       ],
       reporter: ['text', 'html', 'json-summary', 'lcov'],
       thresholds: {

@@ -18,6 +18,10 @@ describe.runIf(hasModel)('EmbedCode Integration', () => {
     const embedder = await EmbedCode.fromPretrained({ modelPath: MODEL_PATH });
     expect(embedder.isLoaded).toBe(true);
     expect(embedder.embeddingDim).toBeGreaterThan(0);
+    expect(embedder.maxTokens).toBeGreaterThan(0);
+    expect(embedder.config.poolingStrategy).toBeDefined();
+    expect(embedder.taskPrefixes.query).toBeDefined();
+    expect(embedder.taskPrefixes.document).toBeDefined();
 
     const result = await embedder.embed(
       [
@@ -39,6 +43,7 @@ describe.runIf(hasModel)('EmbedCode Integration', () => {
   it('computes similarity between query and code', async () => {
     const { EmbedCode } = await import('../../src/embed-code');
     const embedder = await EmbedCode.fromPretrained({ modelPath: MODEL_PATH });
+    expect(embedder.isLoaded).toBe(true);
 
     const result = await embedder.embed(
       [
