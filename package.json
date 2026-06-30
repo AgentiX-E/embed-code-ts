@@ -2,7 +2,7 @@
   "name": "agentix-embed-code-ts",
   "version": "0.1.0",
   "private": true,
-  "description": "nomic-embed-code int8 ONNX weights in a TypeScript npm package — incbin-style",
+  "description": "nomic-embed-code int8 ONNX weights in a TypeScript npm package \u2014 incbin-style",
   "workspaces": [
     "packages/embed-code-core",
     "packages/embed-code-cli"
@@ -57,7 +57,7 @@
     "vitest": "^2.0.0"
   },
   "engines": {
-    "node": ">=20.0.0"
+    "node": ">=22.0.0"
   },
   "license": "Apache-2.0",
   "repository": {
