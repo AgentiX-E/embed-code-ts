@@ -85,17 +85,41 @@ jobs:
         uses: actions/cache@v4
         with:
           path: models/nomic-embed-text-v1.5-int8.onnx
-          key: embed-code-model-${{ hashFiles('scripts/export-onnx.py', 'models/model-descriptor.json') }}-v2
+          key: embed-code-model-${{ hashFiles('models/model-descriptor.json') }}-v3
 
-      - name: Export ONNX model
+      - name: Download pre-converted ONNX model
         if: steps.cache-model.outputs.cache-hit != 'true'
         run: |
-          pip install optimum onnx onnxruntime torch transformers
-          python3 scripts/export-onnx.py \
-            --model nomic-ai/nomic-embed-text-v1.5 \
-            --output models/nomic-embed-text-v1.5-int8.onnx \
-            --precision int8
-        timeout-minutes: 20
+          pip install huggingface_hub
+          python3 -c "
+          from huggingface_hub import hf_hub_download
+          path = hf_hub_download('nomic-ai/nomic-embed-text-v1.5', 'onnx/model_int8.onnx')
+          import shutil, os
+          os.makedirs('models', exist_ok=True)
+          shutil.copy(path, 'models/nomic-embed-text-v1.5-int8.onnx')
+          print(f'Downloaded: {os.path.getsize(\"models/nomic-embed-text-v1.5-int8.onnx\") / 1024**2:.0f} MB')
+          "
+          # Also download tokenizer
+          python3 -c "
+          from huggingface_hub import hf_hub_download
+          import shutil
+          for f in ['tokenizer.json', 'tokenizer_config.json', 'vocab.json', 'merges.txt', 'special_tokens_map.json']:
+              try:
+                  path = hf_hub_download('nomic-ai/nomic-embed-text-v1.5', f)
+                  shutil.copy(path, f'models/{f}')
+              except: pass
+          " || true
+          # Also download nomic-embed-code model files for tokenizer
+          python3 -c "
+          from huggingface_hub import hf_hub_download
+          import shutil
+          for f in ['tokenizer.json', 'tokenizer_config.json']:
+              try:
+                  path = hf_hub_download('nomic-ai/nomic-embed-code', f)
+                  shutil.copy(path, f'models/{f}')
+              except: pass
+          " || true
+        timeout-minutes: 5
 
       - name: Run integration tests with coverage
         run: npx vitest run --coverage
