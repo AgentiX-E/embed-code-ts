@@ -52,7 +52,7 @@ jobs:
           ls -lh nomic-embed-code-v1-${{ inputs.precision }}.zip
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: embed-code-latest-${{ inputs.precision }}
           name: 'nomic-embed-code v1 (${{ inputs.precision }})'
