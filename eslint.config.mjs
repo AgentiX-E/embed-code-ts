@@ -12,6 +12,14 @@ export default tseslint.config(
       'packages/embed-code-core/src/errors.ts',
       'packages/embed-code-core/src/pooling.ts',
     ],
+    languageOptions: {
+      ...c.languageOptions,
+      parserOptions: {
+        ...c.languageOptions?.parserOptions,
+        project: ['./tsconfig.eslint.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
     rules: {
       ...c.rules,
       '@typescript-eslint/no-explicit-any': 'error',
