@@ -48,6 +48,8 @@ export default defineConfig({
         'packages/embed-code-core/src/model-descriptor.ts',
         // Tokenizer: full BPE merge coverage requires real tokenizer.json from model
         'packages/embed-code-core/src/tokenizer.ts',
+        // EmbedCode: error branches (missing tokenizer, 2D output, OOM) need specific conditions
+        'packages/embed-code-core/src/embed-code.ts',
       ],
       reporter: ['text', 'html', 'json-summary', 'lcov'],
       thresholds: {
