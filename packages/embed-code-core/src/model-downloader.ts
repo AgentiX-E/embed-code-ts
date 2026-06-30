@@ -131,7 +131,9 @@ async function applyProxyToFetch(
         parsed.username = proxy.username || '';
         parsed.password = proxy.password || '';
         proxyUrl = parsed.toString();
-      } catch { /* use raw URL */ }
+      } catch {
+        /* use raw URL */
+      }
     }
 
     const dispatcher = new ProxyAgent({
@@ -140,7 +142,7 @@ async function applyProxyToFetch(
       keepAliveMaxTimeout: 30_000,
     });
 
-    return { fetchOptions: { dispatcher: dispatcher as any } };
+    return { fetchOptions: { dispatcher: dispatcher } };
   } catch {
     // Fallback: use env vars
     const saved: Record<string, string | undefined> = {
@@ -154,7 +156,9 @@ async function applyProxyToFetch(
         parsed.username = proxy.username || '';
         parsed.password = proxy.password || '';
         envUrl = parsed.toString();
-      } catch { /* use raw URL */ }
+      } catch {
+        /* use raw URL */
+      }
     }
     process.env.HTTPS_PROXY = envUrl;
     process.env.https_proxy = envUrl;
@@ -192,7 +196,9 @@ export async function downloadModel(options: DownloadOptions = {}): Promise<stri
   const zipDest = path.join(cacheDir, profile.zipFilename);
   const tmpZip = zipDest + '.tmp';
 
-  log(`Downloading nomic-embed-code int8 model (${(profile.expectedZipSize / 1024 ** 2).toFixed(0)} MB)...`);
+  log(
+    `Downloading nomic-embed-code int8 model (${(profile.expectedZipSize / 1024 ** 2).toFixed(0)} MB)...`,
+  );
   log(`  From: ${url}`);
   log(`  To:   ${dest}`);
 
@@ -211,7 +217,14 @@ export async function downloadModel(options: DownloadOptions = {}): Promise<stri
   } catch (err) {
     restoreEnv?.();
     const message = (err as Error).message || String(err);
-    if (proxyConfig && (message.includes('proxy') || message.includes('ECONNREFUSED') || message.includes('ENOTFOUND') || message.includes('tunnel') || message.includes('407'))) {
+    if (
+      proxyConfig &&
+      (message.includes('proxy') ||
+        message.includes('ECONNREFUSED') ||
+        message.includes('ENOTFOUND') ||
+        message.includes('tunnel') ||
+        message.includes('407'))
+    ) {
       throw new DownloadError(
         `Failed to connect through proxy (${proxyConfig.url}): ${message}\nVerify proxy configuration and connectivity.`,
         0,
@@ -260,8 +273,14 @@ export async function downloadModel(options: DownloadOptions = {}): Promise<stri
         const writeOk = fileStream.write(value);
         if (!writeOk) {
           await new Promise<void>((resolve, reject) => {
-            fileStream.once('drain', () => { fileStream.removeAllListeners('error'); resolve(); });
-            fileStream.once('error', (err) => { fileStream.removeAllListeners('drain'); reject(err); });
+            fileStream.once('drain', () => {
+              fileStream.removeAllListeners('error');
+              resolve();
+            });
+            fileStream.once('error', (err) => {
+              fileStream.removeAllListeners('drain');
+              reject(err);
+            });
           });
         }
 
@@ -280,7 +299,9 @@ export async function downloadModel(options: DownloadOptions = {}): Promise<stri
         if (Math.floor(receivedMB / 50) > lastLogAt) {
           lastLogAt = Math.floor(receivedMB / 50);
           const pct = total > 0 ? ((received / totalBytes) * 100).toFixed(0) : '?';
-          log(`  ${receivedMB.toFixed(0)} / ${totalMB.toFixed(0)} MB (${pct}%) @ ${speed.toFixed(1)} MB/s`);
+          log(
+            `  ${receivedMB.toFixed(0)} / ${totalMB.toFixed(0)} MB (${pct}%) @ ${speed.toFixed(1)} MB/s`,
+          );
         }
       }
     }
@@ -306,7 +327,9 @@ export async function downloadModel(options: DownloadOptions = {}): Promise<stri
     try {
       const desc = JSON.parse(fs.readFileSync(descriptorPath, 'utf-8'));
       expectedSha256 = desc?.onnx?.sha256 ?? null;
-    } catch { /* skip verification */ }
+    } catch {
+      /* skip verification */
+    }
 
     if (expectedSha256) {
       const actualSha256 = await sha256File(dest);
@@ -319,15 +342,25 @@ export async function downloadModel(options: DownloadOptions = {}): Promise<stri
       }
     }
 
-    try { fs.unlinkSync(tmpZip); } catch { /* best-effort */ }
+    try {
+      fs.unlinkSync(tmpZip);
+    } catch {
+      /* best-effort */
+    }
 
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-    log(`  Downloaded & extracted ${(received / 1024 ** 2).toFixed(0)} MB in ${elapsed}s → ${dest}`);
+    log(
+      `  Downloaded & extracted ${(received / 1024 ** 2).toFixed(0)} MB in ${elapsed}s → ${dest}`,
+    );
     restoreEnv?.();
     return dest;
   } catch (err) {
     restoreEnv?.();
-    try { fs.unlinkSync(tmpZip); } catch { /* best-effort */ }
+    try {
+      fs.unlinkSync(tmpZip);
+    } catch {
+      /* best-effort */
+    }
     throw err;
   }
 }
@@ -341,19 +374,31 @@ async function extractZip(zipPath: string, outDir: string): Promise<void> {
     () => {
       const escapedZip = zipPath.replace(/'/g, "''");
       const escapedDir = outDir.replace(/'/g, "''");
-      return spawnExtractor('powershell', ['-NoProfile', '-Command', `Expand-Archive -Path '${escapedZip}' -DestinationPath '${escapedDir}' -Force`]);
+      return spawnExtractor('powershell', [
+        '-NoProfile',
+        '-Command',
+        `Expand-Archive -Path '${escapedZip}' -DestinationPath '${escapedDir}' -Force`,
+      ]);
     },
   ];
 
   const errors: string[] = [];
   for (const backend of backends) {
-    try { await backend(); return; } catch (err) { errors.push((err as Error).message); }
+    try {
+      await backend();
+      return;
+    } catch (err) {
+      errors.push((err as Error).message);
+    }
   }
 
   const platform = process.platform;
-  const installHint = platform === 'win32' ? 'Install 7-Zip: winget install 7zip.7zip'
-    : platform === 'darwin' ? 'Install unzip: brew install unzip'
-    : 'Install unzip: apt-get install unzip';
+  const installHint =
+    platform === 'win32'
+      ? 'Install 7-Zip: winget install 7zip.7zip'
+      : platform === 'darwin'
+        ? 'Install unzip: brew install unzip'
+        : 'Install unzip: apt-get install unzip';
 
   throw new DownloadError(
     `Failed to extract model zip:\n${errors.map((e, i) => `  ${i + 1}. ${e}`).join('\n')}\n\nFix: ${installHint}`,
@@ -365,7 +410,9 @@ function spawnExtractor(command: string, args: string[]): Promise<void> {
   return new Promise((resolve, reject) => {
     const proc = spawn(command, args, { stdio: ['ignore', 'ignore', 'pipe'], timeout: 300_000 });
     let stderr = '';
-    proc.stderr?.on('data', (d: Buffer) => { stderr += d.toString(); });
+    proc.stderr?.on('data', (d: Buffer) => {
+      stderr += d.toString();
+    });
     proc.on('error', (err: NodeJS.ErrnoException) => {
       if (err.code === 'ENOENT') reject(new Error(`"${command}" not found on PATH`));
       else reject(new Error(`${command}: ${err.message}`));
@@ -415,7 +462,11 @@ function sha256FileSync(filePath: string): string {
 
 function cleanupPartial(cacheDir: string, profile: PrecisionProfile): void {
   for (const f of [profile.onnxFilename, DESCRIPTOR_FILENAME]) {
-    try { fs.unlinkSync(path.join(cacheDir, f)); } catch { /* ignore */ }
+    try {
+      fs.unlinkSync(path.join(cacheDir, f));
+    } catch {
+      /* ignore */
+    }
   }
 }
 

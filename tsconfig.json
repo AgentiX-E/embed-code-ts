@@ -7,8 +7,6 @@
     "esModuleInterop": true,
     "skipLibCheck": true
   },
-  "references": [
-    { "path": "./packages/embed-code-core" }
-  ],
+  "references": [{ "path": "./packages/embed-code-core" }],
   "files": []
 }

@@ -41,9 +41,7 @@ program
     try {
       const core = await import('@agentix-e/embed-code-core');
       const modelPath =
-        (options.model as string) ||
-        process.env.EMBED_CODE_MODEL_PATH ||
-        core.defaultModelPath();
+        (options.model as string) || process.env.EMBED_CODE_MODEL_PATH || core.defaultModelPath();
 
       console.log('Embed Code CLI  —  @agentix-e/embed-code-cli  v0.1.0');
       console.log(`Model path:  ${modelPath}`);
@@ -51,20 +49,14 @@ program
         const { resolveModelConfig } = core;
         const { config, descriptor } = await resolveModelConfig(modelPath);
         if (descriptor) {
-          console.log(
-            `Model:       ${descriptor.model.name} ${descriptor.model.version}`,
-          );
+          console.log(`Model:       ${descriptor.model.name} ${descriptor.model.version}`);
           console.log(`Architecture: ${descriptor.model.base_architecture}`);
           console.log(`Precision:    ${descriptor.model.precision}`);
           console.log(`Embedding:    ${config.embeddingDim} dims`);
           console.log(`Max tokens:   ${config.maxTokens}`);
           console.log(`Pooling:      ${config.poolingStrategy}`);
-          console.log(
-            `ONNX size:    ${(descriptor.onnx.size_bytes / 1024 ** 2).toFixed(0)} MB`,
-          );
-          console.log(
-            `SHA256:       ${descriptor.onnx.sha256.slice(0, 16)}...`,
-          );
+          console.log(`ONNX size:    ${(descriptor.onnx.size_bytes / 1024 ** 2).toFixed(0)} MB`);
+          console.log(`SHA256:       ${descriptor.onnx.sha256.slice(0, 16)}...`);
         }
 
         // System info
@@ -91,10 +83,7 @@ program
   .command('setup')
   .description('Download the nomic-embed-code int8 ONNX model')
   .option('-f, --force', 'Force re-download even if already cached')
-  .option(
-    '-o, --output <path>',
-    'Custom output path (default: ~/.cache/agentix-embed-code-ts/)',
-  )
+  .option('-o, --output <path>', 'Custom output path (default: ~/.cache/agentix-embed-code-ts/)')
   .option('--proxy-url <url>', 'Proxy URL for downloading through corporate firewall')
   .option('--proxy-username <user>', 'Proxy authentication username')
   .option('--proxy-password <pass>', 'Proxy authentication password (prefer env variable)')
@@ -218,12 +207,12 @@ program
         console.log(JSON.stringify(out));
       } else {
         // Text format: one embedding per line, space-separated
-        const dim = result.shape[1]!;
-        for (let i = 0; i < result.shape[0]!; i++) {
+        const dim = result.shape[1];
+        for (let i = 0; i < result.shape[0]; i++) {
           const start = i * dim;
           const values: number[] = [];
           for (let j = 0; j < Math.min(dim, 8); j++) {
-            values.push(Number(result.embeddings[start + j]!.toFixed(6)));
+            values.push(Number(result.embeddings[start + j].toFixed(6)));
           }
           const tail = dim > 8 ? ` ... (${dim - 8} more)` : '';
           console.log(`[${i}] ${values.join(' ')}${tail}`);

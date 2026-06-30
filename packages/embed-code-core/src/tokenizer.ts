@@ -24,8 +24,8 @@ export class Tokenizer {
     // Build vocabulary
     if (data.model?.vocab) {
       for (const [token, id] of Object.entries(data.model.vocab)) {
-        this.vocab.set(token as string, id as number);
-        this.reverseVocab.set(id as number, token as string);
+        this.vocab.set(token, id as number);
+        this.reverseVocab.set(id as number, token);
       }
     }
 
@@ -90,7 +90,7 @@ export class Tokenizer {
     const attentionMask = new Int32Array(batchSize * maxLength);
 
     for (let b = 0; b < batchSize; b++) {
-      const tokens = this.tokenizeText(texts[b]!, maxLength);
+      const tokens = this.tokenizeText(texts[b], maxLength);
       const offset = b * maxLength;
 
       for (let i = 0; i < maxLength; i++) {
@@ -138,14 +138,12 @@ export class Tokenizer {
 
     // Apply BPE merges (greedy, lowest-rank first)
     if (this.merges.size > 0) {
-      let changed = true;
-      while (changed && symbols.length > 1) {
-        changed = false;
+      for (;;) {
         let bestRank = Infinity;
         let bestIdx = -1;
 
         for (let i = 0; i < symbols.length - 1; i++) {
-          const pair = symbols[i]! + symbols[i + 1]!;
+          const pair = symbols[i] + symbols[i + 1];
           const rank = this.merges.get(pair);
           if (rank !== undefined && rank < bestRank) {
             bestRank = rank;
@@ -154,9 +152,8 @@ export class Tokenizer {
         }
 
         if (bestIdx === -1) break;
-        symbols[bestIdx] = symbols[bestIdx]! + symbols[bestIdx + 1]!;
+        symbols[bestIdx] = symbols[bestIdx] + symbols[bestIdx + 1];
         symbols.splice(bestIdx + 1, 1);
-        changed = true;
       }
     }
 
@@ -169,7 +166,7 @@ export class Tokenizer {
       } else {
         // Fallback: try character-level mapping
         for (const char of sym) {
-          ids.push(this.vocab.get(char) ?? (this.descriptor.unk_token_id ?? 0));
+          ids.push(this.vocab.get(char) ?? this.descriptor.unk_token_id ?? 0);
         }
       }
       if (ids.length >= maxLen) break;

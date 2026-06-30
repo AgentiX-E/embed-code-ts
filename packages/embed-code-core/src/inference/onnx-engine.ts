@@ -79,9 +79,7 @@ export class EmbedCodeInferenceEngine implements IInferenceEngine {
     for (const [name, tensor] of Object.entries(feeds)) {
       let data: any;
       if (tensor.type === 'int64') {
-        data = BigInt64Array.from(
-          Array.from(tensor.data as Int32Array).map((v) => BigInt(v)),
-        );
+        data = BigInt64Array.from(Array.from(tensor.data as Int32Array).map((v) => BigInt(v)));
       } else {
         data = tensor.data;
       }
@@ -91,7 +89,7 @@ export class EmbedCodeInferenceEngine implements IInferenceEngine {
     const results = await this.session.run(feedMap);
 
     const output: Record<string, OrtTensor> = {};
-    for (const [name, tensor] of Object.entries(results) as [string, any][]) {
+    for (const [name, tensor] of Object.entries(results)) {
       output[name] = {
         data: new Float32Array(tensor.data as ArrayBuffer),
         dims: tensor.dims as number[],
@@ -102,12 +100,13 @@ export class EmbedCodeInferenceEngine implements IInferenceEngine {
     return output;
   }
 
-  async dispose(): Promise<void> {
+  dispose(): Promise<void> {
     if (this.session) {
       this.session.release();
       this.session = null;
     }
     this._loaded = false;
+    return Promise.resolve();
   }
 
   private async warmup(): Promise<void> {

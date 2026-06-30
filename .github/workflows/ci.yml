@@ -1,29 +1,110 @@
 name: CI
 
 on:
-  push:
-    branches: [main]
   pull_request:
     branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  build-and-test:
+  # ─── Lint & Format ───────────────────────────────────────
+  lint:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [20.x, 22.x]
-
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run format:check
 
+  # ─── Unit Tests (no model required) ──────────────────────
+  unit-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      matrix:
+        node-version: ['20', '22']
+    steps:
+      - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-
-      - uses: pnpm/action-setup@v4
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run build
+      - run: npx vitest run --config vitest.unit.config.ts --coverage
+      - name: Upload coverage artifact
+        if: always()
+        uses: actions/upload-artifact@v4
         with:
-          version: 10
+          name: coverage-report
+          path: coverage/
+          retention-days: 7
 
-      - run: pnpm install
-      - run: pnpm build
-      - run: pnpm test
+  # ─── Build check ─────────────────────────────────────────
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    strategy:
+      matrix:
+        node-version: ['20', '22']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run build:all
+
+  # ─── Integration Tests (requires ONNX model) ─────────────
+  integration-test:
+    needs: [lint, build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - run: npm ci
+      - run: npm run build:all
+
+      - name: Cache ONNX model
+        id: cache-model
+        uses: actions/cache@v4
+        with:
+          path: models/nomic-embed-code-v1-int8.onnx
+          key: embed-code-model-${{ hashFiles('scripts/export-onnx.py', 'models/model-descriptor.json') }}-v1
+
+      - name: Export ONNX model
+        if: steps.cache-model.outputs.cache-hit != 'true'
+        run: |
+          pip install optimum onnx onnxruntime torch transformers
+          python3 scripts/export-onnx.py \
+            --model nomic-ai/nomic-embed-code \
+            --output models/nomic-embed-code-v1-int8.onnx \
+            --precision int8
+        timeout-minutes: 30
+
+      - name: Run integration tests
+        run: npx vitest run
+        env:
+          EMBED_CODE_MODEL_PATH: models/nomic-embed-code-v1-int8.onnx

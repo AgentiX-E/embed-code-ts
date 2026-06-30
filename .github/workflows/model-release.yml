@@ -55,7 +55,7 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           tag_name: embed-code-latest-${{ inputs.precision }}
-          name: "nomic-embed-code v1 (${{ inputs.precision }})"
+          name: 'nomic-embed-code v1 (${{ inputs.precision }})'
           body: |
             Pre-exported nomic-embed-code v1 ONNX model (${{ inputs.precision }} precision).
 

@@ -6,7 +6,10 @@
  */
 
 export class EmbedCodeError extends Error {
-  constructor(message: string, override readonly cause?: Error) {
+  constructor(
+    message: string,
+    override readonly cause?: Error,
+  ) {
     super(message);
     this.name = 'EmbedCodeError';
   }

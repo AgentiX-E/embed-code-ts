@@ -58,7 +58,7 @@ const results = await embedder.embed([
 ]);
 
 console.log(results.embeddings); // Float32Array [2, 3584]
-console.log(results.elapsedMs);  // Inference time in ms
+console.log(results.elapsedMs); // Inference time in ms
 ```
 
 ### CLI Usage
@@ -116,13 +116,13 @@ await downloadModel({
 
 ## Environment Variables
 
-| Variable | Purpose |
-|----------|---------|
-| `EMBED_CODE_PROXY_URL` | Proxy for model download |
-| `EMBED_CODE_PROXY_USERNAME` | Proxy username |
-| `EMBED_CODE_PROXY_PASSWORD` | Proxy password |
-| `EMBED_CODE_MODEL_PATH` | Override model path |
-| `XDG_CACHE_HOME` | Override cache directory root |
+| Variable                    | Purpose                       |
+| --------------------------- | ----------------------------- |
+| `EMBED_CODE_PROXY_URL`      | Proxy for model download      |
+| `EMBED_CODE_PROXY_USERNAME` | Proxy username                |
+| `EMBED_CODE_PROXY_PASSWORD` | Proxy password                |
+| `EMBED_CODE_MODEL_PATH`     | Override model path           |
+| `XDG_CACHE_HOME`            | Override cache directory root |
 
 ## Exporting Models
 

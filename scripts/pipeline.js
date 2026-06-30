@@ -14,17 +14,23 @@ const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.resolve(__dirname, '..');
-const MODEL_PATH = process.env.EMBED_CODE_MODEL_PATH ||
-  path.join(ROOT, 'models', 'nomic-embed-code-v1-int8.onnx');
+const MODEL_PATH =
+  process.env.EMBED_CODE_MODEL_PATH || path.join(ROOT, 'models', 'nomic-embed-code-v1-int8.onnx');
 const HF_MODEL = process.env.EMBED_CODE_HF_MODEL || 'nomic-ai/nomic-embed-code';
 
 const COLORS = {
-  green: '\x1b[32m', yellow: '\x1b[33m', red: '\x1b[31m',
-  cyan: '\x1b[36m', reset: '\x1b[0m',
+  green: '\x1b[32m',
+  yellow: '\x1b[33m',
+  red: '\x1b[31m',
+  cyan: '\x1b[36m',
+  reset: '\x1b[0m',
 };
 const info = (msg) => console.log(`${COLORS.green}[✓]${COLORS.reset} ${msg}`);
 const warn = (msg) => console.log(`${COLORS.yellow}[!]${COLORS.reset} ${msg}`);
-const fail = (msg) => { console.log(`${COLORS.red}[✗]${COLORS.reset} ${msg}`); process.exit(1); };
+const fail = (msg) => {
+  console.log(`${COLORS.red}[✗]${COLORS.reset} ${msg}`);
+  process.exit(1);
+};
 const title = (msg) => console.log(`\n${COLORS.cyan}━━━ ${msg} ━━━${COLORS.reset}`);
 
 function run(cmd, opts = {}) {
@@ -32,14 +38,19 @@ function run(cmd, opts = {}) {
   process.stdout.write(`  ${label}`);
   try {
     const result = execSync(cmd, {
-      cwd: ROOT, stdio: opts.stdio || ['pipe', 'pipe', 'pipe'],
+      cwd: ROOT,
+      stdio: opts.stdio || ['pipe', 'pipe', 'pipe'],
       timeout: opts.timeout || 600_000,
       env: { ...process.env, NODE_OPTIONS: '' },
     });
     console.log(` ${COLORS.green}✓${COLORS.reset}`);
     if (!opts.silent && result.length > 0 && opts.stdio !== 'inherit') {
       const out = result.toString().trim();
-      if (out) out.split('\n').slice(-8).forEach((l) => console.log(`  ${l}`));
+      if (out)
+        out
+          .split('\n')
+          .slice(-8)
+          .forEach((l) => console.log(`  ${l}`));
     }
     return true;
   } catch (e) {
@@ -81,7 +92,9 @@ async function main() {
   if (doTest) {
     title('Step 3: Run Tests');
     if (fs.existsSync(MODEL_PATH)) {
-      info(`Using model: ${MODEL_PATH} (${(fs.statSync(MODEL_PATH).size / 1024 ** 2).toFixed(0)} MB)`);
+      info(
+        `Using model: ${MODEL_PATH} (${(fs.statSync(MODEL_PATH).size / 1024 ** 2).toFixed(0)} MB)`,
+      );
     } else {
       warn('Model not found. Some integration tests may be skipped.');
     }
@@ -92,10 +105,14 @@ async function main() {
   title('Pipeline Complete');
   if (fs.existsSync(MODEL_PATH)) {
     const sha = execSync(`sha256sum ${MODEL_PATH} | cut -d' ' -f1`, { cwd: ROOT })
-      .toString().trim();
+      .toString()
+      .trim();
     info(`Model: ${MODEL_PATH} (SHA256: ${sha.slice(0, 16)}...)`);
   }
   info('Run "npm run release" to create a GitHub Release with the model.');
 }
 
-main().catch((e) => { console.error(e); process.exit(1); });
+main().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});

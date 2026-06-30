@@ -26,12 +26,7 @@ import { resolveModelConfig, EMBED_CODE_V1_CONFIG } from './model-descriptor';
 import { EmbedCodeInferenceEngine } from './inference/onnx-engine';
 import { Tokenizer } from './tokenizer';
 import { poolEmbeddings, normalizeEmbeddings, cosineSimilarity } from './pooling';
-import type {
-  ModelConfig,
-  ModelLoadOptions,
-  EmbedOptions,
-  EmbeddingResult,
-} from './types';
+import type { ModelConfig, ModelLoadOptions, EmbedOptions, EmbeddingResult } from './types';
 
 export class EmbedCode {
   private _engine: EmbedCodeInferenceEngine;
@@ -74,10 +69,7 @@ export class EmbedCode {
     }
 
     // Resolve architecture from model-descriptor.json
-    const { config, descriptor } = await resolveModelConfig(
-      options.modelPath,
-      EMBED_CODE_V1_CONFIG,
-    );
+    const { config, descriptor } = resolveModelConfig(options.modelPath, EMBED_CODE_V1_CONFIG);
 
     if (descriptor) {
       console.log(
@@ -90,8 +82,7 @@ export class EmbedCode {
     // Initialize tokenizer
     const tokenizer = new Tokenizer();
     const modelDir = path.dirname(options.modelPath);
-    const tokenizerPath =
-      options.tokenizerPath || path.join(modelDir, 'tokenizer.json');
+    const tokenizerPath = options.tokenizerPath || path.join(modelDir, 'tokenizer.json');
 
     try {
       tokenizer.loadFromFile(tokenizerPath);
@@ -103,11 +94,10 @@ export class EmbedCode {
     }
 
     // Initialize inference engine
-    const engine =
-      new EmbedCodeInferenceEngine({
-        executionProvider: options.executionProvider,
-        intraOpNumThreads: options.intraOpNumThreads,
-      });
+    const engine = new EmbedCodeInferenceEngine({
+      executionProvider: options.executionProvider,
+      intraOpNumThreads: options.intraOpNumThreads,
+    });
 
     await engine.load(options.modelPath, { skipWarmup: options.skipWarmup });
 
@@ -184,7 +174,7 @@ export class EmbedCode {
         attentionMask,
         batchSize,
         maxTokens,
-        hiddenDims[2]!,
+        hiddenDims[2],
         poolStrategy,
       );
     }

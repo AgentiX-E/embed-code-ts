@@ -50,11 +50,7 @@ export { EmbedCodeInferenceEngine } from './inference/onnx-engine';
 export { Tokenizer } from './tokenizer';
 
 // Pooling utilities
-export {
-  poolEmbeddings,
-  normalizeEmbeddings,
-  cosineSimilarity,
-} from './pooling';
+export { poolEmbeddings, normalizeEmbeddings, cosineSimilarity } from './pooling';
 
 // Types
 export type {

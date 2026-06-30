@@ -58,10 +58,10 @@ const FALLBACK_CONFIG = EMBED_CODE_V1_CONFIG;
  * @param fallbackConfig Config to use when no descriptor is found
  * @returns { config, descriptor } — validated ModelConfig and the raw descriptor (or null)
  */
-export async function resolveModelConfig(
+export function resolveModelConfig(
   modelPath: string,
   fallbackConfig: Readonly<ModelConfig> = FALLBACK_CONFIG,
-): Promise<{ config: Readonly<ModelConfig>; descriptor: ModelDescriptor | null }> {
+): { config: Readonly<ModelConfig>; descriptor: ModelDescriptor | null } {
   const modelDir = path.dirname(modelPath);
   const descriptorPath = path.join(modelDir, 'model-descriptor.json');
 

@@ -13,18 +13,46 @@
     "build:all": "npm run build && npm run build:cli",
     "test": "vitest run",
     "test:watch": "vitest",
-    "lint": "echo 'OK'",
-    "clean": "rimraf packages/*/dist",
+    "test:unit": "vitest run --config vitest.unit.config.ts",
+    "test:unit:coverage": "vitest run --config vitest.unit.config.ts --coverage",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint . --max-warnings=0",
+    "lint:fix": "eslint . --fix",
+    "format:check": "prettier --check .",
+    "format": "prettier --write .",
+    "clean": "rimraf packages/*/dist packages/*/tsconfig.tsbuildinfo coverage",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
     "export:model": "python3 scripts/export-onnx.py --output models/nomic-embed-code-v1-int8.onnx",
     "pipeline": "node scripts/pipeline.js",
     "pipeline:export": "node scripts/pipeline.js --export",
     "pipeline:test": "node scripts/pipeline.js --test",
+    "docs:generate": "typedoc",
+    "changeset": "changeset",
+    "prepare": "husky",
     "release": "node scripts/pipeline.js && gh release create v$(node -p \"require('./package.json').version\") models/nomic-embed-code-v1-int8.onnx models/model-descriptor.json --title \"nomic-embed-code v1 int8 ONNX\" --notes \"Pre-exported nomic-embed-code v1 int8 ONNX model for embed-code-ts.\""
   },
+  "lint-staged": {
+    "*.{ts,js,mjs,cjs}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,yaml,yml}": [
+      "prettier --write"
+    ]
+  },
   "devDependencies": {
+    "@changesets/cli": "^2.31.0",
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.6.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.4.0",
+    "prettier": "^3.9.4",
     "rimraf": "^6.0.0",
     "tsx": "^4.0.0",
+    "typedoc": "^0.28.19",
+    "typedoc-plugin-markdown": "^4.12.0",
     "typescript": "^5.5.0",
+    "typescript-eslint": "^8.62.1",
     "vitest": "^2.0.0"
   },
   "engines": {

@@ -40,13 +40,10 @@ const results = await embedder.embed([
 ]);
 
 console.log(results.embeddings); // Float32Array [2, 3584]
-console.log(results.elapsedMs);  // Inference time
+console.log(results.elapsedMs); // Inference time
 
 // Compute similarity
-const sim = embedder.similarity(
-  results.embeddings.slice(0, 3584),
-  results.embeddings.slice(3584),
-);
+const sim = embedder.similarity(results.embeddings.slice(0, 3584), results.embeddings.slice(3584));
 
 await embedder.dispose();
 ```
@@ -55,12 +52,13 @@ await embedder.dispose();
 
 nomic-embed-code requires task prefixes:
 
-| Role | Prefix |
-|------|--------|
-| Query | `search_query: {query}` |
+| Role            | Prefix                    |
+| --------------- | ------------------------- |
+| Query           | `search_query: {query}`   |
 | Code / Document | `search_document: {code}` |
 
 Access via `embedder.taskPrefixes`:
+
 ```typescript
 const { query, document } = embedder.taskPrefixes;
 const results = await embedder.embed([
@@ -114,10 +112,10 @@ Downloads the int8 ONNX model from GitHub Releases.
 
 ```typescript
 const modelPath = await downloadModel({
-  precision: 'int8',        // 'int8' (7B) | 'text-int8' (137M)
-  force: false,             // Force re-download
+  precision: 'int8', // 'int8' (7B) | 'text-int8' (137M)
+  force: false, // Force re-download
   onProgress: (receivedMB, totalMB, speedMBs) => {},
-  url: 'https://...',       // Custom URL or mirror
+  url: 'https://...', // Custom URL or mirror
   proxy: { url: 'http://proxy:8080' },
 });
 // → ~/.cache/agentix-embed-code-ts/nomic-embed-code-v1-int8.onnx
@@ -129,9 +127,9 @@ Creates an embedder from a pretrained ONNX checkpoint.
 
 ```typescript
 const embedder = await EmbedCode.fromPretrained({
-  modelPath: '/path/to/model.onnx',  // Required
-  executionProvider: 'cpu',          // 'cpu' | 'cuda' | 'dml'
-  intraOpNumThreads: 4,             // CPU thread count
+  modelPath: '/path/to/model.onnx', // Required
+  executionProvider: 'cpu', // 'cpu' | 'cuda' | 'dml'
+  intraOpNumThreads: 4, // CPU thread count
   skipWarmup: false,
   tokenizerPath: '/path/to/tokenizer.json',
 });
@@ -194,14 +192,14 @@ This runs the pipeline, exports the model, and creates a release tagged `embed-c
 
 ## Environment Variables
 
-| Variable | Purpose |
-|----------|---------|
-| `EMBED_CODE_PROXY_URL` | Proxy for model download |
-| `EMBED_CODE_PROXY_USERNAME` | Proxy username |
-| `EMBED_CODE_PROXY_PASSWORD` | Proxy password |
-| `EMBED_CODE_MODEL_PATH` | Override model path for pipeline |
-| `EMBED_CODE_HF_MODEL` | Override HuggingFace model ID |
-| `XDG_CACHE_HOME` | Override cache directory root |
+| Variable                    | Purpose                          |
+| --------------------------- | -------------------------------- |
+| `EMBED_CODE_PROXY_URL`      | Proxy for model download         |
+| `EMBED_CODE_PROXY_USERNAME` | Proxy username                   |
+| `EMBED_CODE_PROXY_PASSWORD` | Proxy password                   |
+| `EMBED_CODE_MODEL_PATH`     | Override model path for pipeline |
+| `EMBED_CODE_HF_MODEL`       | Override HuggingFace model ID    |
+| `XDG_CACHE_HOME`            | Override cache directory root    |
 
 ## License
 
