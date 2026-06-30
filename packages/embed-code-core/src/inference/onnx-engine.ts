@@ -86,12 +86,14 @@ export class EmbedCodeInferenceEngine implements IInferenceEngine {
       feedMap[name] = new ort.Tensor(tensor.type, data, tensor.dims);
     }
 
-    const results = await this.session.run(feedMap);
+    const results: Record<string, any> = await this.session.run(feedMap);
 
     const output: Record<string, OrtTensor> = {};
-    for (const [name, tensor] of Object.entries(results)) {
+    const resultKeys = Object.keys(results);
+    for (const name of resultKeys) {
+      const tensor = results[name];
       output[name] = {
-        data: new Float32Array(tensor.data as ArrayBuffer),
+        data: new Float32Array(tensor.data),
         dims: tensor.dims as number[],
         type: tensor.type as string,
       };

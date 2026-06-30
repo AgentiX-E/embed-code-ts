@@ -8,3 +8,4 @@ models/*.zip
 *.log
 DESIGN.md
 *.tsbuildinfo
+coverage/

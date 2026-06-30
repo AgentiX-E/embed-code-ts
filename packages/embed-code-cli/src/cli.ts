@@ -47,7 +47,7 @@ program
       console.log(`Model path:  ${modelPath}`);
       if (existsSync(modelPath)) {
         const { resolveModelConfig } = core;
-        const { config, descriptor } = await resolveModelConfig(modelPath);
+        const { config, descriptor } = resolveModelConfig(modelPath);
         if (descriptor) {
           console.log(`Model:       ${descriptor.model.name} ${descriptor.model.version}`);
           console.log(`Architecture: ${descriptor.model.base_architecture}`);
