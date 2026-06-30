@@ -44,7 +44,7 @@ const results = await embedder.embed([
 ]);
 
 console.log(results.embeddings); // Float32Array [2, 3584]
-console.log(results.elapsedMs);  // Inference time
+console.log(results.elapsedMs); // Inference time
 
 await embedder.dispose();
 ```

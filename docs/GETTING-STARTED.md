@@ -56,10 +56,7 @@ console.log('Time:', results.elapsedMs, 'ms');
 
 // 5. Compute similarity
 const dim = 3584;
-const sim = embedder.similarity(
-  results.embeddings.slice(0, dim),
-  results.embeddings.slice(dim)
-);
+const sim = embedder.similarity(results.embeddings.slice(0, dim), results.embeddings.slice(dim));
 console.log('Similarity:', sim);
 
 // 6. Release resources
@@ -137,24 +134,24 @@ HuggingFace Hub              Local Disk
 
 ### 2.4 Model File Specifications
 
-| Property    | Value                                                                |
-| ----------- | -------------------------------------------------------------------- |
-| Filename    | `nomic-embed-text-v1.5-int8.onnx`                                    |
-| Size        | ~140 MB                                                              |
-| Format      | ONNX (opset 18, int8 quantized)                                      |
-| Input       | `input_ids: [batch, 512]` (int64)                                    |
-| Input       | `attention_mask: [batch, 512]` (int64)                               |
-| Output      | `last_hidden_state: [batch, 512, 3584]` (float32)                    |
-| Backend     | ONNX Runtime: CPU / CUDA / DirectML                                  |
+| Property | Value                                             |
+| -------- | ------------------------------------------------- |
+| Filename | `nomic-embed-text-v1.5-int8.onnx`                 |
+| Size     | ~140 MB                                           |
+| Format   | ONNX (opset 18, int8 quantized)                   |
+| Input    | `input_ids: [batch, 512]` (int64)                 |
+| Input    | `attention_mask: [batch, 512]` (int64)            |
+| Output   | `last_hidden_state: [batch, 512, 3584]` (float32) |
+| Backend  | ONNX Runtime: CPU / CUDA / DirectML               |
 
 ### 2.5 Hardware Requirements
 
-| Component      | Minimum      | Recommended       |
-| -------------- | ------------ | ----------------- |
-| RAM            | 512 MB       | 2 GB+             |
-| Disk           | 150 MB free  | SSD               |
-| GPU (Optional) | 2 GB VRAM    | 4 GB+ VRAM        |
-| CPU Mode       | ✅ Available | Fast enough       |
+| Component      | Minimum      | Recommended |
+| -------------- | ------------ | ----------- |
+| RAM            | 512 MB       | 2 GB+       |
+| Disk           | 150 MB free  | SSD         |
+| GPU (Optional) | 2 GB VRAM    | 4 GB+ VRAM  |
+| CPU Mode       | ✅ Available | Fast enough |
 
 ---
 
@@ -247,17 +244,17 @@ async function codeSearch() {
   // Generate embeddings
   const results = await embedder.embed([
     query + 'recursive fibonacci sequence',
-    ...snippets.map(s => document + s),
+    ...snippets.map((s) => document + s),
   ]);
 
   const dim = 3584;
   const queryEmb = results.embeddings.slice(0, dim);
   const snippetEmbs = snippets.map((_, i) =>
-    results.embeddings.slice((i + 1) * dim, (i + 2) * dim)
+    results.embeddings.slice((i + 1) * dim, (i + 2) * dim),
   );
 
   // Compute similarities
-  const similarities = snippetEmbs.map(emb => embedder.similarity(queryEmb, emb));
+  const similarities = snippetEmbs.map((emb) => embedder.similarity(queryEmb, emb));
   const bestIdx = similarities.indexOf(Math.max(...similarities));
 
   console.log('Best match:', snippets[bestIdx]);
@@ -309,15 +306,15 @@ embed-code info -m ./custom.onnx
 
 ### CLI Parameters
 
-| Parameter                    | Required | Description                                      |
-| ---------------------------- | -------- | ------------------------------------------------ |
-| `<text>`                     | ❌       | Text to embed (alternative to -f)                |
-| `-f, --file <path>`          | ❌       | Input file path                                  |
-| `-m, --model <path>`         | ❌       | ONNX model file path                             |
-| `-o, --output <path>`        | ❌       | Output file path                                 |
-| `--max-tokens <n>`           | ❌       | Max input tokens (default: 512)                  |
-| `--no-normalize`             | ❌       | Disable L2 normalization                         |
-| `--pooling <strategy>`       | ❌       | Pooling: last_token, mean, cls (default: last_token) |
+| Parameter              | Required | Description                                          |
+| ---------------------- | -------- | ---------------------------------------------------- |
+| `<text>`               | ❌       | Text to embed (alternative to -f)                    |
+| `-f, --file <path>`    | ❌       | Input file path                                      |
+| `-m, --model <path>`   | ❌       | ONNX model file path                                 |
+| `-o, --output <path>`  | ❌       | Output file path                                     |
+| `--max-tokens <n>`     | ❌       | Max input tokens (default: 512)                      |
+| `--no-normalize`       | ❌       | Disable L2 normalization                             |
+| `--pooling <strategy>` | ❌       | Pooling: last_token, mean, cls (default: last_token) |
 
 ---
 
@@ -327,16 +324,16 @@ embed-code info -m ./custom.onnx
 
 ```typescript
 interface EmbedOptions {
-  maxTokens: number;            // Max input token count (default: 512)
+  maxTokens: number; // Max input token count (default: 512)
   poolingStrategy: 'last_token' | 'mean' | 'cls'; // Pooling (default: 'last_token')
-  normalize: boolean;           // L2 normalize output (default: true)
-  signal?: AbortSignal;         // Abort controller signal
+  normalize: boolean; // L2 normalize output (default: true)
+  signal?: AbortSignal; // Abort controller signal
   onProgress?: (progress: EmbedProgress) => void; // Progress callback
 }
 
 interface EmbedProgress {
-  current: number;   // Current text index
-  total: number;     // Total text count
+  current: number; // Current text index
+  total: number; // Total text count
   elapsedMs: number; // Elapsed time
 }
 ```
@@ -361,11 +358,11 @@ interface EmbedProgress {
 
 ### Input Length Recommendations
 
-| Scenario              | maxTokens | Notes                            |
-| --------------------- | --------- | -------------------------------- |
-| Single function/class | 128-256   | Fast, covers most use cases      |
-| Full source file      | 512       | nomic-embed-code max context     |
-| Multi-file contexts   | N/A       | Chunk and embed individually     |
+| Scenario              | maxTokens | Notes                        |
+| --------------------- | --------- | ---------------------------- |
+| Single function/class | 128-256   | Fast, covers most use cases  |
+| Full source file      | 512       | nomic-embed-code max context |
+| Multi-file contexts   | N/A       | Chunk and embed individually |
 
 ---
 
@@ -387,12 +384,12 @@ elapsedMs: number                — Total inference time
 
 ### Embedding Properties
 
-| Property     | Value         | Description                                  |
-| ------------ | ------------- | -------------------------------------------- |
-| Dimensions   | 3584          | Fixed embedding size (nomic-embed-code-v1.5) |
-| Normalized   | true          | L2 norm ≈ 1.0 when normalize is enabled      |
-| Type         | Float32Array  | 32-bit floating point                        |
-| Range        | [-1, 1]       | Values typically in [-0.1, 0.1]              |
+| Property   | Value        | Description                                  |
+| ---------- | ------------ | -------------------------------------------- |
+| Dimensions | 3584         | Fixed embedding size (nomic-embed-code-v1.5) |
+| Normalized | true         | L2 norm ≈ 1.0 when normalize is enabled      |
+| Type       | Float32Array | 32-bit floating point                        |
+| Range      | [-1, 1]      | Values typically in [-0.1, 0.1]              |
 
 ---
 
@@ -497,12 +494,12 @@ npm install onnxruntime-node
 
 ### Expected Inference Speed
 
-| Hardware       | 1 text (512 tokens) | 32 texts (batch)  |
-| -------------- | ------------------- | ----------------- |
-| CPU (32 cores) | 2-5 ms              | 30-60 ms          |
-| CPU (8 cores)  | 5-10 ms             | 80-150 ms         |
-| GPU (8GB)      | 0.5-1 ms            | 10-20 ms          |
-| GPU (24GB)     | 0.2-0.5 ms          | 5-10 ms           |
+| Hardware       | 1 text (512 tokens) | 32 texts (batch) |
+| -------------- | ------------------- | ---------------- |
+| CPU (32 cores) | 2-5 ms              | 30-60 ms         |
+| CPU (8 cores)  | 5-10 ms             | 80-150 ms        |
+| GPU (8GB)      | 0.5-1 ms            | 10-20 ms         |
+| GPU (24GB)     | 0.2-0.5 ms          | 5-10 ms          |
 
 ### Optimization Suggestions
 

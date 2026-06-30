@@ -36,10 +36,10 @@ Input Text → [Tokenizer] → [ONNX Runtime] → [Pooling] → [Normalize] → 
 
 ## Packages
 
-| Package                         | npm                                                                                                                                              | Description                                                           |
-| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------- |
-| `@agentix-e/embed-code-core`    | [![npm](https://img.shields.io/npm/v/@agentix-e/embed-code-core?color=blue)](https://www.npmjs.com/package/@agentix-e/embed-code-core)           | Core inference engine + tokenizer + pooling + model downloader        |
-| `@agentix-e/embed-code-cli`     | [![npm](https://img.shields.io/npm/v/@agentix-e/embed-code-cli?color=blue)](https://www.npmjs.com/package/@agentix-e/embed-code-cli)             | CLI tool (includes `embed-code setup` auto model download)            |
+| Package                      | npm                                                                                                                                    | Description                                                    |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| `@agentix-e/embed-code-core` | [![npm](https://img.shields.io/npm/v/@agentix-e/embed-code-core?color=blue)](https://www.npmjs.com/package/@agentix-e/embed-code-core) | Core inference engine + tokenizer + pooling + model downloader |
+| `@agentix-e/embed-code-cli`  | [![npm](https://img.shields.io/npm/v/@agentix-e/embed-code-cli?color=blue)](https://www.npmjs.com/package/@agentix-e/embed-code-cli)   | CLI tool (includes `embed-code setup` auto model download)     |
 
 > **Layered strategy**: npm packages contain only code (~50 KB), models (~140 MB int8 ONNX) are downloaded on-demand via GitHub Releases.
 
@@ -79,10 +79,7 @@ console.log(results.embeddings); // Float32Array [2, 3584]
 console.log(results.elapsedMs); // Inference time
 
 // Compute similarity
-const sim = embedder.similarity(
-  results.embeddings.slice(0, 3584),
-  results.embeddings.slice(3584)
-);
+const sim = embedder.similarity(results.embeddings.slice(0, 3584), results.embeddings.slice(3584));
 
 await embedder.dispose();
 ```
@@ -101,13 +98,13 @@ npm run pipeline
 
 ## EmbedConfig Reference
 
-| Parameter          | Type    | Default       | Description                                              |
-| ------------------ | ------- | ------------- | -------------------------------------------------------- |
-| `maxTokens`        | number  | 512           | Maximum input token count                                |
-| `poolingStrategy`  | string  | `last_token`  | Pooling: `last_token`, `mean`, or `cls`                  |
-| `normalize`        | boolean | true          | L2 normalize output embeddings                           |
-| `batchSize`        | number  | 32            | Number of texts to process per batch                     |
-| `truncation`       | boolean | true          | Truncate inputs exceeding maxTokens                      |
+| Parameter         | Type    | Default      | Description                             |
+| ----------------- | ------- | ------------ | --------------------------------------- |
+| `maxTokens`       | number  | 512          | Maximum input token count               |
+| `poolingStrategy` | string  | `last_token` | Pooling: `last_token`, `mean`, or `cls` |
+| `normalize`       | boolean | true         | L2 normalize output embeddings          |
+| `batchSize`       | number  | 32           | Number of texts to process per batch    |
+| `truncation`      | boolean | true         | Truncate inputs exceeding maxTokens     |
 
 ## Task Prefixes
 
@@ -130,10 +127,10 @@ const results = await embedder.embed([
 
 ## Output Shape Reference
 
-| Output                   | Shape        | Description                         |
-| ------------------------ | ------------ | ----------------------------------- |
-| `results.embeddings`     | `(N, D)`     | Flat Float32Array, N texts × D dims |
-| `results.elapsedMs`      | number       | Inference time in milliseconds      |
+| Output               | Shape    | Description                         |
+| -------------------- | -------- | ----------------------------------- |
+| `results.embeddings` | `(N, D)` | Flat Float32Array, N texts × D dims |
+| `results.elapsedMs`  | number   | Inference time in milliseconds      |
 
 Where `D` = 3584 (nomic-embed-code-v1.5 hidden dimension).
 
@@ -219,13 +216,13 @@ npm run format:check
 
 ## Documentation & Reports
 
-| Resource          | Description                                                           | URL                                                                                                      |
-| ----------------- | --------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| 📚 **API Docs**   | Full TypeDoc reference for all packages                               | [agentix-e.github.io/embed-code-ts/api/](https://agentix-e.github.io/embed-code-ts/api/)                 |
-| 📊 **Benchmark**  | Inference latency, throughput & embedding quality reports             | [agentix-e.github.io/embed-code-ts/benchmark/](https://agentix-e.github.io/embed-code-ts/benchmark/)     |
-| 📈 **Coverage**   | Line, branch, function & statement coverage (≥95% on all covered source modules) | [agentix-e.github.io/embed-code-ts/coverage/](https://agentix-e.github.io/embed-code-ts/coverage/) |
-| 📦 **npm (core)** | `@agentix-e/embed-code-core`                                          | [npmjs.com/package/@agentix-e/embed-code-core](https://www.npmjs.com/package/@agentix-e/embed-code-core) |
-| 📦 **npm (cli)**  | `@agentix-e/embed-code-cli`                                           | [npmjs.com/package/@agentix-e/embed-code-cli](https://www.npmjs.com/package/@agentix-e/embed-code-cli)   |
+| Resource          | Description                                                                      | URL                                                                                                      |
+| ----------------- | -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| 📚 **API Docs**   | Full TypeDoc reference for all packages                                          | [agentix-e.github.io/embed-code-ts/api/](https://agentix-e.github.io/embed-code-ts/api/)                 |
+| 📊 **Benchmark**  | Inference latency, throughput & embedding quality reports                        | [agentix-e.github.io/embed-code-ts/benchmark/](https://agentix-e.github.io/embed-code-ts/benchmark/)     |
+| 📈 **Coverage**   | Line, branch, function & statement coverage (≥95% on all covered source modules) | [agentix-e.github.io/embed-code-ts/coverage/](https://agentix-e.github.io/embed-code-ts/coverage/)       |
+| 📦 **npm (core)** | `@agentix-e/embed-code-core`                                                     | [npmjs.com/package/@agentix-e/embed-code-core](https://www.npmjs.com/package/@agentix-e/embed-code-core) |
+| 📦 **npm (cli)**  | `@agentix-e/embed-code-cli`                                                      | [npmjs.com/package/@agentix-e/embed-code-cli](https://www.npmjs.com/package/@agentix-e/embed-code-cli)   |
 
 ## System Requirements
 
@@ -241,11 +238,11 @@ npm run format:check
 
 ### Pre-install dependencies
 
-| Usage method                          | Requires pre-install                                    |
-| ------------------------------------- | ------------------------------------------------------- |
-| **npm install + auto model download** | Node.js ≥ 22 + `onnxruntime-node`                       |
-| **Export model from HuggingFace**     | Python ≥ 3.10 + `pip install optimum onnx onnxruntime`  |
-| **Build from source**                 | Node.js ≥ 22 + npm                                      |
+| Usage method                          | Requires pre-install                                   |
+| ------------------------------------- | ------------------------------------------------------ |
+| **npm install + auto model download** | Node.js ≥ 22 + `onnxruntime-node`                      |
+| **Export model from HuggingFace**     | Python ≥ 3.10 + `pip install optimum onnx onnxruntime` |
+| **Build from source**                 | Node.js ≥ 22 + npm                                     |
 
 > `onnxruntime-node` includes prebuilt C++ native modules, supports Linux x64 / arm64, macOS x64 / arm64 (Apple Silicon), Windows x64. **No additional system packages required**.
 
@@ -302,8 +299,8 @@ This project is open source under [Apache 2.0](LICENSE).
 
 ### License compatibility
 
-| Component                  | License             | Description        |
-| -------------------------- | ------------------- | ------------------ |
-| embed-code-ts code         | Apache 2.0          | Fully original     |
-| nomic-embed-code weights   | Apache 2.0 (Nomic)  | HuggingFace hosted |
-| ONNX Runtime               | MIT (Microsoft)     | npm dependency     |
+| Component                | License            | Description        |
+| ------------------------ | ------------------ | ------------------ |
+| embed-code-ts code       | Apache 2.0         | Fully original     |
+| nomic-embed-code weights | Apache 2.0 (Nomic) | HuggingFace hosted |
+| ONNX Runtime             | MIT (Microsoft)    | npm dependency     |

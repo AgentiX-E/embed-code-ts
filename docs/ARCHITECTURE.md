@@ -116,11 +116,11 @@ Implements `IInferenceEngine`:
 
 **File**: `packages/embed-code-core/src/pooling/pooler.ts`
 
-| Strategy     | Description                                      | Use Case                        |
-| ------------ | ------------------------------------------------ | ------------------------------- |
+| Strategy       | Description                                     | Use Case                        |
+| -------------- | ----------------------------------------------- | ------------------------------- |
 | **last_token** | Use the last non-padding token embedding        | Default, recommended for search |
-| **Mean**     | Average of all token embeddings (ignoring pads)  | Best for code classification    |
-| **CLS**      | Use the [CLS] token embedding only               | BERT-style tasks                |
+| **Mean**       | Average of all token embeddings (ignoring pads) | Best for code classification    |
+| **CLS**        | Use the [CLS] token embedding only              | BERT-style tasks                |
 
 ### 6. Model Downloader
 
@@ -205,9 +205,9 @@ IInferenceEngine     — pluggable backend (ONNX)
 
 ## Package Sizes
 
-| Package                      | Code Size | Dependencies                        |
-| ---------------------------- | --------- | ----------------------------------- |
-| `@agentix-e/embed-code-core` | ~50 KB    | `onnxruntime-node` (dynamic)        |
-| `@agentix-e/embed-code-cli`  | ~10 KB    | `commander`                         |
+| Package                      | Code Size | Dependencies                 |
+| ---------------------------- | --------- | ---------------------------- |
+| `@agentix-e/embed-code-core` | ~50 KB    | `onnxruntime-node` (dynamic) |
+| `@agentix-e/embed-code-cli`  | ~10 KB    | `commander`                  |
 
 Model weights (~140 MB int8 ONNX) are downloaded separately from GitHub Releases.

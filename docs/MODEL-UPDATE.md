@@ -107,13 +107,13 @@ git commit -m "chore(model): update descriptor to HF rev <sha>"
 
 The `model-descriptor.json` file (committed to the repo and distributed with each ONNX release) defines the architecture contract between the model and the TypeScript engine:
 
-| Field               | Source                  | Purpose                                  |
-| ------------------- | ----------------------- | ---------------------------------------- |
-| `schema`            | Constant (1)            | Forward compatibility version            |
-| `model.hf_revision` | HuggingFace API         | Traceability to exact PyTorch checkpoint |
-| `onnx.input_shape`  | ONNX graph              | Runtime shape validation                 |
-| `onnx.sha256`       | Computed from ONNX file | Download integrity verification          |
-| `architecture.*`    | PyTorch model params    | Configures the TypeScript engine         |
+| Field               | Source                  | Purpose                                    |
+| ------------------- | ----------------------- | ------------------------------------------ |
+| `schema`            | Constant (1)            | Forward compatibility version              |
+| `model.hf_revision` | HuggingFace API         | Traceability to exact PyTorch checkpoint   |
+| `onnx.input_shape`  | ONNX graph              | Runtime shape validation                   |
+| `onnx.sha256`       | Computed from ONNX file | Download integrity verification            |
+| `architecture.*`    | PyTorch model params    | Configures the TypeScript engine           |
 | `tokenizer.*`       | Model config            | Vocabulary size, maxTokens, special tokens |
 
 The engine reads this descriptor at runtime via `loadModelDescriptor()` and converts it to a `ModelConfig` via `descriptorToModelConfig()`. All hardcoded architecture constants in the TypeScript code have been eliminated — the descriptor is the single source of truth.
@@ -122,10 +122,10 @@ The engine reads this descriptor at runtime via `loadModelDescriptor()` and conv
 
 ## Version Compatibility
 
-| Schema | Engine Requirement                    | Notes                                                     |
-| ------ | ------------------------------------- | --------------------------------------------------------- |
-| 1      | `@agentix-e/embed-code-core` ≥ 0.1.0 | Current                                                   |
-| > 1    | Upgrade required                      | Engine logs warning and falls back to `NOMIC_EMBED_CODE_CONFIG` |
+| Schema | Engine Requirement                   | Notes                                                           |
+| ------ | ------------------------------------ | --------------------------------------------------------------- |
+| 1      | `@agentix-e/embed-code-core` ≥ 0.1.0 | Current                                                         |
+| > 1    | Upgrade required                     | Engine logs warning and falls back to `NOMIC_EMBED_CODE_CONFIG` |
 
 If a future nomic-embed-code model version has a different architecture, updating `export-onnx.py` to generate the new descriptor is sufficient — no TypeScript code changes are needed as long as the schema version is compatible.
 
@@ -155,12 +155,12 @@ When a new model version is released:
 
 ## Troubleshooting
 
-| Issue                                | Solution                                                                                     |
-| ------------------------------------ | -------------------------------------------------------------------------------------------- |
-| Nightly check not detecting changes  | Verify `models/model-descriptor.json` is committed with the current HF revision              |
-| Model release fails                  | Check the workflow run logs; force re-run with `force: true`                                 |
-| `downloadModel()` fails              | Verify `model-latest` release exists and contains both `.onnx` and `model-descriptor.json`   |
-| `downloadModel()` fails behind proxy | Set `HTTPS_PROXY` or `EMBED_CODE_PROXY_URL` environment variables (see README Proxy section) |
+| Issue                                | Solution                                                                                        |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------- |
+| Nightly check not detecting changes  | Verify `models/model-descriptor.json` is committed with the current HF revision                 |
+| Model release fails                  | Check the workflow run logs; force re-run with `force: true`                                    |
+| `downloadModel()` fails              | Verify `model-latest` release exists and contains both `.onnx` and `model-descriptor.json`      |
+| `downloadModel()` fails behind proxy | Set `HTTPS_PROXY` or `EMBED_CODE_PROXY_URL` environment variables (see README Proxy section)    |
 | `downloadModel()` fails with 407     | Proxy authentication required — set `EMBED_CODE_PROXY_USERNAME` and `EMBED_CODE_PROXY_PASSWORD` |
-| Engine rejects model                 | Descriptor schema > `ENGINE_SUPPORTED_SCHEMA` — upgrade `@agentix-e/embed-code-core`         |
-| Local tests need ONNX model          | Export locally: `python3 scripts/export-onnx.py` or `npm run pipeline:export`                |
+| Engine rejects model                 | Descriptor schema > `ENGINE_SUPPORTED_SCHEMA` — upgrade `@agentix-e/embed-code-core`            |
+| Local tests need ONNX model          | Export locally: `python3 scripts/export-onnx.py` or `npm run pipeline:export`                   |
