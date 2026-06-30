@@ -13,6 +13,7 @@ export interface ModelDescriptor {
     version: string;
     base_architecture: string;
     hf_repository: string;
+    hf_revision: string;
     exported_at: string;
     precision: string;
   };
@@ -20,8 +21,8 @@ export interface ModelDescriptor {
     input_ids_name: string;
     attention_mask_name: string;
     output_name: string;
-    input_shape: number[];
-    output_shape: number[];
+    input_shape?: number[];
+    output_shape?: number[];
     opset: number;
     sha256: string;
     size_bytes: number;

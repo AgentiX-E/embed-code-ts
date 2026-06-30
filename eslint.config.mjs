@@ -3,15 +3,30 @@ import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
   eslint.configs.recommended,
-  // Type-checked rules for source files only
+  // Strict type-checked rules for source files
   ...tseslint.configs.recommendedTypeChecked.map((c) => ({
     ...c,
     files: ['packages/*/src/**/*.ts'],
+    rules: {
+      ...c.rules,
+      '@typescript-eslint/no-explicit-any': 'error',
+      '@typescript-eslint/no-non-null-assertion': 'error',
+      '@typescript-eslint/consistent-type-imports': ['error', { fixStyle: 'inline-type-imports' }],
+      'no-console': ['warn', { allow: ['error', 'warn'] }],
+      'no-debugger': 'error',
+      'prefer-const': 'error',
+      'no-var': 'error',
+    },
   })),
   // Relaxed rules for test and config files
   ...tseslint.configs.recommended.map((c) => ({
     ...c,
-    files: ['packages/*/test/**/*.ts', '*.config.ts'],
+    files: ['packages/*/test/**/*.ts', '*.config.ts', 'vitest*.ts'],
+    rules: {
+      ...c.rules,
+      '@typescript-eslint/no-explicit-any': 'off',
+      'no-console': 'off',
+    },
   })),
   {
     languageOptions: {
@@ -21,16 +36,7 @@ export default tseslint.config(
       },
     },
     rules: {
-      '@typescript-eslint/no-explicit-any': 'off',
-      '@typescript-eslint/no-unsafe-assignment': 'off',
-      '@typescript-eslint/no-unsafe-member-access': 'off',
-      '@typescript-eslint/no-unsafe-call': 'off',
-      '@typescript-eslint/no-unsafe-return': 'off',
-      '@typescript-eslint/no-unsafe-argument': 'off',
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
-      '@typescript-eslint/restrict-template-expressions': 'off',
-      '@typescript-eslint/no-redundant-type-constituents': 'off',
-      'no-console': 'off',
     },
   },
   {
@@ -38,6 +44,7 @@ export default tseslint.config(
       '**/dist/**',
       '**/node_modules/**',
       '**/coverage/**',
+      '**/docs/api/**',
       'scripts/**',
       'eslint.config.mjs',
       'package-lock.json',

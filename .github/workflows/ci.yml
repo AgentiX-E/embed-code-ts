@@ -41,6 +41,15 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: npx vitest run --config vitest.unit.config.ts --coverage
+      - name: Check coverage thresholds
+        run: node scripts/ci-coverage-check.js --tier unit --verbose
+      - name: Ensure coverage directory exists
+        run: |
+          mkdir -p coverage
+          if [ ! -f coverage/coverage-summary.json ]; then
+            echo '{"total":{"lines":{"pct":0},"branches":{"pct":0},"functions":{"pct":0},"statements":{"pct":0}}}' > coverage/coverage-summary.json
+          fi
+        continue-on-error: true
       - name: Upload coverage
         uses: actions/upload-artifact@v7
         with:
@@ -93,7 +102,7 @@ jobs:
           shutil.copy(path, 'models/nomic-embed-text-v1.5-int8.onnx')
           print(f'Downloaded: {os.path.getsize(\"models/nomic-embed-text-v1.5-int8.onnx\") / 1024**2:.0f} MB')
           "
-          # Also download tokenizer
+          # Also download tokenizer files
           python3 -c "
           from huggingface_hub import hf_hub_download
           import shutil
@@ -103,7 +112,6 @@ jobs:
                   shutil.copy(path, f'models/{f}')
               except: pass
           " || true
-          # Also download nomic-embed-code model files for tokenizer
           python3 -c "
           from huggingface_hub import hf_hub_download
           import shutil
@@ -119,6 +127,9 @@ jobs:
         run: npx vitest run --coverage
         env:
           EMBED_CODE_MODEL_PATH: models/nomic-embed-text-v1.5-int8.onnx
+
+      - name: Check coverage thresholds
+        run: node scripts/ci-coverage-check.js --tier integration --verbose
 
       - name: Upload integration coverage
         uses: actions/upload-artifact@v7
@@ -147,17 +158,36 @@ jobs:
           fail-on-cache-miss: true
 
       - name: Run benchmark
-        run: node scripts/benchmark-ci.js
+        run: |
+          node scripts/benchmark-ci.js \
+            --json benchmark-report.json \
+            --md benchmark-report.md \
+            --html benchmark-report.html \
+            --baseline benchmarks/baseline.json \
+            --verbose
         env:
           EMBED_CODE_MODEL_PATH: models/nomic-embed-text-v1.5-int8.onnx
           BENCH_ITERATIONS: 10
         timeout-minutes: 10
 
+      - name: Accuracy Gate
+        run: node scripts/ci-benchmark-check.js --verbose
+
+      - name: Post benchmark summary
+        if: always()
+        run: |
+          if [ -f benchmark-report.md ]; then
+            cat benchmark-report.md >> $GITHUB_STEP_SUMMARY
+          fi
+
       - name: Upload benchmark report
         uses: actions/upload-artifact@v7
         with:
           name: benchmark-report
-          path: benchmark-report.json
+          path: |
+            benchmark-report.json
+            benchmark-report.md
+            benchmark-report.html
           retention-days: 7
 
   # ─── Deploy Pages ─────────────────────────────────────────

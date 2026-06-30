@@ -11,10 +11,8 @@ const MODEL_PATH = process.env.EMBED_CODE_MODEL_PATH || '';
 
 const hasModel = MODEL_PATH && fs.existsSync(MODEL_PATH);
 
-describe('EmbedCode Integration', () => {
-  it.skip('loads model and generates embeddings', async () => {
-    if (!hasModel) return;
-
+describe.runIf(hasModel)('EmbedCode Integration', () => {
+  it('loads model and generates embeddings', async () => {
     const { EmbedCode } = await import('../../src/embed-code');
 
     const embedder = await EmbedCode.fromPretrained({ modelPath: MODEL_PATH });
@@ -35,9 +33,7 @@ describe('EmbedCode Integration', () => {
     expect(embedder.isLoaded).toBe(false);
   }, 60000);
 
-  it.skip('computes similarity between query and code', async () => {
-    if (!hasModel) return;
-
+  it('computes similarity between query and code', async () => {
     const { EmbedCode } = await import('../../src/embed-code');
     const embedder = await EmbedCode.fromPretrained({ modelPath: MODEL_PATH });
 

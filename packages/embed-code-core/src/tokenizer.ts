@@ -65,10 +65,16 @@ export class Tokenizer {
   loadFromBuffer(buffer: ArrayBuffer): void {
     const decoder = new TextDecoder();
     const json = decoder.decode(buffer);
-    const tmpPath = '/tmp/embed-code-tokenizer-tmp.json';
+    // Use process.cwd() to avoid hardcoded /tmp and ensure concurrency safety
+    const tmpDir = fs.mkdtempSync('embed-code-tokenizer-');
+    const tmpPath = `${tmpDir}/tokenizer.json`;
     fs.writeFileSync(tmpPath, json);
-    this.loadFromFile(tmpPath);
-    fs.unlinkSync(tmpPath);
+    try {
+      this.loadFromFile(tmpPath);
+    } finally {
+      try { fs.unlinkSync(tmpPath); } catch { /* best effort */ }
+      try { fs.rmdirSync(tmpDir); } catch { /* best effort */ }
+    }
   }
 
   /**

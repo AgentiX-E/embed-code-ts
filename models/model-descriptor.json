@@ -5,6 +5,7 @@
     "version": "v1",
     "base_architecture": "Qwen2.5-7B",
     "hf_repository": "nomic-ai/nomic-embed-code",
+    "hf_revision": "",
     "exported_at": "",
     "precision": "int8"
   },

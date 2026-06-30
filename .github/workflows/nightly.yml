@@ -1,0 +1,92 @@
+name: Nightly Model Check
+
+on:
+  schedule:
+    - cron: '0 2 * * *' # Daily at 2 AM UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: write
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with: { python-version: '3.11' }
+
+      - name: Install dependencies
+        run: pip install huggingface_hub
+
+      - name: Check for new HuggingFace revision
+        id: check
+        run: |
+          # Get latest HF revision
+          LATEST_REV=$(python3 -c "
+          try:
+              from huggingface_hub import HfApi
+              api = HfApi()
+              info = api.model_info('nomic-ai/nomic-embed-code')
+              print(info.sha[:12])
+          except Exception as e:
+              print(f'ERROR: {e}')
+          " 2>/dev/null)
+
+          # Get committed revision
+          COMMITTED_REV=$(python3 -c "
+          import json
+          with open('models/model-descriptor.json') as f:
+              d = json.load(f)
+          rev = d.get('model',{}).get('hf_revision','')
+          print(rev[:12] if rev else 'unknown')
+          " 2>/dev/null)
+
+          echo "latest_rev=$LATEST_REV" >> $GITHUB_OUTPUT
+          echo "committed_rev=$COMMITTED_REV" >> $GITHUB_OUTPUT
+
+          if [ "$LATEST_REV" != "unknown" ] && [ "$LATEST_REV" != "$COMMITTED_REV" ] && [ -n "$LATEST_REV" ]; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "New HF revision: $LATEST_REV (committed: $COMMITTED_REV)"
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+            echo "No change: $LATEST_REV (committed: $COMMITTED_REV)"
+          fi
+
+      - name: Trigger model release
+        if: steps.check.outputs.changed == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh workflow run model-release.yml -f force=true
+          echo "Triggered model-release workflow."
+
+      - name: Create issue for model update
+        if: steps.check.outputs.changed == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: 'model-update',
+              state: 'open',
+            });
+
+            if (issues.length === 0) {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: `[Model Update] New nomic-embed-code revision: ${{ steps.check.outputs.latest_rev }}`,
+                body: `A new HuggingFace revision was detected for [nomic-ai/nomic-embed-code](https://huggingface.co/nomic-ai/nomic-embed-code).
+
+          **New revision**: \`${{ steps.check.outputs.latest_rev }}\`
+          **Committed revision**: \`${{ steps.check.outputs.committed_rev }}\`
+
+          The model-release workflow has been triggered automatically. This issue will be closed when the descriptor is updated.`,
+                labels: ['model-update'],
+              });
+            }
