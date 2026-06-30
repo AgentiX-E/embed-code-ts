@@ -37,6 +37,7 @@ export default tseslint.config(
     rules: {
       ...c.rules,
       '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-non-null-assertion': 'off',
     },
   })),
   // Relaxed type-checked rules for CLI (dynamic imports, Commander)
@@ -46,6 +47,7 @@ export default tseslint.config(
     rules: {
       ...c.rules,
       '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-non-null-assertion': 'off',
     },
   })),
   // Relaxed rules for test and config files
@@ -59,12 +61,6 @@ export default tseslint.config(
     },
   })),
   {
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.eslint.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-    },
     rules: {
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
     },
