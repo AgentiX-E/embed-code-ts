@@ -46,13 +46,20 @@ async function main() {
   console.log(`Iterations: ${ITERATIONS}`);
   console.log('');
 
-  const embedder = await core.EmbedCode.fromPretrained({ modelPath: MODEL_PATH, skipWarmup: false });
+  const embedder = await core.EmbedCode.fromPretrained({
+    modelPath: MODEL_PATH,
+    skipWarmup: false,
+  });
   const dim = embedder.embeddingDim;
 
   // Benchmark configs: different batch sizes and token lengths
   const configs = [
     { name: 'single-short', batchSize: 1, text: 'def hello(): return "world"' },
-    { name: 'single-medium', batchSize: 1, text: 'def factorial(n):\n  if n <= 1:\n    return 1\n  return n * factorial(n - 1)' },
+    {
+      name: 'single-medium',
+      batchSize: 1,
+      text: 'def factorial(n):\n  if n <= 1:\n    return 1\n  return n * factorial(n - 1)',
+    },
     { name: 'batch-4', batchSize: 4, text: 'def add(a, b): return a + b' },
     { name: 'batch-8', batchSize: 8, text: 'const x = 42' },
   ];
@@ -60,7 +67,9 @@ async function main() {
   const results = [];
 
   for (const cfg of configs) {
-    const texts = Array(cfg.batchSize).fill(cfg.text).map((t) => embedder.taskPrefixes.document + t);
+    const texts = Array(cfg.batchSize)
+      .fill(cfg.text)
+      .map((t) => embedder.taskPrefixes.document + t);
     const latencies = [];
 
     // Warmup (excluded from measurement)
@@ -91,7 +100,9 @@ async function main() {
       throughputTokensPerSec: Math.round(throughputTokensPerSec),
     });
 
-    console.log(`  ${cfg.name.padEnd(16)} avg=${avgMs.toFixed(1)}ms  min=${minMs.toFixed(1)}ms  tokens/s=${throughputTokensPerSec.toFixed(0)}`);
+    console.log(
+      `  ${cfg.name.padEnd(16)} avg=${avgMs.toFixed(1)}ms  min=${minMs.toFixed(1)}ms  tokens/s=${throughputTokensPerSec.toFixed(0)}`,
+    );
   }
 
   await embedder.dispose();

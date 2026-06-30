@@ -209,9 +209,9 @@ nomic-embed-code is also Apache-2.0 licensed by Nomic AI.
 
 ## Links
 
-| Resource | URL |
-|----------|-----|
-| API Documentation | [https://agentix-e.github.io/embed-code-ts/api/](https://agentix-e.github.io/embed-code-ts/api/) |
-| Coverage Report | [https://agentix-e.github.io/embed-code-ts/coverage/](https://agentix-e.github.io/embed-code-ts/coverage/) |
-| Benchmark Results | [https://agentix-e.github.io/embed-code-ts/](https://agentix-e.github.io/embed-code-ts/) |
-| GitHub Repository | [https://github.com/AgentiX-E/embed-code-ts](https://github.com/AgentiX-E/embed-code-ts) |
+| Resource          | URL                                                                                                        |
+| ----------------- | ---------------------------------------------------------------------------------------------------------- |
+| API Documentation | [https://agentix-e.github.io/embed-code-ts/api/](https://agentix-e.github.io/embed-code-ts/api/)           |
+| Coverage Report   | [https://agentix-e.github.io/embed-code-ts/coverage/](https://agentix-e.github.io/embed-code-ts/coverage/) |
+| Benchmark Results | [https://agentix-e.github.io/embed-code-ts/](https://agentix-e.github.io/embed-code-ts/)                   |
+| GitHub Repository | [https://github.com/AgentiX-E/embed-code-ts](https://github.com/AgentiX-E/embed-code-ts)                   |

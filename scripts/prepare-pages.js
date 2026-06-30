@@ -110,7 +110,9 @@ const html = `<!DOCTYPE html>
     <tr><th>Config</th><th>Batch</th><th>Avg Latency</th><th>Throughput</th></tr>
     ${benchmarkTable()}
   </table>
-  ${benchmarkData?.memory ? `
+  ${
+    benchmarkData?.memory
+      ? `
   <h2>Memory</h2>
   <table>
     <tr><th>Heap Used</th><th>Heap Total</th><th>RSS</th></tr>
@@ -119,7 +121,9 @@ const html = `<!DOCTYPE html>
       <td>${benchmarkData.memory.heapTotalMB} MB</td>
       <td>${benchmarkData.memory.rssMB} MB</td>
     </tr>
-  </table>` : ''}
+  </table>`
+      : ''
+  }
 
   <h2>Coverage</h2>
   <p>${coveragePct !== null ? `<span class="badge ${coveragePct >= 95 ? 'badge-green' : 'badge-yellow'}">${coveragePct}%</span>` : 'No coverage data available.'}</p>
