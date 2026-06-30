@@ -9,27 +9,27 @@ on:
 
 permissions:
   contents: read
+  pages: write
+  id-token: write
 
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  # ─── Lint & Format ───────────────────────────────────────
+  # ─── Lint ─────────────────────────────────────────────────
   lint:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: 'npm'
+        with: { node-version: '22', cache: 'npm' }
       - run: npm ci
       - run: npm run lint
       - run: npm run format:check
 
-  # ─── Unit Tests (no model required) ──────────────────────
+  # ─── Unit Tests + Coverage ────────────────────────────────
   unit-test:
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -39,21 +39,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node-version }}
-          cache: 'npm'
+        with: { node-version: '${{ matrix.node-version }}', cache: 'npm' }
       - run: npm ci
       - run: npm run build
       - run: npx vitest run --config vitest.unit.config.ts --coverage
-      - name: Upload coverage artifact
-        if: always()
+      - name: Upload coverage
+        if: matrix.node-version == '22'
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
           path: coverage/
           retention-days: 7
 
-  # ─── Build check ─────────────────────────────────────────
+  # ─── Build ────────────────────────────────────────────────
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -63,13 +61,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node-version }}
-          cache: 'npm'
+        with: { node-version: '${{ matrix.node-version }}', cache: 'npm' }
       - run: npm ci
       - run: npm run build:all
 
-  # ─── Integration Tests (requires ONNX model) ─────────────
+  # ─── Integration Test ─────────────────────────────────────
   integration-test:
     needs: [lint, build]
     runs-on: ubuntu-latest
@@ -77,12 +73,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: 'npm'
+        with: { node-version: '22', cache: 'npm' }
       - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
+        with: { python-version: '3.11' }
 
       - run: npm ci
       - run: npm run build:all
@@ -91,20 +84,103 @@ jobs:
         id: cache-model
         uses: actions/cache@v4
         with:
-          path: models/nomic-embed-code-v1-int8.onnx
-          key: embed-code-model-${{ hashFiles('scripts/export-onnx.py', 'models/model-descriptor.json') }}-v1
+          path: models/nomic-embed-text-v1.5-int8.onnx
+          key: embed-code-model-${{ hashFiles('scripts/export-onnx.py', 'models/model-descriptor.json') }}-v2
 
       - name: Export ONNX model
         if: steps.cache-model.outputs.cache-hit != 'true'
         run: |
           pip install optimum onnx onnxruntime torch transformers
           python3 scripts/export-onnx.py \
-            --model nomic-ai/nomic-embed-code \
-            --output models/nomic-embed-code-v1-int8.onnx \
+            --model nomic-ai/nomic-embed-text-v1.5 \
+            --output models/nomic-embed-text-v1.5-int8.onnx \
             --precision int8
-        timeout-minutes: 30
+        timeout-minutes: 20
 
-      - name: Run integration tests
-        run: npx vitest run
+      - name: Run integration tests with coverage
+        run: npx vitest run --coverage
         env:
-          EMBED_CODE_MODEL_PATH: models/nomic-embed-code-v1-int8.onnx
+          EMBED_CODE_MODEL_PATH: models/nomic-embed-text-v1.5-int8.onnx
+
+      - name: Upload integration coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-coverage
+          path: coverage/
+          retention-days: 7
+
+  # ─── Benchmark ────────────────────────────────────────────
+  benchmark:
+    needs: [integration-test]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22', cache: 'npm' }
+      - run: npm ci
+      - run: npm run build:all
+
+      - name: Restore cached ONNX model
+        uses: actions/cache/restore@v4
+        with:
+          path: models/nomic-embed-text-v1.5-int8.onnx
+          key: embed-code-model-${{ hashFiles('scripts/export-onnx.py', 'models/model-descriptor.json') }}-v2
+          fail-on-cache-miss: true
+
+      - name: Run benchmark
+        run: node scripts/benchmark-ci.js
+        env:
+          EMBED_CODE_MODEL_PATH: models/nomic-embed-text-v1.5-int8.onnx
+          BENCH_ITERATIONS: 10
+        timeout-minutes: 10
+
+      - name: Upload benchmark report
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-report
+          path: benchmark-report.json
+          retention-days: 7
+
+  # ─── Deploy Pages ─────────────────────────────────────────
+  deploy-pages:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: [lint, unit-test, build, integration-test, benchmark]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22', cache: 'npm' }
+      - run: npm ci
+      - run: npm run build:all
+
+      - name: Generate API docs
+        run: npx typedoc
+
+      - name: Download coverage
+        uses: actions/download-artifact@v4
+        with: { name: coverage-report, path: docs/coverage }
+        continue-on-error: true
+
+      - name: Download integration coverage
+        uses: actions/download-artifact@v4
+        with: { name: integration-coverage, path: docs/coverage-integration }
+        continue-on-error: true
+
+      - name: Download benchmark
+        uses: actions/download-artifact@v4
+        with: { name: benchmark-report, path: docs/benchmark }
+        continue-on-error: true
+
+      - name: Prepare pages
+        run: node scripts/prepare-pages.js
+
+      - uses: actions/configure-pages@v4
+      - uses: actions/upload-pages-artifact@v3
+        with: { path: docs }
+      - uses: actions/deploy-pages@v4
+        id: deployment
