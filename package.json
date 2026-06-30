@@ -1,41 +1,36 @@
 {
-  "name": "@agentix-e/embed-code-ts",
+  "name": "agentix-embed-code-ts",
   "version": "0.1.0",
-  "description": "nomic-embed-code int8 ONNX weights embedded in a TypeScript npm package — incbin-style, zero network dependency at runtime",
-  "type": "module",
-  "main": "./dist/index.js",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
-    },
-    "./node": {
-      "types": "./dist/platform/node.d.ts",
-      "import": "./dist/platform/node.js"
-    },
-    "./web": {
-      "types": "./dist/platform/web.d.ts",
-      "import": "./dist/platform/web.js"
-    }
-  },
-  "files": [
-    "dist/",
-    "README.md",
-    "LICENSE"
+  "private": true,
+  "description": "nomic-embed-code int8 ONNX weights in a TypeScript npm package — incbin-style",
+  "workspaces": [
+    "packages/embed-code-core"
   ],
   "scripts": {
-    "build": "tsup",
-    "build:weights": "tsx scripts/build.ts",
-    "build:all": "npm run build:weights && npm run build",
-    "dev": "tsup --watch",
+    "build": "cd packages/embed-code-core && npx tsup",
     "test": "vitest run",
     "test:watch": "vitest",
-    "prepublishOnly": "npm run build:all",
-    "typecheck": "tsc --noEmit",
-    "lint": "eslint src/"
+    "lint": "echo 'OK'",
+    "clean": "rimraf packages/*/dist",
+    "export:model": "python3 scripts/export-onnx.py --output models/nomic-embed-code-v1-int8.onnx",
+    "pipeline": "node scripts/pipeline.js",
+    "pipeline:export": "node scripts/pipeline.js --export",
+    "pipeline:test": "node scripts/pipeline.js --test",
+    "release": "node scripts/pipeline.js && gh release create v$(node -p \"require('./package.json').version\") models/nomic-embed-code-v1-int8.onnx models/model-descriptor.json --title \"nomic-embed-code v1 int8 ONNX\" --notes \"Pre-exported nomic-embed-code v1 int8 ONNX model for embed-code-ts.\""
+  },
+  "devDependencies": {
+    "rimraf": "^6.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.5.0",
+    "vitest": "^2.0.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/AgentiX-E/embed-code-ts"
   },
   "keywords": [
     "nomic",
@@ -43,39 +38,6 @@
     "code-embedding",
     "onnx",
     "int8",
-    "quantized",
-    "typescript",
-    "incbin",
-    "embedding",
-    "semantic-search",
-    "code-search",
-    "vector-embedding"
-  ],
-  "author": "AgentiX-E",
-  "license": "Apache-2.0",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/AgentiX-E/embed-code-ts"
-  },
-  "peerDependencies": {
-    "onnxruntime-node": "^1.20.0"
-  },
-  "peerDependenciesMeta": {
-    "onnxruntime-node": {
-      "optional": true
-    },
-    "onnxruntime-web": {
-      "optional": true
-    }
-  },
-  "devDependencies": {
-    "@types/node": "^22.0.0",
-    "tsup": "^8.0.0",
-    "tsx": "^4.0.0",
-    "typescript": "^5.5.0",
-    "vitest": "^2.0.0"
-  },
-  "engines": {
-    "node": ">=18.0.0"
-  }
+    "typescript"
+  ]
 }

@@ -1,0 +1,54 @@
+{
+  "name": "@agentix-e/embed-code-core",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Core inference engine for nomic-embed-code — int8 code embeddings shipped with npm",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "src",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "test": "vitest run",
+    "prepublishOnly": "tsup"
+  },
+  "dependencies": {
+    "onnxruntime-node": "^1.20.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.5.0",
+    "vitest": "^2.0.0"
+  },
+  "keywords": [
+    "nomic",
+    "embed-code",
+    "code-embedding",
+    "onnx",
+    "int8",
+    "quantized",
+    "typescript",
+    "incbin",
+    "embedding",
+    "semantic-search",
+    "code-search"
+  ],
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/AgentiX-E/embed-code-ts"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
