@@ -11,7 +11,6 @@ export default tseslint.config(
     files: [
       'packages/embed-code-core/src/errors.ts',
       'packages/embed-code-core/src/pooling.ts',
-      'packages/embed-code-core/src/tokenizer.ts',
     ],
     rules: {
       ...c.rules,
@@ -33,6 +32,7 @@ export default tseslint.config(
       'packages/embed-code-core/src/inference/onnx-engine.ts',
       'packages/embed-code-core/src/model-downloader.ts',
       'packages/embed-code-core/src/model-descriptor.ts',
+      'packages/embed-code-core/src/tokenizer.ts',
     ],
     rules: {
       ...c.rules,
