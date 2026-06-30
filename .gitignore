@@ -1,0 +1,9 @@
+node_modules/
+dist/
+models/
+.cache/
+*.onnx
+*.part
+.env
+.DS_Store
+*.log
