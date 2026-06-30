@@ -81,12 +81,13 @@ jobs:
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 title: `[Model Update] New nomic-embed-code revision: ${{ steps.check.outputs.latest_rev }}`,
-                body: `A new HuggingFace revision was detected for [nomic-ai/nomic-embed-code](https://huggingface.co/nomic-ai/nomic-embed-code).
+                body: |-
+                  A new HuggingFace revision was detected for [nomic-ai/nomic-embed-code](https://huggingface.co/nomic-ai/nomic-embed-code).
 
-          **New revision**: \`${{ steps.check.outputs.latest_rev }}\`
-          **Committed revision**: \`${{ steps.check.outputs.committed_rev }}\`
+                  **New revision**: `${{ steps.check.outputs.latest_rev }}`
+                  **Committed revision**: `${{ steps.check.outputs.committed_rev }}`
 
-          The model-release workflow has been triggered automatically. This issue will be closed when the descriptor is updated.`,
+                  The model-release workflow has been triggered automatically. This issue will be closed when the descriptor is updated.
                 labels: ['model-update'],
               });
             }

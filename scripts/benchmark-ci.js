@@ -315,33 +315,33 @@ function generateMarkdown(report) {
   if (report.accuracy) {
     lines.push('## Accuracy');
     lines.push('');
-    lines.push(`| Metric | Value |');
+    lines.push('| Metric | Value |');
     lines.push('|--------|-------|');
-    lines.push(`| Query-Doc Cosine Similarity | ${report.accuracy.queryDocSimilarity} |');
-    lines.push(`| Query-Unrelated Cosine Similarity | ${report.accuracy.queryUnrelatedSimilarity} |');
-    lines.push(`| Better Than Unrelated | ${report.accuracy.betterThanUnrelated ? '✅ Yes' : '❌ No'} |');
+    lines.push(`| Query-Doc Cosine Similarity | ${report.accuracy.queryDocSimilarity} |`);
+    lines.push(`| Query-Unrelated Cosine Similarity | ${report.accuracy.queryUnrelatedSimilarity} |`);
+    lines.push(`| Better Than Unrelated | ${report.accuracy.betterThanUnrelated ? '✅ Yes' : '❌ No'} |`);
     lines.push('');
   }
 
   if (report.stability) {
     lines.push('## Stability');
     lines.push('');
-    lines.push(`| Metric | Value |');
+    lines.push('| Metric | Value |');
     lines.push('|--------|-------|');
-    lines.push(`| Iterations | ${report.stability.iterations} |');
-    lines.push(`| Heap Start | ${report.stability.firstHeapMB} MB |');
-    lines.push(`| Heap End | ${report.stability.lastHeapMB} MB |');
-    lines.push(`| Delta | ${report.stability.deltaMB} MB (${report.stability.deltaPct}%) |');
-    lines.push(`| Stable | ${report.stability.stable ? '✅ Yes' : '⚠️ No'} |');
+    lines.push(`| Iterations | ${report.stability.iterations} |`);
+    lines.push(`| Heap Start | ${report.stability.firstHeapMB} MB |`);
+    lines.push(`| Heap End | ${report.stability.lastHeapMB} MB |`);
+    lines.push(`| Delta | ${report.stability.deltaMB} MB (${report.stability.deltaPct}%) |`);
+    lines.push(`| Stable | ${report.stability.stable ? '✅ Yes' : '⚠️ No'} |`);
     lines.push('');
   }
 
   if (report.memory) {
     lines.push('## Memory');
     lines.push('');
-    lines.push(`| Heap Used | Heap Total | RSS |');
+    lines.push('| Heap Used | Heap Total | RSS |');
     lines.push('|-----------|------------|-----|');
-    lines.push(`| ${report.memory.heapUsedMB} MB | ${report.memory.heapTotalMB} MB | ${report.memory.rssMB} MB |');
+    lines.push(`| ${report.memory.heapUsedMB} MB | ${report.memory.heapTotalMB} MB | ${report.memory.rssMB} MB |`);
     lines.push('');
   }
 
