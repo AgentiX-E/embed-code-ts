@@ -36,7 +36,7 @@ const CODE_SNIPPETS = [
   'const factorial = (n: number): number =>\n  n <= 1 ? 1 : n * factorial(n - 1);',
   'func (s *Server) HandleRequest(ctx context.Context, req *http.Request) (*http.Response, error) {\n  span, ctx := opentracing.StartSpanFromContext(ctx, "handle_request")\n  defer span.Finish()\n  return s.router.ServeHTTP(ctx, req)\n}',
   '#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct EmbeddingRequest {\n  pub texts: Vec<String>,\n  pub model: String,\n  pub normalize: bool,\n}',
-  'SELECT u.id, u.name, COUNT(o.id) as order_count\nFROM users u\nLEFT JOIN orders o ON u.id = o.user_id\nWHERE u.created_at > NOW() - INTERVAL \'30 days\'\nGROUP BY u.id, u.name\nORDER BY order_count DESC\nLIMIT 100;',
+  "SELECT u.id, u.name, COUNT(o.id) as order_count\nFROM users u\nLEFT JOIN orders o ON u.id = o.user_id\nWHERE u.created_at > NOW() - INTERVAL '30 days'\nGROUP BY u.id, u.name\nORDER BY order_count DESC\nLIMIT 100;",
   'import torch\nimport torch.nn as nn\n\nclass AttentionBlock(nn.Module):\n  def __init__(self, dim, heads):\n    super().__init__()\n    self.qkv = nn.Linear(dim, dim * 3)\n    self.proj = nn.Linear(dim, dim)\n    self.heads = heads',
 ];
 
@@ -91,7 +91,8 @@ export function generateQueries(n: number): string[] {
 /** Pre-computed fixtures for benchmark consistency */
 export const benchmarkFixtures = Object.freeze({
   singleShort: 'search_document: const x = 42',
-  singleMedium: 'search_document: function binarySearch(arr: number[], target: number): number {\n  let left = 0;\n  let right = arr.length - 1;\n  while (left <= right) {\n    const mid = Math.floor((left + right) / 2);\n    if (arr[mid] === target) return mid;\n    if (arr[mid] < target) left = mid + 1;\n    else right = mid - 1;\n  }\n  return -1;\n}',
+  singleMedium:
+    'search_document: function binarySearch(arr: number[], target: number): number {\n  let left = 0;\n  let right = arr.length - 1;\n  while (left <= right) {\n    const mid = Math.floor((left + right) / 2);\n    if (arr[mid] === target) return mid;\n    if (arr[mid] < target) left = mid + 1;\n    else right = mid - 1;\n  }\n  return -1;\n}',
   singleLong: 'search_document: ' + CODE_SNIPPETS[1], // quicksort
   batch4: [
     'search_document: const add = (a: number, b: number): number => a + b',

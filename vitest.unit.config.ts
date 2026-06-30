@@ -27,9 +27,7 @@ export default defineConfig({
     hookTimeout: 15000,
     coverage: {
       provider: 'v8',
-      include: [
-        'packages/embed-code-core/src/**/*.ts',
-      ],
+      include: ['packages/embed-code-core/src/**/*.ts'],
       exclude: [
         // Barrel re-exports — no runtime logic
         'packages/*/src/index.ts',

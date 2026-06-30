@@ -8,10 +8,7 @@ export default tseslint.config(
   // dynamic imports, or JSON parsing
   ...tseslint.configs.recommendedTypeChecked.map((c) => ({
     ...c,
-    files: [
-      'packages/embed-code-core/src/errors.ts',
-      'packages/embed-code-core/src/pooling.ts',
-    ],
+    files: ['packages/embed-code-core/src/errors.ts', 'packages/embed-code-core/src/pooling.ts'],
     languageOptions: {
       ...c.languageOptions,
       parserOptions: {

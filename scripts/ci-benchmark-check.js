@@ -55,7 +55,9 @@ function main() {
       failed = true;
     }
     if (cfg.throughputTokensPerSec <= 0) {
-      console.error(`FAIL: ${cfg.config}: throughputTokensPerSec = ${cfg.throughputTokensPerSec} (must be > 0)`);
+      console.error(
+        `FAIL: ${cfg.config}: throughputTokensPerSec = ${cfg.throughputTokensPerSec} (must be > 0)`,
+      );
       failed = true;
     }
   }

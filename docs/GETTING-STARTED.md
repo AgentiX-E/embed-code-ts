@@ -134,15 +134,15 @@ HuggingFace Hub              Local Disk
 
 ### 2.4 Model File Specifications
 
-| Property | Value                                             |
-| -------- | ------------------------------------------------- |
-| Filename | `nomic-embed-code-v1-int8.onnx`                  |
-| Size     | ~7 GB                                             |
-| Format   | ONNX (opset 20, int8 quantized)                   |
-| Input    | `input_ids: [batch, 32768]` (int64)               |
-| Input    | `attention_mask: [batch, 32768]` (int64)          |
+| Property | Value                                               |
+| -------- | --------------------------------------------------- |
+| Filename | `nomic-embed-code-v1-int8.onnx`                     |
+| Size     | ~7 GB                                               |
+| Format   | ONNX (opset 20, int8 quantized)                     |
+| Input    | `input_ids: [batch, 32768]` (int64)                 |
+| Input    | `attention_mask: [batch, 32768]` (int64)            |
 | Output   | `last_hidden_state: [batch, 32768, 3584]` (float32) |
-| Backend  | ONNX Runtime: CPU / CUDA / DirectML               |
+| Backend  | ONNX Runtime: CPU / CUDA / DirectML                 |
 
 ### 2.5 Hardware Requirements
 
@@ -301,7 +301,7 @@ embed-code info -m ./custom.onnx
 | `-f, --file <path>`    | ❌       | Input file path                                      |
 | `-m, --model <path>`   | ❌       | ONNX model file path                                 |
 | `-o, --output <path>`  | ❌       | Output file path                                     |
-| `--max-tokens <n>`     | ❌       | Max input tokens (default: 32768)                      |
+| `--max-tokens <n>`     | ❌       | Max input tokens (default: 32768)                    |
 | `--no-normalize`       | ❌       | Disable L2 normalization                             |
 | `--pooling <strategy>` | ❌       | Pooling: last_token, mean, cls (default: last_token) |
 
@@ -373,12 +373,12 @@ elapsedMs: number                — Total inference time
 
 ### Embedding Properties
 
-| Property   | Value        | Description                                  |
-| ---------- | ------------ | -------------------------------------------- |
-| Dimensions | 3584         | Fixed embedding size (nomic-embed-code v1)  |
-| Normalized | true         | L2 norm ≈ 1.0 when normalize is enabled      |
-| Type       | Float32Array | 32-bit floating point                        |
-| Range      | [-1, 1]      | Values typically in [-0.1, 0.1]              |
+| Property   | Value        | Description                                |
+| ---------- | ------------ | ------------------------------------------ |
+| Dimensions | 3584         | Fixed embedding size (nomic-embed-code v1) |
+| Normalized | true         | L2 norm ≈ 1.0 when normalize is enabled    |
+| Type       | Float32Array | 32-bit floating point                      |
+| Range      | [-1, 1]      | Values typically in [-0.1, 0.1]            |
 
 ---
 

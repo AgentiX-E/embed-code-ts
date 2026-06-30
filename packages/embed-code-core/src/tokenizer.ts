@@ -72,8 +72,16 @@ export class Tokenizer {
     try {
       this.loadFromFile(tmpPath);
     } finally {
-      try { fs.unlinkSync(tmpPath); } catch { /* best effort */ }
-      try { fs.rmdirSync(tmpDir); } catch { /* best effort */ }
+      try {
+        fs.unlinkSync(tmpPath);
+      } catch {
+        /* best effort */
+      }
+      try {
+        fs.rmdirSync(tmpDir);
+      } catch {
+        /* best effort */
+      }
     }
   }
 

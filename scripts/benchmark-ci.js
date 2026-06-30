@@ -158,8 +158,12 @@ async function main() {
   let accuracy = null;
   try {
     const queryText = embedder.taskPrefixes.query + 'Recursive factorial implementation';
-    const docText = embedder.taskPrefixes.document + 'def factorial(n): return 1 if n <= 1 else n * factorial(n - 1)';
-    const unrelatedText = embedder.taskPrefixes.document + 'class BinaryTreeNode { constructor(val) { this.val = val; this.left = null; this.right = null; } }';
+    const docText =
+      embedder.taskPrefixes.document +
+      'def factorial(n): return 1 if n <= 1 else n * factorial(n - 1)';
+    const unrelatedText =
+      embedder.taskPrefixes.document +
+      'class BinaryTreeNode { constructor(val) { this.val = val; this.left = null; this.right = null; } }';
 
     const accResult = await embedder.embed([queryText, docText, unrelatedText]);
     const queryEmb = accResult.embeddings.slice(0, dim);
@@ -192,13 +196,16 @@ async function main() {
       await embedder.embed([singleText]);
       if (i % 25 === 0 || i === STABILITY_ITERS - 1) {
         const mu = process.memoryUsage();
-        memSnapshots.push({ iteration: i, heapUsedMB: Math.round(mu.heapUsed / 1024 / 1024 * 100) / 100 });
+        memSnapshots.push({
+          iteration: i,
+          heapUsedMB: Math.round((mu.heapUsed / 1024 / 1024) * 100) / 100,
+        });
       }
     }
     const first = memSnapshots[0].heapUsedMB;
     const last = memSnapshots[memSnapshots.length - 1].heapUsedMB;
     const delta = last - first;
-    const deltaPct = first > 0 ? ((delta / first) * 100) : 0;
+    const deltaPct = first > 0 ? (delta / first) * 100 : 0;
     stability = {
       iterations: STABILITY_ITERS,
       firstHeapMB: first,
@@ -229,14 +236,21 @@ async function main() {
           const base = baseline.latency.find((b) => b.config === cfg.config);
           if (base) {
             const delta = ((cfg.avgLatencyMs - base.avgLatencyMs) / base.avgLatencyMs) * 100;
-            regressions.push({ config: cfg.config, current: cfg.avgLatencyMs, baseline: base.avgLatencyMs, deltaPct: Math.round(delta * 100) / 100 });
+            regressions.push({
+              config: cfg.config,
+              current: cfg.avgLatencyMs,
+              baseline: base.avgLatencyMs,
+              deltaPct: Math.round(delta * 100) / 100,
+            });
           }
         }
         regression = { threshold: THRESHOLD, regressions };
         if (VERBOSE && regressions.length > 0) {
           console.log('\nRegression:');
           for (const r of regressions) {
-            console.log(`  ${r.config}: ${r.current}ms vs ${r.baseline}ms (${r.deltaPct > 0 ? '+' : ''}${r.deltaPct}%)`);
+            console.log(
+              `  ${r.config}: ${r.current}ms vs ${r.baseline}ms (${r.deltaPct > 0 ? '+' : ''}${r.deltaPct}%)`,
+            );
           }
         }
       }
@@ -282,7 +296,9 @@ async function main() {
 
 // ── Helper: cosine similarity ──────────────────────────────
 function cosineSimilarity(a, b, dim) {
-  let dot = 0, normA = 0, normB = 0;
+  let dot = 0,
+    normA = 0,
+    normB = 0;
   for (let i = 0; i < dim && i < a.length && i < b.length; i++) {
     dot += a[i] * b[i];
     normA += a[i] ** 2;
@@ -297,10 +313,14 @@ function generateMarkdown(report) {
   const lines = [];
   lines.push('# embed-code-ts Benchmark Report');
   lines.push('');
-  lines.push(`**Model**: ${report.model}  |  **Dim**: ${report.embeddingDim}  |  **Date**: ${report.timestamp}`);
+  lines.push(
+    `**Model**: ${report.model}  |  **Dim**: ${report.embeddingDim}  |  **Date**: ${report.timestamp}`,
+  );
   lines.push('');
   if (report.system) {
-    lines.push(`**System**: Node.js ${report.system.nodeVersion}  |  ${report.system.platform}/${report.system.arch}  |  ${report.system.cpuModel} × ${report.system.cpuCores}  |  ${report.system.ramGB} GB RAM`);
+    lines.push(
+      `**System**: Node.js ${report.system.nodeVersion}  |  ${report.system.platform}/${report.system.arch}  |  ${report.system.cpuModel} × ${report.system.cpuCores}  |  ${report.system.ramGB} GB RAM`,
+    );
     lines.push('');
   }
   lines.push('## Latency');
@@ -308,7 +328,9 @@ function generateMarkdown(report) {
   lines.push('| Config | Batch | Avg (ms) | P50 (ms) | P99 (ms) | Min (ms) | Max (ms) | tok/s |');
   lines.push('|--------|-------|----------|----------|----------|----------|----------|-------|');
   for (const c of report.configs) {
-    lines.push(`| ${c.config} | ${c.batchSize} | ${c.avgLatencyMs} | ${c.p50LatencyMs || '-'} | ${c.p99LatencyMs || '-'} | ${c.minLatencyMs} | ${c.maxLatencyMs} | ${c.throughputTokensPerSec} |`);
+    lines.push(
+      `| ${c.config} | ${c.batchSize} | ${c.avgLatencyMs} | ${c.p50LatencyMs || '-'} | ${c.p99LatencyMs || '-'} | ${c.minLatencyMs} | ${c.maxLatencyMs} | ${c.throughputTokensPerSec} |`,
+    );
   }
   lines.push('');
 
@@ -318,8 +340,12 @@ function generateMarkdown(report) {
     lines.push('| Metric | Value |');
     lines.push('|--------|-------|');
     lines.push(`| Query-Doc Cosine Similarity | ${report.accuracy.queryDocSimilarity} |`);
-    lines.push(`| Query-Unrelated Cosine Similarity | ${report.accuracy.queryUnrelatedSimilarity} |`);
-    lines.push(`| Better Than Unrelated | ${report.accuracy.betterThanUnrelated ? '✅ Yes' : '❌ No'} |`);
+    lines.push(
+      `| Query-Unrelated Cosine Similarity | ${report.accuracy.queryUnrelatedSimilarity} |`,
+    );
+    lines.push(
+      `| Better Than Unrelated | ${report.accuracy.betterThanUnrelated ? '✅ Yes' : '❌ No'} |`,
+    );
     lines.push('');
   }
 
@@ -341,7 +367,9 @@ function generateMarkdown(report) {
     lines.push('');
     lines.push('| Heap Used | Heap Total | RSS |');
     lines.push('|-----------|------------|-----|');
-    lines.push(`| ${report.memory.heapUsedMB} MB | ${report.memory.heapTotalMB} MB | ${report.memory.rssMB} MB |`);
+    lines.push(
+      `| ${report.memory.heapUsedMB} MB | ${report.memory.heapTotalMB} MB | ${report.memory.rssMB} MB |`,
+    );
     lines.push('');
   }
 
@@ -350,9 +378,12 @@ function generateMarkdown(report) {
 
 // ── HTML report generator ──────────────────────────────────
 function generateHTML(report) {
-  const latencyRows = report.configs.map((c) =>
-    `<tr><td>${c.config}</td><td>${c.batchSize}</td><td>${c.avgLatencyMs}</td><td>${c.p50LatencyMs || '-'}</td><td>${c.p99LatencyMs || '-'}</td><td>${c.minLatencyMs}</td><td>${c.maxLatencyMs}</td><td>${c.throughputTokensPerSec}</td></tr>`,
-  ).join('\n');
+  const latencyRows = report.configs
+    .map(
+      (c) =>
+        `<tr><td>${c.config}</td><td>${c.batchSize}</td><td>${c.avgLatencyMs}</td><td>${c.p50LatencyMs || '-'}</td><td>${c.p99LatencyMs || '-'}</td><td>${c.minLatencyMs}</td><td>${c.maxLatencyMs}</td><td>${c.throughputTokensPerSec}</td></tr>`,
+    )
+    .join('\n');
 
   const accuracySection = report.accuracy
     ? `<h2>Accuracy</h2>
