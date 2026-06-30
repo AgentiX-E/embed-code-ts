@@ -62,6 +62,14 @@ describe('poolEmbeddings', () => {
     expect(result[1]).toBeCloseTo(8.0);
   });
 
+  it('mean pooling with all padding tokens returns zeros', () => {
+    const h = new Float32Array([0.1, 0.2, 0.3, 0.4]);
+    const mask = new Int32Array([0, 0]); // all padding
+    const result = poolEmbeddings(h, mask, 1, 2, 2, 'mean');
+    expect(result[0]).toBe(0);
+    expect(result[1]).toBe(0);
+  });
+
   it('CLS pooling takes first token', () => {
     const h = new Float32Array([
       0.1,
@@ -96,6 +104,15 @@ describe('poolEmbeddings', () => {
     expect(result[3]).toBeCloseTo(10);
     expect(result[4]).toBeCloseTo(11);
     expect(result[5]).toBeCloseTo(12);
+  });
+
+  it('last-token pooling with all-padding tokens falls back to last position', () => {
+    const h = new Float32Array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6]);
+    const mask = new Int32Array([0, 0, 0]); // all padding
+    const result = poolEmbeddings(h, mask, 1, 3, 2, 'last_token');
+    // Falls back to index S-1 = 2
+    expect(result[0]).toBeCloseTo(0.5);
+    expect(result[1]).toBeCloseTo(0.6);
   });
 });
 
@@ -141,5 +158,11 @@ describe('cosineSimilarity', () => {
 
   it('throws on dimension mismatch', () => {
     expect(() => cosineSimilarity(new Float32Array([1, 2]), new Float32Array([1, 2, 3]))).toThrow();
+  });
+
+  it('returns 0 for zero vectors', () => {
+    expect(cosineSimilarity(new Float32Array([0, 0]), new Float32Array([1, 2]))).toBeCloseTo(0.0);
+    expect(cosineSimilarity(new Float32Array([1, 2]), new Float32Array([0, 0]))).toBeCloseTo(0.0);
+    expect(cosineSimilarity(new Float32Array([0, 0]), new Float32Array([0, 0]))).toBeCloseTo(0.0);
   });
 });

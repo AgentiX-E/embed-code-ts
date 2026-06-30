@@ -100,11 +100,9 @@ npm run pipeline
 
 | Parameter         | Type    | Default      | Description                             |
 | ----------------- | ------- | ------------ | --------------------------------------- |
-| `maxTokens`       | number  | 512          | Maximum input token count               |
+| `maxTokens`       | number  | 32768        | Maximum input token count               |
 | `poolingStrategy` | string  | `last_token` | Pooling: `last_token`, `mean`, or `cls` |
 | `normalize`       | boolean | true         | L2 normalize output embeddings          |
-| `batchSize`       | number  | 32           | Number of texts to process per batch    |
-| `truncation`      | boolean | true         | Truncate inputs exceeding maxTokens     |
 
 ## Task Prefixes
 
@@ -142,36 +140,45 @@ embed-code-ts/
 │   ├── embed-code-core/         # Core inference engine
 │   │   ├── src/
 │   │   │   ├── index.ts         # Public API
-│   │   │   ├── model.ts         # EmbedCode class
-│   │   │   ├── config.ts        # Configuration management
+│   │   │   ├── embed-code.ts    # EmbedCode class
+│   │   │   ├── errors.ts        # Error hierarchy
 │   │   │   ├── types.ts         # Type definitions
 │   │   │   ├── tokenizer.ts     # BPE tokenizer
+│   │   │   ├── pooling.ts       # Pooling strategies + normalize
+│   │   │   ├── model-descriptor.ts # Model descriptor resolver
+│   │   │   ├── model-downloader.ts # Model downloader + proxy
 │   │   │   ├── inference/
-│   │   │   │   └── onnx-engine.ts    # ONNX Runtime inference engine
-│   │   │   ├── pooling/
-│   │   │   │   └── pooler.ts         # Pooling strategies
-│   │   │   ├── downloader/
-│   │   │   │   └── model-downloader.ts # Model downloader
-│   │   │   └── utils/
-│   │   │       ├── descriptor.ts      # Model descriptor resolver
-│   │   │       └── tensor-utils.ts    # Low-level tensor ops
-│   │   └── test/               # Unit + integration test suites
+│   │   │   │   └── onnx-engine.ts  # ONNX Runtime inference engine
+│   │   │   └── types/
+│   │   │       ├── onnx.d.ts       # ONNX Runtime type shims
+│   │   │       └── undici.d.ts     # undici ProxyAgent type shims
+│   │   └── test/
+│   │       ├── unit/               # Fast unit tests (no model needed)
+│   │       ├── integration/        # Real-model integration tests
+│   │       └── test-fixtures.ts    # Deterministic test fixtures
 │   └── embed-code-cli/         # CLI tool
 │       ├── src/
-│       │   ├── cli.ts          # Commander-based CLI
-│       │   └── embed.ts        # File/batch embedding
-│       └── test/
+│       │   └── cli.ts          # Commander-based CLI
+│       └── README.md
 ├── scripts/
 │   ├── pipeline.js              # Node.js fully automated pipeline
 │   ├── benchmark-ci.js          # CI benchmark runner
+│   ├── ci-benchmark-check.js    # Benchmark quality gate
+│   ├── ci-coverage-check.js     # Coverage threshold verification
 │   ├── prepare-pages.js         # GitHub Pages preparation
 │   └── export-onnx.py           # PyTorch → ONNX exporter
+├── benchmarks/
+│   └── baseline.json            # Performance regression baseline
 ├── .github/
 │   └── workflows/               # CI/CD automation
-│       └── ci.yml               # PR checks + integration tests + benchmark + deploy
+│       ├── ci.yml               # PR checks + integration tests + benchmark + deploy
+│       ├── release.yml          # Tag-triggered npm publish (OIDC)
+│       ├── model-release.yml    # Model channel: export → validate → GH Release
+│       └── nightly.yml          # Daily HF revision check
 ├── models/                      # Model descriptor (model weights gitignored)
-├── vitest.config.ts
-└── vitest.unit.config.ts
+├── vitest.config.ts             # Integration test config (≥95% thresholds)
+├── vitest.unit.config.ts        # Unit test config (≥95% thresholds)
+└── vitest.globalSetup.ts        # Model availability check
 ```
 
 ## Development
@@ -209,9 +216,9 @@ npm run format:check
 
 ## Known Limitations
 
-- **Max context**: 512 tokens per input (nomic-embed-code native limit)
+- **Max context**: 32768 tokens per input (nomic-embed-code native limit based on Qwen2.5-7B)
 - **No fine-tuning API**: The model runs in zero-shot mode. Fine-tuning is not yet supported.
-- **Model version**: Currently supports nomic-embed-code-v1.5. Future model versions will be supported via the model descriptor system.
+- **Model version**: Currently supports nomic-embed-code-v1. Future model versions will be supported via the model descriptor system.
 - **Task prefixes required**: For optimal performance, inputs should use `search_query:` or `search_document:` prefixes.
 
 ## Documentation & Reports

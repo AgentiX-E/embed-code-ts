@@ -22,8 +22,6 @@ export function poolEmbeddings(
       return meanPooling(hiddenStates, attentionMask, batchSize, seqLen, hiddenDim);
     case 'cls':
       return clsPooling(hiddenStates, batchSize, seqLen, hiddenDim);
-    default:
-      return lastTokenPooling(hiddenStates, attentionMask, batchSize, seqLen, hiddenDim);
   }
 }
 

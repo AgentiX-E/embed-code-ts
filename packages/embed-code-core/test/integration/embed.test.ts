@@ -11,20 +11,25 @@ const MODEL_PATH = process.env.EMBED_CODE_MODEL_PATH || '';
 
 const hasModel = MODEL_PATH && fs.existsSync(MODEL_PATH);
 
-describe('EmbedCode Integration', () => {
-  it.skip('loads model and generates embeddings', async () => {
-    if (!hasModel) return;
-
+describe.runIf(hasModel)('EmbedCode Integration', () => {
+  it('loads model and generates embeddings', async () => {
     const { EmbedCode } = await import('../../src/embed-code');
 
     const embedder = await EmbedCode.fromPretrained({ modelPath: MODEL_PATH });
     expect(embedder.isLoaded).toBe(true);
     expect(embedder.embeddingDim).toBeGreaterThan(0);
+    expect(embedder.maxTokens).toBeGreaterThan(0);
+    expect(embedder.config.poolingStrategy).toBeDefined();
+    expect(embedder.taskPrefixes.query).toBeDefined();
+    expect(embedder.taskPrefixes.document).toBeDefined();
 
-    const result = await embedder.embed([
-      embedder.taskPrefixes.query + 'Calculate factorial',
-      embedder.taskPrefixes.document + 'def fact(n): return 1 if n <= 1 else n * fact(n-1)',
-    ]);
+    const result = await embedder.embed(
+      [
+        embedder.taskPrefixes.query + 'Calculate factorial',
+        embedder.taskPrefixes.document + 'def fact(n): return 1 if n <= 1 else n * fact(n-1)',
+      ],
+      { maxTokens: 64 },
+    );
 
     expect(result.embeddings).toBeInstanceOf(Float32Array);
     expect(result.shape[0]).toBe(2);
@@ -35,16 +40,18 @@ describe('EmbedCode Integration', () => {
     expect(embedder.isLoaded).toBe(false);
   }, 60000);
 
-  it.skip('computes similarity between query and code', async () => {
-    if (!hasModel) return;
-
+  it('computes similarity between query and code', async () => {
     const { EmbedCode } = await import('../../src/embed-code');
     const embedder = await EmbedCode.fromPretrained({ modelPath: MODEL_PATH });
+    expect(embedder.isLoaded).toBe(true);
 
-    const result = await embedder.embed([
-      embedder.taskPrefixes.query + 'Sort an array',
-      embedder.taskPrefixes.document + 'def sort(arr): return sorted(arr)',
-    ]);
+    const result = await embedder.embed(
+      [
+        embedder.taskPrefixes.query + 'Sort an array',
+        embedder.taskPrefixes.document + 'def sort(arr): return sorted(arr)',
+      ],
+      { maxTokens: 64 },
+    );
 
     const dim = embedder.embeddingDim;
     const sim = embedder.similarity(result.embeddings.slice(0, dim), result.embeddings.slice(dim));

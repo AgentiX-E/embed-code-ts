@@ -94,10 +94,24 @@ function resolveProxyConfig(options?: DownloadOptions): ProxyConfig | null {
 
   const embedProxyUrl = process.env.EMBED_CODE_PROXY_URL;
   if (embedProxyUrl) {
+    let password = process.env.EMBED_CODE_PROXY_PASSWORD || undefined;
+
+    // Support Docker/Kubernetes secrets: EMBED_CODE_PROXY_PASSWORD_FILE
+    if (!password) {
+      const passwordFile = process.env.EMBED_CODE_PROXY_PASSWORD_FILE;
+      if (passwordFile) {
+        try {
+          password = fs.readFileSync(passwordFile, 'utf-8').trim();
+        } catch {
+          // File not readable — leave password undefined
+        }
+      }
+    }
+
     return {
       url: embedProxyUrl,
       username: process.env.EMBED_CODE_PROXY_USERNAME || undefined,
-      password: process.env.EMBED_CODE_PROXY_PASSWORD || undefined,
+      password,
     };
   }
 

@@ -146,6 +146,11 @@ export class EmbedCode {
         dims: [batchSize, maxTokens],
         type: 'int64',
       },
+      token_type_ids: {
+        data: new Int32Array(batchSize * maxTokens).fill(0),
+        dims: [batchSize, maxTokens],
+        type: 'int64',
+      },
     });
 
     options.onProgress?.({ phase: 'inference', step: 2, total: 4 });

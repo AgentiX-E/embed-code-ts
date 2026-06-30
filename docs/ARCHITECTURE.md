@@ -47,9 +47,9 @@
 
 ### 1. EmbedCode (Public API)
 
-**File**: `packages/embed-code-core/src/model.ts`
+**File**: `packages/embed-code-core/src/embed-code.ts`
 
-The main entry point. Implements `IEmbedCode` for testability and DI.
+The main entry point. Implements the public API via a private constructor + static factory.
 
 ```typescript
 // Lifecycle
@@ -62,7 +62,6 @@ embedder.dispose();
 **Design decisions**:
 
 - **Private constructor + static factory**: Ensures async initialization is enforced
-- **`IEmbedCode` interface**: Enables testable separation of concerns
 - **Task prefix API**: `embedder.taskPrefixes` exposes `{ query, document }` for proper prompt formatting
 - **Flat Float32Array output**: Optimized for zero-copy bulk similarity computation
 
@@ -114,7 +113,7 @@ Implements `IInferenceEngine`:
 
 ### 5. Pooling Strategies
 
-**File**: `packages/embed-code-core/src/pooling/pooler.ts`
+**File**: `packages/embed-code-core/src/pooling.ts`
 
 | Strategy       | Description                                     | Use Case                        |
 | -------------- | ----------------------------------------------- | ------------------------------- |
@@ -124,7 +123,7 @@ Implements `IInferenceEngine`:
 
 ### 6. Model Downloader
 
-**File**: `packages/embed-code-core/src/downloader/model-downloader.ts`
+**File**: `packages/embed-code-core/src/model-downloader.ts`
 
 - **Streaming download**: Uses Node.js `fetch` reader → file `writeStream` (no 140 MB heap buffer)
 - **Proxy support**: Environment variables (`EMBED_CODE_PROXY_URL/USERNAME/PASSWORD`, `HTTPS_PROXY`) or programmatic `DownloadOptions.proxy` with username/password. Uses undici `ProxyAgent` for clean proxy handling without global environment mutations
@@ -134,7 +133,7 @@ Implements `IInferenceEngine`:
 
 ### 7. Model Descriptor System
 
-**File**: `packages/embed-code-core/src/utils/descriptor.ts`
+**File**: `packages/embed-code-core/src/model-descriptor.ts`
 
 The `model-descriptor.json` file (committed to repo, distributed with releases) defines the architecture contract:
 
@@ -161,7 +160,7 @@ User Input (string | string[])
     ├─→ [tokenize()]
     │       ├─ Normalize: Unicode NFC + lowercase
     │       ├─ BPE encode → token IDs
-    │       ├─ Pad/truncate → maxTokens (512)
+    │       ├─ Pad/truncate → maxTokens (32768)
     │       └─ Attention mask generation
     │
     ├─→ [inference()]
@@ -183,9 +182,8 @@ User Input (string | string[])
 ```
 EmbedOptions         — mutable options (passed to embed())
 ModelConfig          — frozen, read-only (resolved from descriptor)
-EmbedResult          — { embeddings: Float32Array, elapsedMs: number }
-EmbedProgress        — { current: number, total: number, elapsedMs: number }
-IEmbedCode           — public interface for dependency injection
+EmbeddingResult      — { embeddings: Float32Array, shape: [number, number], elapsedMs: number }
+EmbedProgress        — { phase: 'tokenize' | 'inference' | 'pool' | 'normalize', step: number, total: number }
 IInferenceEngine     — pluggable backend (ONNX)
 ```
 
