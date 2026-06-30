@@ -121,6 +121,21 @@ jobs:
                   shutil.copy(path, f'models/{f}')
               except: pass
           " || true
+          # Write correct model-descriptor.json for embed-text-v1.5
+          python3 -c "
+          import json
+          descriptor = {
+            'schema': 1,
+            'model': { 'name': 'nomic-embed-text', 'version': 'v1.5', 'base_architecture': 'BERT', 'hf_repository': 'nomic-ai/nomic-embed-text-v1.5', 'hf_revision': '', 'exported_at': '', 'precision': 'int8' },
+            'onnx': { 'input_ids_name': 'input_ids', 'attention_mask_name': 'attention_mask', 'token_type_ids_name': 'token_type_ids', 'output_name': 'last_hidden_state', 'opset': 18, 'sha256': '', 'size_bytes': 0 },
+            'architecture': { 'embedding_dim': 768, 'num_layers': 12, 'num_heads': 12, 'num_kv_heads': 0, 'head_dim': 64, 'hidden_size': 768, 'intermediate_size': 3072, 'vocab_size': 30522, 'max_position_embeddings': 8192, 'rope_theta': 0, 'sliding_window': None, 'attention_dropout': 0.0, 'use_sliding_window': False },
+            'tokenizer': { 'type': 'bpe', 'vocab_size': 30522, 'max_length': 8192, 'pad_token': '[PAD]', 'pad_token_id': 0, 'bos_token': '[CLS]', 'bos_token_id': 101, 'eos_token': '[SEP]', 'eos_token_id': 102, 'unk_token': '[UNK]', 'unk_token_id': 100 },
+            'pooling': { 'strategy': 'mean', 'normalize': True },
+            'task_prefixes': { 'query': 'search_query: ', 'document': 'search_document: ' }
+          }
+          with open('models/model-descriptor.json', 'w') as f:
+            json.dump(descriptor, f, indent=2)
+          " || true
         timeout-minutes: 5
 
       - name: Run integration tests with coverage
