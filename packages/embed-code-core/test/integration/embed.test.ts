@@ -19,10 +19,13 @@ describe.runIf(hasModel)('EmbedCode Integration', () => {
     expect(embedder.isLoaded).toBe(true);
     expect(embedder.embeddingDim).toBeGreaterThan(0);
 
-    const result = await embedder.embed([
-      embedder.taskPrefixes.query + 'Calculate factorial',
-      embedder.taskPrefixes.document + 'def fact(n): return 1 if n <= 1 else n * fact(n-1)',
-    ]);
+    const result = await embedder.embed(
+      [
+        embedder.taskPrefixes.query + 'Calculate factorial',
+        embedder.taskPrefixes.document + 'def fact(n): return 1 if n <= 1 else n * fact(n-1)',
+      ],
+      { maxTokens: 64 },
+    );
 
     expect(result.embeddings).toBeInstanceOf(Float32Array);
     expect(result.shape[0]).toBe(2);
@@ -37,10 +40,13 @@ describe.runIf(hasModel)('EmbedCode Integration', () => {
     const { EmbedCode } = await import('../../src/embed-code');
     const embedder = await EmbedCode.fromPretrained({ modelPath: MODEL_PATH });
 
-    const result = await embedder.embed([
-      embedder.taskPrefixes.query + 'Sort an array',
-      embedder.taskPrefixes.document + 'def sort(arr): return sorted(arr)',
-    ]);
+    const result = await embedder.embed(
+      [
+        embedder.taskPrefixes.query + 'Sort an array',
+        embedder.taskPrefixes.document + 'def sort(arr): return sorted(arr)',
+      ],
+      { maxTokens: 64 },
+    );
 
     const dim = embedder.embeddingDim;
     const sim = embedder.similarity(result.embeddings.slice(0, dim), result.embeddings.slice(dim));
