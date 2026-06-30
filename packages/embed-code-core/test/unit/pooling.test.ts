@@ -97,6 +97,15 @@ describe('poolEmbeddings', () => {
     expect(result[4]).toBeCloseTo(11);
     expect(result[5]).toBeCloseTo(12);
   });
+
+  it('last-token pooling with all-padding tokens falls back to last position', () => {
+    const h = new Float32Array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6]);
+    const mask = new Int32Array([0, 0, 0]); // all padding
+    const result = poolEmbeddings(h, mask, 1, 3, 2, 'last_token');
+    // Falls back to index S-1 = 2
+    expect(result[0]).toBeCloseTo(0.5);
+    expect(result[1]).toBeCloseTo(0.6);
+  });
 });
 
 describe('normalizeEmbeddings', () => {
@@ -141,5 +150,11 @@ describe('cosineSimilarity', () => {
 
   it('throws on dimension mismatch', () => {
     expect(() => cosineSimilarity(new Float32Array([1, 2]), new Float32Array([1, 2, 3]))).toThrow();
+  });
+
+  it('returns 0 for zero vectors', () => {
+    expect(cosineSimilarity(new Float32Array([0, 0]), new Float32Array([1, 2]))).toBeCloseTo(0.0);
+    expect(cosineSimilarity(new Float32Array([1, 2]), new Float32Array([0, 0]))).toBeCloseTo(0.0);
+    expect(cosineSimilarity(new Float32Array([0, 0]), new Float32Array([0, 0]))).toBeCloseTo(0.0);
   });
 });
