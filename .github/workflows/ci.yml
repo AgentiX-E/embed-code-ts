@@ -23,7 +23,7 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with: { node-version: '22', cache: 'npm' }
       - run: npm ci
       - run: npm run lint
@@ -38,7 +38,7 @@ jobs:
         node-version: ['20', '22']
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with: { node-version: '${{ matrix.node-version }}', cache: 'npm' }
       - run: npm ci
       - run: npm run build
@@ -60,7 +60,7 @@ jobs:
         node-version: ['20', '22']
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with: { node-version: '${{ matrix.node-version }}', cache: 'npm' }
       - run: npm ci
       - run: npm run build:all
@@ -72,7 +72,7 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with: { node-version: '22', cache: 'npm' }
       - uses: actions/setup-python@v6
         with: { python-version: '3.11' }
@@ -140,7 +140,7 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with: { node-version: '22', cache: 'npm' }
       - run: npm ci
       - run: npm run build:all
@@ -177,7 +177,7 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with: { node-version: '22', cache: 'npm' }
       - run: npm ci
       - run: npm run build:all
