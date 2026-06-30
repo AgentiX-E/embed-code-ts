@@ -149,7 +149,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: models/nomic-embed-text-v1.5-int8.onnx
-          key: embed-code-model-${{ hashFiles('scripts/export-onnx.py', 'models/model-descriptor.json') }}-v2
+          key: embed-code-model-${{ hashFiles('models/model-descriptor.json') }}-v3
           fail-on-cache-miss: true
 
       - name: Run benchmark
