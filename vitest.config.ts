@@ -45,7 +45,7 @@ export default defineConfig({
         // Cache helpers, proxy resolution, SHA-256 tested; fetch/streaming/zip need GitHub Releases
         'packages/embed-code-core/src/model-downloader.ts',
         // Pure type definitions — zero runtime code
-        'packages/embed-code-core/src/types/**',
+        'packages/embed-code-core/src/types.ts',
         'packages/*/src/types/**/*.d.ts',
       ],
       reporter: ['text', 'html', 'json-summary', 'lcov'],

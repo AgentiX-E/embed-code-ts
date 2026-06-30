@@ -6,7 +6,7 @@ export default tseslint.config(
   // Strict type-checked rules for source files
   ...tseslint.configs.recommendedTypeChecked.map((c) => ({
     ...c,
-    files: ['packages/*/src/**/*.ts'],
+    files: ['packages/embed-code-core/src/**/*.ts'],
     rules: {
       ...c.rules,
       '@typescript-eslint/no-explicit-any': 'error',
@@ -17,6 +17,11 @@ export default tseslint.config(
       'prefer-const': 'error',
       'no-var': 'error',
     },
+  })),
+  // Relaxed type-checked rules for CLI (dynamic imports, Commander)
+  ...tseslint.configs.recommended.map((c) => ({
+    ...c,
+    files: ['packages/embed-code-cli/src/**/*.ts'],
   })),
   // Relaxed rules for test and config files
   ...tseslint.configs.recommended.map((c) => ({

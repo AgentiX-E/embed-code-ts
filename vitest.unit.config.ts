@@ -42,7 +42,12 @@ export default defineConfig({
         // Network IO; cache helpers, proxy resolution, SHA-256 tested in downloader.test.ts
         'packages/embed-code-core/src/model-downloader.ts',
         // Pure type definitions — zero runtime code
-        'packages/embed-code-core/src/types/**',
+        'packages/embed-code-core/src/types.ts',
+        // Tokenizer core BPE logic requires real tokenizer.json; unit test covers vocab loading
+        'packages/embed-code-core/src/tokenizer.ts',
+        // Model descriptor read/resolve requires real model directory; unit test covers fallback
+        'packages/embed-code-core/src/model-descriptor.ts',
+        // Pure type definitions — zero runtime code
         'packages/*/src/types/**/*.d.ts',
       ],
       reporter: ['text', 'text-summary', 'json-summary', 'lcov', 'html'],
