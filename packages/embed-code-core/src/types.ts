@@ -176,6 +176,7 @@ export interface ModelConfig {
   readonly normalize: boolean;
   readonly inputIdsName: string;
   readonly attentionMaskName: string;
+  readonly tokenTypeIdsName?: string;
   readonly outputName: string;
   readonly taskPrefixes: TaskPrefixDescriptor;
 }

@@ -125,6 +125,11 @@ export class EmbedCodeInferenceEngine implements IInferenceEngine {
           dims: [1, 512],
           type: 'int64',
         },
+        token_type_ids: {
+          data: new Int32Array(512).fill(0),
+          dims: [1, 512],
+          type: 'int64',
+        },
       });
     } catch {
       // Warmup failure is non-fatal — model may use different input names
