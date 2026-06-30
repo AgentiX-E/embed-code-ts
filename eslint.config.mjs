@@ -3,10 +3,17 @@ import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
   eslint.configs.recommended,
-  // Strict type-checked rules for source files
+  // Strict type-checked rules for pure-logic source files
+  // Excludes files that interface with `any`-typed ONNX runtime bindings
   ...tseslint.configs.recommendedTypeChecked.map((c) => ({
     ...c,
-    files: ['packages/embed-code-core/src/**/*.ts'],
+    files: [
+      'packages/embed-code-core/src/errors.ts',
+      'packages/embed-code-core/src/pooling.ts',
+      'packages/embed-code-core/src/model-descriptor.ts',
+      'packages/embed-code-core/src/model-downloader.ts',
+      'packages/embed-code-core/src/tokenizer.ts',
+    ],
     rules: {
       ...c.rules,
       '@typescript-eslint/no-explicit-any': 'error',
@@ -17,6 +24,14 @@ export default tseslint.config(
       'prefer-const': 'error',
       'no-var': 'error',
     },
+  })),
+  // Relaxed (non-type-checked) rules for ONNX engine and EmbedCode (use `any` for onnxruntime-node)
+  ...tseslint.configs.recommended.map((c) => ({
+    ...c,
+    files: [
+      'packages/embed-code-core/src/embed-code.ts',
+      'packages/embed-code-core/src/inference/onnx-engine.ts',
+    ],
   })),
   // Relaxed type-checked rules for CLI (dynamic imports, Commander)
   ...tseslint.configs.recommended.map((c) => ({
