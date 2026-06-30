@@ -62,6 +62,14 @@ describe('poolEmbeddings', () => {
     expect(result[1]).toBeCloseTo(8.0);
   });
 
+  it('mean pooling with all padding tokens returns zeros', () => {
+    const h = new Float32Array([0.1, 0.2, 0.3, 0.4]);
+    const mask = new Int32Array([0, 0]); // all padding
+    const result = poolEmbeddings(h, mask, 1, 2, 2, 'mean');
+    expect(result[0]).toBe(0);
+    expect(result[1]).toBe(0);
+  });
+
   it('CLS pooling takes first token', () => {
     const h = new Float32Array([
       0.1,

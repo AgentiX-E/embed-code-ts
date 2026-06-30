@@ -34,11 +34,19 @@ export default tseslint.config(
       'packages/embed-code-core/src/model-downloader.ts',
       'packages/embed-code-core/src/model-descriptor.ts',
     ],
+    rules: {
+      ...c.rules,
+      '@typescript-eslint/no-explicit-any': 'off',
+    },
   })),
   // Relaxed type-checked rules for CLI (dynamic imports, Commander)
   ...tseslint.configs.recommended.map((c) => ({
     ...c,
     files: ['packages/embed-code-cli/src/**/*.ts'],
+    rules: {
+      ...c.rules,
+      '@typescript-eslint/no-explicit-any': 'off',
+    },
   })),
   // Relaxed rules for test and config files
   ...tseslint.configs.recommended.map((c) => ({
