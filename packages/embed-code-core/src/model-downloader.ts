@@ -92,10 +92,10 @@ export function getCachedModelPath(): string | null {
 function resolveProxyConfig(options?: DownloadOptions): ProxyConfig | null {
   if (options?.proxy?.url) return options.proxy;
 
-  const timesfmProxyUrl = process.env.EMBED_CODE_PROXY_URL;
-  if (timesfmProxyUrl) {
+  const embedProxyUrl = process.env.EMBED_CODE_PROXY_URL;
+  if (embedProxyUrl) {
     return {
-      url: timesfmProxyUrl,
+      url: embedProxyUrl,
       username: process.env.EMBED_CODE_PROXY_USERNAME || undefined,
       password: process.env.EMBED_CODE_PROXY_PASSWORD || undefined,
     };

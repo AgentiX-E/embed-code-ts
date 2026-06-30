@@ -1,9 +1,10 @@
 node_modules/
 dist/
-models/
+models/*.onnx
+models/*.zip
 .cache/
-*.onnx
 *.part
-.env
 .DS_Store
 *.log
+DESIGN.md
+*.tsbuildinfo

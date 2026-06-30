@@ -4,10 +4,13 @@
   "private": true,
   "description": "nomic-embed-code int8 ONNX weights in a TypeScript npm package — incbin-style",
   "workspaces": [
-    "packages/embed-code-core"
+    "packages/embed-code-core",
+    "packages/embed-code-cli"
   ],
   "scripts": {
     "build": "cd packages/embed-code-core && npx tsup",
+    "build:cli": "cd packages/embed-code-cli && npx tsc",
+    "build:all": "npm run build && npm run build:cli",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "echo 'OK'",

@@ -1,0 +1,43 @@
+{
+  "name": "@agentix-e/embed-code-cli",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "CLI for nomic-embed-code — code embeddings from the command line",
+  "main": "./dist/cli.js",
+  "bin": {
+    "embed-code": "./dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "prepublishOnly": "tsc"
+  },
+  "dependencies": {
+    "@agentix-e/embed-code-core": "^0.1.0",
+    "commander": "^13.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.5.0",
+    "vitest": "^2.0.0"
+  },
+  "keywords": [
+    "nomic",
+    "embed-code",
+    "code-embedding",
+    "cli",
+    "typescript"
+  ],
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/AgentiX-E/embed-code-ts"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

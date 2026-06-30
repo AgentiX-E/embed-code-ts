@@ -6,18 +6,13 @@
 
 ## Philosophy
 
-Inspired by the C/C++ `incbin` technique and the proven [`@agentix-e/timesfm-ts`](https://github.com/AgentiX-E/timesfm-ts) architecture:
+Inspired by the C/C++ `incbin` technique:
 
 - **npm package is code-only** (~50 KB) — the model weights are distributed as a GitHub Release asset
 - **model-descriptor.json** is the "incbin fingerprint" — embedded in the package, it tells the runtime exactly what model to get and how to verify it
 - **On first use**, `downloadModel()` fetches the int8 ONNX from GitHub Releases, verifies SHA-256, and caches it to `~/.cache/`
 - **Subsequent runs** are pure filesystem reads — zero network, zero latency
 - **No postinstall scripts** — explicit, auditable download flow
-
-This is the same pattern used by:
-- [`@agentix-e/timesfm-ts`](https://github.com/AgentiX-E/timesfm-ts) — TimesFM time-series forecasting
-- **Puppeteer** — Chromium download
-- **sharp** — libvips download
 
 ## Quick Start
 
