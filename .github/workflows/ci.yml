@@ -42,7 +42,7 @@ jobs:
       - run: npm run build
       - run: npx vitest run --config vitest.unit.config.ts --coverage
       - name: Upload coverage
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-report
           path: coverage/
@@ -121,7 +121,7 @@ jobs:
           EMBED_CODE_MODEL_PATH: models/nomic-embed-text-v1.5-int8.onnx
 
       - name: Upload integration coverage
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: integration-coverage
           path: coverage/
@@ -154,7 +154,7 @@ jobs:
         timeout-minutes: 10
 
       - name: Upload benchmark report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: benchmark-report
           path: benchmark-report.json
