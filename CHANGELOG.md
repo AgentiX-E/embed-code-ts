@@ -1,30 +1,40 @@
 # Changelog
 
-## 0.1.0 (2026-06-30)
+All notable changes to embed-code-ts will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
 
 ### Added
 
-- `@agentix-e/embed-code-core` — Core inference engine for nomic-embed-code
-  - `EmbedCode.fromPretrained()` factory pattern
-  - `downloadModel()` with streaming fetch, SHA-256 verification, and local caching
-  - BPE tokenizer compatible with Qwen2.5 tokenizer
-  - Last-token and mean pooling strategies
-  - ONNX Runtime inference engine (CPU/CUDA/DML)
-  - `model-descriptor.json` as single source of truth for architecture config
-  - Proxy support for corporate network environments
-  - ESM + CJS dual format build output
+- **`docs/ARCHITECTURE.md`** — comprehensive architecture documentation covering component design, data flow, type system, and design principles
+- **`docs/MODEL-UPDATE.md`** — model update guide with dual-channel release architecture, incbin weight flow, and troubleshooting
+- **`docs/index.html`** — GitHub Pages landing page with navigation cards for API docs, benchmarks, coverage, and source code
+- **`docs/GETTING-STARTED.md`** — comprehensive usage documentation with quick start, API usage, CLI tools, configuration reference, output description, troubleshooting, and performance guide
+- **Restructured README** — aligned with project standards: badges, architecture diagram, packages table, quick start (3 options), config reference, output shape reference, project structure, development guide, references, known limitations, documentation & reports links, system requirements, CLI quick reference, license with compatibility table
+- **Restructured CONTRIBUTING** — development workflow, pre-submit checklist, model management, commit convention, code style, versioning & publishing guide
 
-- `@agentix-e/embed-code-cli` — Command-line interface
-  - `embed-code setup` — Download model
-  - `embed-code embed` — Generate embeddings from CLI/file/stdin
-  - `embed-code info` — Show model metadata
+### Changed
 
-- Build pipeline
-  - `scripts/pipeline.js` — CI/CD orchestration
-  - `scripts/export-onnx.py` — PyTorch to ONNX int8 conversion
+- **Package READMEs** — updated with npm badges, API docs badges, standardized sections (overview, installation, quick start, API documentation, license)
 
-- CI/CD
-  - GitHub Actions CI workflow
-  - Model release workflow
-  - ESLint + Prettier + husky pre-commit hooks
-  - Changesets for version management
+## [0.1.0] — Initial
+
+### Added
+
+- Initial project scaffold with 2-package monorepo
+- Int8 ONNX model inference engine (`@agentix-e/embed-code-core`)
+- BPE tokenizer with code-aware vocabulary
+- CLI tool with `embed-code setup` and `embed-code embed` commands (`@agentix-e/embed-code-cli`)
+- Model downloader with proxy support (3-tier cascade: options → env vars → standard vars)
+- SHA-256 checksum verification for downloaded models
+- Last-token, mean, and CLS pooling strategies
+- L2 normalization for output embeddings
+- Cosine similarity computation
+- Task prefix support (`search_query:`, `search_document:`)
+- Full CI/CD pipeline: lint, unit test, build check, integration test, benchmark, deploy to GitHub Pages
+- Model release workflow with automated validation
+- TypeScript strict mode with 95%+ coverage thresholds
+- Model descriptor system for future-proof model version management

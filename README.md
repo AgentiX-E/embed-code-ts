@@ -1,29 +1,65 @@
-# @agentix-e/embed-code-ts
+# embed-code-ts
 
-> nomic-embed-code int8 ONNX — code embeddings shipped with npm. incbin-style.
+> Node.js/TypeScript implementation of Nomic's nomic-embed-code — int8 code embeddings with incbin-style model delivery.
 
-**State-of-the-art code embeddings. Ship AI directly in your npm dependencies.**
+[![CI](https://github.com/AgentiX-E/embed-code-ts/actions/workflows/ci.yml/badge.svg)](https://github.com/AgentiX-E/embed-code-ts/actions/workflows/ci.yml)
+[![Docs](https://img.shields.io/badge/docs-TypeDoc-blue)](https://agentix-e.github.io/embed-code-ts/api/)
+[![Benchmark Report](https://img.shields.io/badge/benchmark-latest-blue)](https://agentix-e.github.io/embed-code-ts/benchmark/)
+[![Coverage](https://img.shields.io/badge/coverage-report-blue)](https://agentix-e.github.io/embed-code-ts/coverage/)
+[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue)](https://www.typescriptlang.org/)
+[![Node.js](https://img.shields.io/badge/Node.js-%3E%3D22-green)](https://nodejs.org/)
 
-## Philosophy
+## Overview
 
-Inspired by the C/C++ `incbin` technique:
+**embed-code-ts** brings Nomic's nomic-embed-code to the Node.js ecosystem. It provides state-of-the-art code-aware text embeddings — feed it source code or natural language queries and get normalized embedding vectors, no GPU required.
 
-- **npm package is code-only** (~50 KB) — the model weights are distributed as a GitHub Release asset
-- **model-descriptor.json** is the "incbin fingerprint" — embedded in the package, it tells the runtime exactly what model to get and how to verify it
-- **On first use**, `downloadModel()` fetches the int8 ONNX from GitHub Releases, verifies SHA-256, and caches it to `~/.cache/`
-- **Subsequent runs** are pure filesystem reads — zero network, zero latency
-- **No postinstall scripts** — explicit, auditable download flow
+The model weights are distributed with an **incbin-inspired approach**: the npm package is code-only (~50 KB), while the model is downloaded on-demand from GitHub Releases, SHA-256 verified, and cached locally.
+
+### Architecture
+
+```
+Input Text → [Tokenizer] → [ONNX Runtime] → [Pooling] → [Normalize] → Embedding
+               (BPE)       (nomic-embed-code   (last_token/    (L2 norm)
+                             int8 ONNX)          mean/cls)
+```
+
+### Key Features
+
+- **Code-aware embeddings** — optimized for source code and natural language
+- **Int8 quantized** — model runs fast on CPU with minimal memory
+- **Incbin-style delivery** — npm package is code-only; model downloaded on-demand and cached
+- **Task prefix support** — `search_query:`, `search_document:` for semantic search
+- **Multiple pooling strategies** — last_token, mean, cls pooling
+- **Production-grade** — built on ONNX Runtime's native C++ backend (CPU, CUDA, DirectML)
+- **Verified accuracy** — cosine similarity preservation verified in benchmarks, see [latest benchmark](https://agentix-e.github.io/embed-code-ts/benchmark/)
+
+## Packages
+
+| Package                         | npm                                                                                                                                              | Description                                                           |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------- |
+| `@agentix-e/embed-code-core`    | [![npm](https://img.shields.io/npm/v/@agentix-e/embed-code-core?color=blue)](https://www.npmjs.com/package/@agentix-e/embed-code-core)           | Core inference engine + tokenizer + pooling + model downloader        |
+| `@agentix-e/embed-code-cli`     | [![npm](https://img.shields.io/npm/v/@agentix-e/embed-code-cli?color=blue)](https://www.npmjs.com/package/@agentix-e/embed-code-cli)             | CLI tool (includes `embed-code setup` auto model download)            |
+
+> **Layered strategy**: npm packages contain only code (~50 KB), models (~140 MB int8 ONNX) are downloaded on-demand via GitHub Releases.
 
 ## Quick Start
 
+### Option 1 — npm install (recommended, code only)
+
 ```bash
 npm install @agentix-e/embed-code-core onnxruntime-node
+
+# Auto download model ~140 MB (first time only)
+node -e "const {downloadModel}=require('@agentix-e/embed-code-core');downloadModel()"
 ```
+
+### Option 2 — Programmatic usage
 
 ```typescript
 import { EmbedCode, downloadModel } from '@agentix-e/embed-code-core';
 
-// Download model on first use (caches to ~/.cache/)
+// Auto download model (first time only, cached thereafter)
 const modelPath = await downloadModel({
   onProgress: (received, total, speed) => {
     console.log(`${received.toFixed(0)} / ${total.toFixed(0)} MB @ ${speed.toFixed(1)} MB/s`);
@@ -43,14 +79,39 @@ console.log(results.embeddings); // Float32Array [2, 3584]
 console.log(results.elapsedMs); // Inference time
 
 // Compute similarity
-const sim = embedder.similarity(results.embeddings.slice(0, 3584), results.embeddings.slice(3584));
+const sim = embedder.similarity(
+  results.embeddings.slice(0, 3584),
+  results.embeddings.slice(3584)
+);
 
 await embedder.dispose();
 ```
 
+### Option 3 — Build from source + HuggingFace export
+
+```bash
+git clone https://github.com/AgentiX-E/embed-code-ts.git
+cd embed-code-ts && npm install && npm run build:all
+
+# One-click pipeline
+npm run pipeline
+```
+
+> Detailed docs: [docs/GETTING-STARTED.md](docs/GETTING-STARTED.md) | [docs/MODEL-UPDATE.md](docs/MODEL-UPDATE.md)
+
+## EmbedConfig Reference
+
+| Parameter          | Type    | Default       | Description                                              |
+| ------------------ | ------- | ------------- | -------------------------------------------------------- |
+| `maxTokens`        | number  | 512           | Maximum input token count                                |
+| `poolingStrategy`  | string  | `last_token`  | Pooling: `last_token`, `mean`, or `cls`                  |
+| `normalize`        | boolean | true          | L2 normalize output embeddings                           |
+| `batchSize`        | number  | 32            | Number of texts to process per batch                     |
+| `truncation`       | boolean | true          | Truncate inputs exceeding maxTokens                      |
+
 ## Task Prefixes
 
-nomic-embed-code requires task prefixes:
+nomic-embed-code requires task prefixes for optimal performance:
 
 | Role            | Prefix                    |
 | --------------- | ------------------------- |
@@ -67,151 +128,182 @@ const results = await embedder.embed([
 ]);
 ```
 
-## Architecture
+## Output Shape Reference
+
+| Output                   | Shape        | Description                         |
+| ------------------------ | ------------ | ----------------------------------- |
+| `results.embeddings`     | `(N, D)`     | Flat Float32Array, N texts × D dims |
+| `results.elapsedMs`      | number       | Inference time in milliseconds      |
+
+Where `D` = 3584 (nomic-embed-code-v1.5 hidden dimension).
+
+## Project Structure
 
 ```
-┌──────────────────────────────────────────┐
-│         @agentix-e/embed-code-core         │
-│  ~50 KB code-only npm package             │
-│                                            │
-│  ┌────────────┐  ┌──────────────────────┐ │
-│  │ EmbedCode   │  │ Model Downloader     │ │
-│  │ (public API)│  │ downloadModel()      │ │
-│  └─────┬──────┘  │ → GitHub Releases    │ │
-│        │         │ → SHA-256 verify      │ │
-│        │         │ → ~/.cache/           │ │
-│        │         └──────────────────────┘ │
-│        │                                   │
-│  ┌─────▼──────────────────────────────┐   │
-│  │ ONNX Inference Engine               │   │
-│  │ onnxruntime-node → CPU/CUDA/DML     │   │
-│  └────────────────────────────────────┘   │
-│                                            │
-│  ┌──────────┐ ┌──────────┐ ┌───────────┐ │
-│  │ Tokenizer │ │ Pooling  │ │ Descriptor│ │
-│  │ (BPE)     │ │ (last/   │ │ Resolver  │ │
-│  │           │ │  mean/cls)│ │           │ │
-│  └──────────┘ └──────────┘ └───────────┘ │
-└──────────────────────────────────────────┘
-         │
-         │ downloads from
-         ▼
-┌──────────────────────────────────────────┐
-│  GitHub Release: embed-code-latest-int8   │
-│  nomic-embed-code-v1-int8.zip             │
-│  ├── nomic-embed-code-v1-int8.onnx        │
-│  └── model-descriptor.json                │
-└──────────────────────────────────────────┘
+embed-code-ts/
+├── packages/
+│   ├── embed-code-core/         # Core inference engine
+│   │   ├── src/
+│   │   │   ├── index.ts         # Public API
+│   │   │   ├── model.ts         # EmbedCode class
+│   │   │   ├── config.ts        # Configuration management
+│   │   │   ├── types.ts         # Type definitions
+│   │   │   ├── tokenizer.ts     # BPE tokenizer
+│   │   │   ├── inference/
+│   │   │   │   └── onnx-engine.ts    # ONNX Runtime inference engine
+│   │   │   ├── pooling/
+│   │   │   │   └── pooler.ts         # Pooling strategies
+│   │   │   ├── downloader/
+│   │   │   │   └── model-downloader.ts # Model downloader
+│   │   │   └── utils/
+│   │   │       ├── descriptor.ts      # Model descriptor resolver
+│   │   │       └── tensor-utils.ts    # Low-level tensor ops
+│   │   └── test/               # Unit + integration test suites
+│   └── embed-code-cli/         # CLI tool
+│       ├── src/
+│       │   ├── cli.ts          # Commander-based CLI
+│       │   └── embed.ts        # File/batch embedding
+│       └── test/
+├── scripts/
+│   ├── pipeline.js              # Node.js fully automated pipeline
+│   ├── benchmark-ci.js          # CI benchmark runner
+│   ├── prepare-pages.js         # GitHub Pages preparation
+│   └── export-onnx.py           # PyTorch → ONNX exporter
+├── .github/
+│   └── workflows/               # CI/CD automation
+│       └── ci.yml               # PR checks + integration tests + benchmark + deploy
+├── models/                      # Model descriptor (model weights gitignored)
+├── vitest.config.ts
+└── vitest.unit.config.ts
 ```
 
-## API Reference
-
-### `downloadModel(options?)`
-
-Downloads the int8 ONNX model from GitHub Releases.
-
-```typescript
-const modelPath = await downloadModel({
-  precision: 'int8', // 'int8' (7B) | 'text-int8' (137M)
-  force: false, // Force re-download
-  onProgress: (receivedMB, totalMB, speedMBs) => {},
-  url: 'https://...', // Custom URL or mirror
-  proxy: { url: 'http://proxy:8080' },
-});
-// → ~/.cache/agentix-embed-code-ts/nomic-embed-code-v1-int8.onnx
-```
-
-### `EmbedCode.fromPretrained(options)`
-
-Creates an embedder from a pretrained ONNX checkpoint.
-
-```typescript
-const embedder = await EmbedCode.fromPretrained({
-  modelPath: '/path/to/model.onnx', // Required
-  executionProvider: 'cpu', // 'cpu' | 'cuda' | 'dml'
-  intraOpNumThreads: 4, // CPU thread count
-  skipWarmup: false,
-  tokenizerPath: '/path/to/tokenizer.json',
-});
-```
-
-### `embedder.embed(texts, options?)`
-
-Generates embeddings for input texts.
-
-```typescript
-const result = await embedder.embed(texts, {
-  maxTokens: 512,
-  poolingStrategy: 'last_token',
-  normalize: true,
-  signal: abortController.signal,
-  onProgress: (progress) => {},
-});
-// → { embeddings: Float32Array, shape: [N, dim], elapsedMs: number }
-```
-
-### `embedder.similarity(a, b)`
-
-Computes cosine similarity between two embedding vectors.
-
-### `embedder.dispose()`
-
-Releases ONNX session and resources.
-
-### `defaultModelPath()`, `getCachedModelPath()`, `isModelCached()`
-
-Cache management utilities.
-
-## Exporting Models
-
-To export nomic-embed-code from PyTorch to ONNX int8:
+## Development
 
 ```bash
-# Install Python deps
-pip install optimum onnx onnxruntime torch transformers
+# Install
+npm install && npm run build:all
 
-# Export with int8 quantization
-python3 scripts/export-onnx.py \
-  --output models/nomic-embed-code-v1-int8.onnx \
-  --model nomic-ai/nomic-embed-code \
-  --precision int8
+# One-click full pipeline (model export + tests + benchmarks)
+npm run pipeline
 
-# Or use the full pipeline
-npm run pipeline -- --export
+# Run tests only
+npm test
+npm run test:watch
+
+# Unit tests only (no model needed, fast)
+npm run test:unit
+
+# Unit tests with coverage (≥95% thresholds enforced)
+npm run test:unit:coverage
+
+# Full coverage report (unit + integration, ≥95% thresholds)
+npm run test:coverage
+
+# Lint + format
+npm run lint
+npm run format:check
 ```
 
-## GitHub Release
+## References
 
-To create a GitHub Release with the exported model:
+- **Model**: [nomic-ai/nomic-embed-code](https://huggingface.co/nomic-ai/nomic-embed-code) on HuggingFace
+- **Paper**: [Nomic Embed: Training a Reproducible Long Context Text Embedder](https://arxiv.org/abs/2402.01613)
+- **ONNX Runtime**: [onnxruntime.ai](https://onnxruntime.ai/)
+
+## Known Limitations
+
+- **Max context**: 512 tokens per input (nomic-embed-code native limit)
+- **No fine-tuning API**: The model runs in zero-shot mode. Fine-tuning is not yet supported.
+- **Model version**: Currently supports nomic-embed-code-v1.5. Future model versions will be supported via the model descriptor system.
+- **Task prefixes required**: For optimal performance, inputs should use `search_query:` or `search_document:` prefixes.
+
+## Documentation & Reports
+
+| Resource          | Description                                                           | URL                                                                                                      |
+| ----------------- | --------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| 📚 **API Docs**   | Full TypeDoc reference for all packages                               | [agentix-e.github.io/embed-code-ts/api/](https://agentix-e.github.io/embed-code-ts/api/)                 |
+| 📊 **Benchmark**  | Inference latency, throughput & embedding quality reports             | [agentix-e.github.io/embed-code-ts/benchmark/](https://agentix-e.github.io/embed-code-ts/benchmark/)     |
+| 📈 **Coverage**   | Line, branch, function & statement coverage (≥95% on all covered source modules) | [agentix-e.github.io/embed-code-ts/coverage/](https://agentix-e.github.io/embed-code-ts/coverage/) |
+| 📦 **npm (core)** | `@agentix-e/embed-code-core`                                          | [npmjs.com/package/@agentix-e/embed-code-core](https://www.npmjs.com/package/@agentix-e/embed-code-core) |
+| 📦 **npm (cli)**  | `@agentix-e/embed-code-cli`                                           | [npmjs.com/package/@agentix-e/embed-code-cli](https://www.npmjs.com/package/@agentix-e/embed-code-cli)   |
+
+## System Requirements
+
+| Component             | Minimum                 | Recommended                        |
+| --------------------- | ----------------------- | ---------------------------------- |
+| **OS**                | Linux / macOS / Windows | Linux (production)                 |
+| **Node.js**           | ≥ 22.x                  | ≥ 22.x                             |
+| **RAM**               | 512 MB                  | 2 GB+                              |
+| **Disk (code)**       | 10 MB                   | —                                  |
+| **Disk (model)**      | 140 MB                  | SSD                                |
+| **GPU** (optional)    | 2 GB VRAM               | 4 GB+ VRAM (CUDA)                  |
+| **Python** (optional) | ≥ 3.10                  | Only needed for HuggingFace export |
+
+### Pre-install dependencies
+
+| Usage method                          | Requires pre-install                                    |
+| ------------------------------------- | ------------------------------------------------------- |
+| **npm install + auto model download** | Node.js ≥ 22 + `onnxruntime-node`                       |
+| **Export model from HuggingFace**     | Python ≥ 3.10 + `pip install optimum onnx onnxruntime`  |
+| **Build from source**                 | Node.js ≥ 22 + npm                                      |
+
+> `onnxruntime-node` includes prebuilt C++ native modules, supports Linux x64 / arm64, macOS x64 / arm64 (Apple Silicon), Windows x64. **No additional system packages required**.
+
+## CLI Quick Reference
 
 ```bash
-npm run release
+# Download model
+embed-code setup                              # Default: ~/.cache/embed-code-ts/
+embed-code setup -o ./models/model.onnx       # Custom path
+embed-code setup -f                           # Force re-download
+embed-code setup --precision int8             # Download INT8 quantized model
+
+# Model info
+embed-code info                               # Show model metadata + system info
+embed-code info -m ./custom.onnx              # Custom model path
+
+# Download with proxy (corporate / restricted networks)
+# Option A: Standard environment variables (auto-detected)
+export HTTPS_PROXY=http://proxy.company.com:8080
+embed-code setup
+
+# Option B: Explicit proxy with authentication
+embed-code setup --proxy-url http://proxy.company.com:8080
+embed-code setup --proxy-url http://proxy.company.com:8080 --proxy-username user
+embed-code setup --proxy-url http://proxy:8080 --proxy-username user --proxy-password pass
+# Password is also available from environment variable (more secure):
+EMBED_CODE_PROXY_PASSWORD=pass embed-code setup --proxy-url http://proxy:8080 --proxy-username user
+# Or via file for Docker/Kubernetes secrets:
+EMBED_CODE_PROXY_PASSWORD_FILE=/run/secrets/proxy-password embed-code setup --proxy-url http://proxy:8080 --proxy-username user
+
+# Option C: EMBED_CODE-specific environment variables
+EMBED_CODE_PROXY_URL=http://proxy:8080 EMBED_CODE_PROXY_USERNAME=user EMBED_CODE_PROXY_PASSWORD=pass embed-code setup
+
+# Embed (model path priority)
+embed-code embed "function fib(n) { return n <= 1 ? n : fib(n-1) + fib(n-2); }"
+embed-code embed -f source.ts                            # From file
+embed-code embed -m ./custom.onnx -f source.py           # Explicit model path
+EMBED_CODE_MODEL_PATH=./prod.onnx embed-code embed "..." # Environment variable
+
+# Model path resolution priority: ① --model ② $EMBED_CODE_MODEL_PATH ③ default cache ④ auto download
 ```
-
-This runs the pipeline, exports the model, and creates a release tagged `embed-code-latest-int8` that `downloadModel()` can fetch.
-
-## Environment Variables
-
-| Variable                    | Purpose                          |
-| --------------------------- | -------------------------------- |
-| `EMBED_CODE_PROXY_URL`      | Proxy for model download         |
-| `EMBED_CODE_PROXY_USERNAME` | Proxy username                   |
-| `EMBED_CODE_PROXY_PASSWORD` | Proxy password                   |
-| `EMBED_CODE_MODEL_PATH`     | Override model path for pipeline |
-| `EMBED_CODE_HF_MODEL`       | Override HuggingFace model ID    |
-| `XDG_CACHE_HOME`            | Override cache directory root    |
 
 ## License
 
-Apache-2.0 — see [LICENSE](./LICENSE)
+This project is open source under [Apache 2.0](LICENSE).
 
-nomic-embed-code is also Apache-2.0 licensed by Nomic AI.
+### Relationship with Nomic nomic-embed-code
 
-## Links
+- nomic-embed-code ([nomic-ai/nomic-embed-code](https://huggingface.co/nomic-ai/nomic-embed-code)) is licensed under **Apache 2.0**
+- The TypeScript/Node.js code in this project is an **original implementation**, also released under Apache 2.0
+- nomic-embed-code pretrained model weights (downloaded from HuggingFace) follow Nomic's model license terms
+- This project's `scripts/export-onnx.py` is used to help users export models, does not directly distribute model weights
+- ONNX files in GitHub Releases are derivative works exported by users from HuggingFace
 
-| Resource          | URL                                                                                                        |
-| ----------------- | ---------------------------------------------------------------------------------------------------------- |
-| API Documentation | [https://agentix-e.github.io/embed-code-ts/api/](https://agentix-e.github.io/embed-code-ts/api/)           |
-| Coverage Report   | [https://agentix-e.github.io/embed-code-ts/coverage/](https://agentix-e.github.io/embed-code-ts/coverage/) |
-| Benchmark Results | [https://agentix-e.github.io/embed-code-ts/](https://agentix-e.github.io/embed-code-ts/)                   |
-| GitHub Repository | [https://github.com/AgentiX-E/embed-code-ts](https://github.com/AgentiX-E/embed-code-ts)                   |
+### License compatibility
+
+| Component                  | License             | Description        |
+| -------------------------- | ------------------- | ------------------ |
+| embed-code-ts code         | Apache 2.0          | Fully original     |
+| nomic-embed-code weights   | Apache 2.0 (Nomic)  | HuggingFace hosted |
+| ONNX Runtime               | MIT (Microsoft)     | npm dependency     |
