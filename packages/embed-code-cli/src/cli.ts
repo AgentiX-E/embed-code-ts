@@ -55,8 +55,8 @@ program
           console.log(`Embedding:    ${config.embeddingDim} dims`);
           console.log(`Max tokens:   ${config.maxTokens}`);
           console.log(`Pooling:      ${config.poolingStrategy}`);
-          console.log(`ONNX size:    ${(descriptor.onnx.size_bytes / 1024 ** 2).toFixed(0)} MB`);
-          console.log(`SHA256:       ${descriptor.onnx.sha256.slice(0, 16)}...`);
+          console.log(`Weights size: ${((descriptor.weights?.size_bytes ?? 0) / 1024 ** 2).toFixed(0)} MB`);
+          console.log(`SHA256:       ${(descriptor.weights?.sha256 ?? 'unknown').slice(0, 16)}...`);
         }
 
         // System info

@@ -1,21 +1,32 @@
 /**
  * EmbedCode — the main public API.
  *
+ * Pure-TypeScript BERT-base code embedding engine.
+ * Int8 weights are embedded directly in the npm package (incbin-style),
+ * no ONNX Runtime or native bindings required.
+ *
  * Usage:
  * ```typescript
- * import { EmbedCode, downloadModel } from '@agentix-e/embed-code-core';
+ * import { EmbedCode } from '@agentix-e/embed-code-core';
  *
- * // Auto-download on first use (caches to ~/.cache/)
- * const modelPath = await downloadModel();
+ * // Load from embedded weights buffer (recommended)
+ * const embedder = await EmbedCode.fromPretrained({
+ *   weightsBuffer: embeddedWeightsBuffer,
+ *   tokenizerPath: path.join(__dirname, 'tokenizer.json'),
+ * });
  *
- * const embedder = await EmbedCode.fromPretrained({ modelPath });
+ * // Or load from file path
+ * const embedder = await EmbedCode.fromPretrained({
+ *   modelPath: '/path/to/weights.int8.bin',
+ *   tokenizerPath: '/path/to/tokenizer.json',
+ * });
  *
  * const results = await embedder.embed([
  *   'search_query: Calculate factorial',
  *   'search_document: def fact(n): return 1 if n <= 1 else n * fact(n-1)',
  * ]);
  *
- * console.log(results.embeddings); // Float32Array [2, 3584]
+ * console.log(results.embeddings); // Float32Array [2, 768]
  * await embedder.dispose();
  * ```
  */
@@ -23,19 +34,26 @@
 import * as path from 'node:path';
 import { ModelNotFoundError } from './errors';
 import { resolveModelConfig, EMBED_CODE_V1_CONFIG } from './model-descriptor';
-import { EmbedCodeInferenceEngine } from './inference/onnx-engine';
+import { EmbedCodeTSEngine } from './inference/ts-engine';
+import { WeightBuffer } from './inference/weights';
 import { Tokenizer } from './tokenizer';
 import { poolEmbeddings, normalizeEmbeddings, cosineSimilarity } from './pooling';
-import type { ModelConfig, ModelLoadOptions, EmbedOptions, EmbeddingResult } from './types';
+import type {
+  ModelConfig,
+  ModelLoadOptions,
+  EmbedOptions,
+  EmbeddingResult,
+  IInferenceEngine,
+} from './types';
 
 export class EmbedCode {
-  private _engine: EmbedCodeInferenceEngine;
+  private _engine: IInferenceEngine;
   private _config: Readonly<ModelConfig>;
   private _tokenizer: Tokenizer;
   private _loaded = false;
 
   private constructor(
-    engine: EmbedCodeInferenceEngine,
+    engine: IInferenceEngine,
     config: Readonly<ModelConfig>,
     tokenizer: Tokenizer,
   ) {
@@ -47,59 +65,69 @@ export class EmbedCode {
   // ─── Factory ──────────────────────────────────────────────
 
   /**
-   * Create an EmbedCode instance from a pretrained ONNX checkpoint.
+   * Create an EmbedCode instance from pretrained weights.
    *
-   * The model architecture is resolved from the model-descriptor.json
-   * co-located with the ONNX file. Falls back to EMBED_CODE_V1_CONFIG
-   * when no descriptor is present.
+   * Supports:
+   *   - Embedded weights buffer (ArrayBuffer/Uint8Array) — recommended incbin-style
+   *   - File path to weights.int8.bin
    *
-   * @param options.modelPath  Path to the ONNX model file. Required.
-   * @param options.tokenizerPath  Path to tokenizer.json (default: alongside model)
-   * @param options.executionProvider  'cpu' (default), 'cuda', 'dml'
+   * The model architecture is resolved from the co-located model-descriptor.json.
+   * Falls back to EMBED_CODE_V1_CONFIG when no descriptor is present.
    */
   static async fromPretrained(options: ModelLoadOptions): Promise<EmbedCode> {
-    if (!options.modelPath) {
+    if (!options.modelPath && !options.weightsBuffer) {
       throw new ModelNotFoundError(
-        'modelPath is required. Provide the path to an ONNX model file.\n' +
-          'To obtain a model:\n' +
-          '  1. Run: import { downloadModel } from "@agentix-e/embed-code-core"; await downloadModel();\n' +
-          '  2. Or download a pre-converted ONNX model from GitHub Releases\n' +
-          '  3. Or export locally: python scripts/export-onnx.py --output model.onnx',
+        'modelPath or weightsBuffer is required.\n' +
+          'Provide either:\n' +
+          '  1. An embedded weights buffer: EmbedCode.fromPretrained({ weightsBuffer })\n' +
+          '  2. A path to weights.int8.bin: EmbedCode.fromPretrained({ modelPath })\n' +
+          '  3. Export weights locally: python scripts/export-weights.py --output weights.int8.bin',
       );
     }
 
     // Resolve architecture from model-descriptor.json
-    const { config, descriptor } = resolveModelConfig(options.modelPath, EMBED_CODE_V1_CONFIG);
-
-    if (descriptor) {
-      console.log(
-        `[EmbedCode] Loaded descriptor: ${descriptor.model.name} ${descriptor.model.version}` +
-          ` (${descriptor.model.base_architecture}), ` +
-          `${descriptor.onnx.size_bytes > 0 ? (descriptor.onnx.size_bytes / 1024 ** 2).toFixed(0) + ' MB' : ''}`,
-      );
-    }
+    const modelDir = options.modelPath
+      ? path.dirname(options.modelPath)
+      : path.dirname(options.tokenizerPath || __filename);
+    const configSource = options.modelPath ?? modelDir;
+    const { config } = resolveModelConfig(configSource, EMBED_CODE_V1_CONFIG);
 
     // Initialize tokenizer
     const tokenizer = new Tokenizer();
-    const modelDir = path.dirname(options.modelPath);
-    const tokenizerPath = options.tokenizerPath || path.join(modelDir, 'tokenizer.json');
+    const tokenizerPath =
+      options.tokenizerPath || (options.modelPath ? path.join(modelDir, 'tokenizer.json') : '');
 
-    try {
-      tokenizer.loadFromFile(tokenizerPath);
-    } catch {
-      console.warn(
-        `[EmbedCode] Tokenizer not found at ${tokenizerPath}. ` +
-          'Some tokenization features may be limited.',
-      );
+    if (tokenizerPath) {
+      try {
+        tokenizer.loadFromFile(tokenizerPath);
+      } catch {
+        console.warn(
+          `[EmbedCode] Tokenizer not found at ${tokenizerPath}. ` +
+            'Some tokenization features may be limited.',
+        );
+      }
     }
 
     // Initialize inference engine
-    const engine = new EmbedCodeInferenceEngine({
-      executionProvider: options.executionProvider,
-      intraOpNumThreads: options.intraOpNumThreads,
-    });
+    const engine = new EmbedCodeTSEngine();
 
-    await engine.load(options.modelPath, { skipWarmup: options.skipWarmup });
+    if (options.weightsBuffer) {
+      let wb: WeightBuffer;
+      if (options.weightsBuffer instanceof WeightBuffer) {
+        wb = options.weightsBuffer;
+      } else if (options.weightsBuffer instanceof ArrayBuffer) {
+        wb = new WeightBuffer(options.weightsBuffer);
+      } else {
+        // Uint8Array or similar — copy to standalone ArrayBuffer
+        const u8 = options.weightsBuffer as Uint8Array;
+        const copy = new ArrayBuffer(u8.byteLength);
+        new Uint8Array(copy).set(u8);
+        wb = new WeightBuffer(copy);
+      }
+      await engine.load(wb);
+    } else if (options.modelPath) {
+      await engine.load(options.modelPath);
+    }
 
     const instance = new EmbedCode(engine, config, tokenizer);
     instance._loaded = true;
@@ -114,9 +142,6 @@ export class EmbedCode {
    * For optimal results with nomic-embed-code, prefix texts with:
    *   - Queries: "search_query: {query}"
    *   - Code/Documents: "search_document: {code}"
-   *
-   * @param texts Text strings to embed
-   * @param options Optional config overrides
    */
   async embed(texts: string[], options: EmbedOptions = {}): Promise<EmbeddingResult> {
     const maxTokens = options.maxTokens ?? this._config.maxTokens;
@@ -132,7 +157,7 @@ export class EmbedCode {
     // Progress callback
     options.onProgress?.({ phase: 'tokenize', step: 1, total: 4 });
 
-    // 2. ONNX inference
+    // 2. Pure-TS inference
     options.signal?.throwIfAborted();
 
     const outputs = await this._engine.run({
@@ -143,11 +168,6 @@ export class EmbedCode {
       },
       [this._config.attentionMaskName]: {
         data: attentionMask,
-        dims: [batchSize, maxTokens],
-        type: 'int64',
-      },
-      token_type_ids: {
-        data: new Int32Array(batchSize * maxTokens).fill(0),
         dims: [batchSize, maxTokens],
         type: 'int64',
       },
@@ -163,7 +183,7 @@ export class EmbedCode {
       Object.values(outputs)[0];
 
     if (!hiddenStates) {
-      throw new Error(`ONNX output "${this._config.outputName}" not found.`);
+      throw new Error(`Output "${this._config.outputName}" not found.`);
     }
 
     const hiddenData = hiddenStates.data as Float32Array;
@@ -171,7 +191,6 @@ export class EmbedCode {
 
     let embeddings: Float32Array;
     if (hiddenDims.length === 2) {
-      // Already pooled output
       embeddings = new Float32Array(hiddenData);
     } else {
       embeddings = poolEmbeddings(
@@ -179,7 +198,7 @@ export class EmbedCode {
         attentionMask,
         batchSize,
         maxTokens,
-        hiddenDims[2],
+        hiddenDims[2] ?? this._config.embeddingDim,
         poolStrategy,
       );
     }

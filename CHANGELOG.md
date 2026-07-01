@@ -25,7 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial project scaffold with 2-package monorepo
-- Int8 ONNX model inference engine (`@agentix-e/embed-code-core`)
+- Int8 pure-TypeScript model inference engine (`@agentix-e/embed-code-core`)
 - BPE tokenizer with code-aware vocabulary
 - CLI tool with `embed-code setup` and `embed-code embed` commands (`@agentix-e/embed-code-cli`)
 - Model downloader with proxy support (3-tier cascade: options → env vars → standard vars)

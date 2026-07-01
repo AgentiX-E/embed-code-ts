@@ -165,4 +165,38 @@ describe('cosineSimilarity', () => {
     expect(cosineSimilarity(new Float32Array([1, 2]), new Float32Array([0, 0]))).toBeCloseTo(0.0);
     expect(cosineSimilarity(new Float32Array([0, 0]), new Float32Array([0, 0]))).toBeCloseTo(0.0);
   });
+
+  it('handles negative values correctly', () => {
+    const sim = cosineSimilarity(
+      new Float32Array([-0.5, 0.3, -0.1]),
+      new Float32Array([0.5, -0.3, 0.1]),
+    );
+    expect(sim).toBeCloseTo(-1.0);
+  });
+
+  it('handles large-dimension vectors (3584-dim, like nomic-embed-code)', () => {
+    // Two proportional vectors with large dimension
+    const dim = 3584;
+    const a = new Float32Array(dim);
+    const b = new Float32Array(dim);
+    for (let i = 0; i < dim; i++) {
+      a[i] = Math.sin(i * 0.01);
+      b[i] = a[i] * 2; // b = 2*a, same direction
+    }
+    expect(cosineSimilarity(a, b)).toBeCloseTo(1.0);
+  });
+
+  it('correctly tracks accumulators for large vectors without overflow', () => {
+    const dim = 3584;
+    const a = new Float32Array(dim);
+    const b = new Float32Array(dim);
+    // Fill with small values (real embedding range)
+    for (let i = 0; i < dim; i++) {
+      a[i] = Math.sin(i * 0.05) * 0.1;
+      b[i] = Math.cos(i * 0.05) * 0.1;
+    }
+    const sim = cosineSimilarity(a, b);
+    expect(sim).toBeGreaterThan(-1.1);
+    expect(sim).toBeLessThan(1.1);
+  });
 });

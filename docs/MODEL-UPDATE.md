@@ -17,7 +17,7 @@ git tag v* → release.yml
               └─ github-release (TypeDoc + release notes)
 ```
 
-Code releases publish npm packages only. They do **not** include ONNX model files.
+Code releases publish npm packages only. They do **not** include weight files.
 
 ### Model Channel
 
@@ -29,7 +29,7 @@ nightly.yml (cron: 2 AM UTC daily)
     │
     ├─ New revision detected? → Trigger model-release.yml
     │     ├─ detect (idempotency check via model-<sha> tag)
-    │     ├─ export-model (PyTorch → int8 ONNX with validation)
+    │     ├─ export-model (PyTorch → int8 weights with validation)
     │     ├─ validate (full test suite + benchmark)
     │     ├─ github-release (model-<sha> + model-latest tags)
     │     └─ update-manifest (commit descriptor → auto-close issue)
@@ -43,7 +43,7 @@ nightly.yml (cron: 2 AM UTC daily)
 npm install @agentix-e/embed-code-core
 node -e "const {downloadModel}=require('@agentix-e/embed-code-core');downloadModel()"
     │
-    └─ Downloads from: github.com/.../releases/download/model-latest/nomic-embed-text-v1.5-int8.onnx
+    └─ Downloads from: github.com/.../releases/download/model-latest/nomic-embed-text-v1.5-int8.weights.bin
        + model-descriptor.json for SHA-256 verification
 ```
 
@@ -61,7 +61,7 @@ npm package (@agentix-e/embed-code-core)
 │  + model-descriptor.json (SHA-256 fingerprint)
 │
 └─ On first use: downloadModel()
-   ├─ Fetches int8 ONNX from GitHub Releases
+   ├─ Fetches int8 weights from GitHub Releases
    ├─ SHA-256 verifies against descriptor
    └─ Caches to ~/.cache/embed-code-ts/
 
@@ -105,14 +105,14 @@ git commit -m "chore(model): update descriptor to HF rev <sha>"
 
 ## ModelDescriptor Contract
 
-The `model-descriptor.json` file (committed to the repo and distributed with each ONNX release) defines the architecture contract between the model and the TypeScript engine:
+The `model-descriptor.json` file (committed to the repo and distributed with each weight file release) defines the architecture contract between the model and the TypeScript engine:
 
 | Field               | Source                  | Purpose                                    |
 | ------------------- | ----------------------- | ------------------------------------------ |
 | `schema`            | Constant (1)            | Forward compatibility version              |
 | `model.hf_revision` | HuggingFace API         | Traceability to exact PyTorch checkpoint   |
-| `onnx.input_shape`  | ONNX graph              | Runtime shape validation                   |
-| `onnx.sha256`       | Computed from ONNX file | Download integrity verification            |
+| `weights`  | weight file              | Runtime shape validation                   |
+| `weights.sha256`       | Computed from weight file | Download integrity verification            |
 | `architecture.*`    | PyTorch model params    | Configures the TypeScript engine           |
 | `tokenizer.*`       | Model config            | Vocabulary size, maxTokens, special tokens |
 
@@ -127,7 +127,7 @@ The engine reads this descriptor at runtime via `loadModelDescriptor()` and conv
 | 1      | `@agentix-e/embed-code-core` ≥ 0.1.0 | Current                                                         |
 | > 1    | Upgrade required                     | Engine logs warning and falls back to `NOMIC_EMBED_CODE_CONFIG` |
 
-If a future nomic-embed-code model version has a different architecture, updating `export-onnx.py` to generate the new descriptor is sufficient — no TypeScript code changes are needed as long as the schema version is compatible.
+If a future nomic-embed-code model version has a different architecture, updating `export-weights.py` to generate the new descriptor is sufficient — no TypeScript code changes are needed as long as the schema version is compatible.
 
 ---
 
@@ -138,7 +138,7 @@ When a new model version is released:
 ```
 1. New HF model detected
        │
-2. Export int8 ONNX (~140 MB)
+2. Export int8 weights (~137 MB)
        │
 3. Validate:
    ├─ Model loads correctly ✓
@@ -147,7 +147,7 @@ When a new model version is released:
    └─ Benchmark regression ≤ 5% ✓
        │
 4. Release:
-   ├─ GitHub Release: publish int8 ONNX + descriptor
+   ├─ GitHub Release: publish int8 weights + descriptor
    └─ Update model-latest tag
 ```
 
@@ -159,8 +159,8 @@ When a new model version is released:
 | ------------------------------------ | ----------------------------------------------------------------------------------------------- |
 | Nightly check not detecting changes  | Verify `models/model-descriptor.json` is committed with the current HF revision                 |
 | Model release fails                  | Check the workflow run logs; force re-run with `force: true`                                    |
-| `downloadModel()` fails              | Verify `model-latest` release exists and contains both `.onnx` and `model-descriptor.json`      |
+| `downloadModel()` fails              | Verify `model-latest` release exists and contains both `.weights.bin` and `model-descriptor.json`      |
 | `downloadModel()` fails behind proxy | Set `HTTPS_PROXY` or `EMBED_CODE_PROXY_URL` environment variables (see README Proxy section)    |
 | `downloadModel()` fails with 407     | Proxy authentication required — set `EMBED_CODE_PROXY_USERNAME` and `EMBED_CODE_PROXY_PASSWORD` |
 | Engine rejects model                 | Descriptor schema > `ENGINE_SUPPORTED_SCHEMA` — upgrade `@agentix-e/embed-code-core`            |
-| Local tests need ONNX model          | Export locally: `python3 scripts/export-onnx.py` or `npm run pipeline:export`                   |
+| Local tests need weight file          | Export locally: `python3 scripts/export-weights.py` or `npm run pipeline:export`                   |

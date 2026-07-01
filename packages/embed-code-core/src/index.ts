@@ -1,18 +1,16 @@
 /**
  * @agentix-e/embed-code-core
  *
- * TypeScript/Node.js implementation of nomic-embed-code —
- * a state-of-the-art code embedding model for semantic code search.
- *
- * The npm package is code-only (~50 KB).  The int8 ONNX model is distributed
- * as a GitHub Release asset and downloaded on first use.
+ * Pure-TypeScript nomic-embed-code inference engine.
+ * Int8 weights embedded directly in the npm package (incbin-style).
+ * No ONNX Runtime, no native bindings — zero-dependency inference.
  *
  * @example
  * ```typescript
- * import { EmbedCode, downloadModel } from '@agentix-e/embed-code-core';
+ * import { EmbedCode } from '@agentix-e/embed-code-core';
  *
- * const modelPath = await downloadModel();
- * const embedder = await EmbedCode.fromPretrained({ modelPath });
+ * // Load from embedded weights (recommended incbin-style)
+ * const embedder = await EmbedCode.fromPretrained({ weightsBuffer, tokenizerPath });
  *
  * const results = await embedder.embed([
  *   'search_query: Calculate factorial',
@@ -27,7 +25,7 @@
 // Main API
 export { EmbedCode } from './embed-code';
 
-// Model downloader
+// Model downloader (for environments without embedded weights)
 export {
   downloadModel,
   defaultModelPath,
@@ -43,10 +41,11 @@ export {
   EMBED_TEXT_V15_CONFIG,
 } from './model-descriptor';
 
-// Inference engine (for advanced use)
-export { EmbedCodeInferenceEngine } from './inference/onnx-engine';
+// Inference engine (pure TypeScript, zero dependencies)
+export { EmbedCodeTSEngine } from './inference/ts-engine';
+export { WeightBuffer } from './inference/weights';
 
-// Tokenizer (for advanced use)
+// Tokenizer (BPE, for advanced use)
 export { Tokenizer } from './tokenizer';
 
 // Pooling utilities
@@ -67,7 +66,7 @@ export type {
   DownloadOptions,
   ProxyConfig,
   IInferenceEngine,
-  OrtTensor,
+  Tensor,
   TokenizationResult,
 } from './types';
 

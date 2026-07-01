@@ -20,7 +20,7 @@ npx @agentix-e/embed-code-cli embed "your code here"
 ## Quick Start
 
 ```bash
-# Download model (first time only, ~140 MB)
+# Download model (first time only, ~7 GB)
 embed-code setup
 
 # With proxy (corporate network)
@@ -40,10 +40,10 @@ embed-code embed "function add(a, b) { return a + b; }"
 embed-code embed -f source.py
 
 # Custom model path and options
-embed-code embed -m ./custom.onnx -f source.ts --pooling mean
+embed-code embed -m ./custom.weights.bin -f source.ts --pooling mean
 
 # Show model info
-embed-code info -m ./models/nomic-embed-text-v1.5-int8.onnx
+embed-code info -m ./models/nomic-embed-text-v1.5-int8.weights.bin
 ```
 
 ## Model Path Resolution

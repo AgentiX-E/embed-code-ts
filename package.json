@@ -2,7 +2,8 @@
   "name": "agentix-embed-code-ts",
   "version": "0.1.0",
   "private": true,
-  "description": "nomic-embed-code int8 ONNX weights in a TypeScript npm package \u2014 incbin-style",
+  "description": "nomic-embed-code int8 weights in a TypeScript npm package — pure-TS incbin-style inference",
+
   "workspaces": [
     "packages/embed-code-core",
     "packages/embed-code-cli"
@@ -25,14 +26,14 @@
     "format": "prettier --write .",
     "clean": "rimraf packages/*/dist packages/*/tsconfig.tsbuildinfo coverage",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "export:model": "python3 scripts/export-onnx.py --output models/nomic-embed-code-v1-int8.onnx",
+    "export:weights": "python3 scripts/export-weights.py --output models/nomic-embed-code-v1-int8.weights.bin",
     "pipeline": "node scripts/pipeline.js",
     "pipeline:export": "node scripts/pipeline.js --export",
     "pipeline:test": "node scripts/pipeline.js --test",
     "docs:generate": "typedoc",
     "changeset": "changeset",
     "prepare": "husky",
-    "release": "node scripts/pipeline.js && gh release create v$(node -p \"require('./package.json').version\") models/nomic-embed-code-v1-int8.onnx models/model-descriptor.json --title \"nomic-embed-code v1 int8 ONNX\" --notes \"Pre-exported nomic-embed-code v1 int8 ONNX model for embed-code-ts.\""
+    "release": "node scripts/pipeline.js && gh release create v$(node -p \"require('./package.json').version\") models/nomic-embed-code-v1-int8.weights.bin models/model-descriptor.json --title \"nomic-embed-code v1 int8 weights\" --notes \"Pre-exported nomic-embed-code v1 int8 weights for embed-code-ts.\""
   },
   "lint-staged": {
     "*.{ts,js,mjs,cjs}": [
@@ -71,8 +72,10 @@
     "nomic",
     "embed-code",
     "code-embedding",
-    "onnx",
     "int8",
-    "typescript"
+    "incbin",
+    "typescript",
+    "pure-ts",
+    "bert"
   ]
 }

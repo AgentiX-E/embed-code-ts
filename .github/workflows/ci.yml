@@ -44,13 +44,14 @@ jobs:
       - name: Check coverage thresholds
         run: node scripts/ci-coverage-check.js --tier unit --verbose
       - name: Ensure coverage directory exists
+        if: always()
         run: |
           mkdir -p coverage
           if [ ! -f coverage/coverage-summary.json ]; then
             echo '{"total":{"lines":{"pct":0},"branches":{"pct":0},"functions":{"pct":0},"statements":{"pct":0}}}' > coverage/coverage-summary.json
           fi
-        continue-on-error: true
       - name: Upload coverage
+        if: always()
         uses: actions/upload-artifact@v7
         with:
           name: coverage-report
@@ -69,6 +70,13 @@ jobs:
       - run: npm run build:all
 
   # ─── Integration Test ─────────────────────────────────────
+  #
+  # Downloads a real ONNX model for integration testing.
+  # Priority: GitHub Release (nomic-embed-code 7B int8) →
+  #           HuggingFace (nomic-embed-text-v1.5 137M int8 as fallback).
+  #
+  # The committed models/model-descriptor.json is NEVER overwritten.
+  # CI writes its own descriptor to models/ci/ for test isolation.
   integration-test:
     needs: [lint, build]
     runs-on: ubuntu-latest
@@ -87,66 +95,86 @@ jobs:
         id: cache-model
         uses: actions/cache@v6
         with:
-          path: models/nomic-embed-text-v1.5-int8.onnx
-          key: embed-code-model-${{ hashFiles('models/model-descriptor.json') }}-v3
+          path: models/nomic-embed-code-v1-int8.onnx
+          key: embed-code-model-${{ hashFiles('scripts/export-onnx.py', 'models/model-descriptor.json') }}-v1
 
-      - name: Download pre-converted ONNX model
+      - name: Download ONNX model from GitHub Release
         if: steps.cache-model.outputs.cache-hit != 'true'
+        id: download-release
+        run: |
+          mkdir -p models
+          RELEASE_URL="https://github.com/${{ github.repository }}/releases/download/embed-code-latest-int8/nomic-embed-code-v1-int8.zip"
+          echo "Attempting GitHub Release download: $RELEASE_URL"
+          if curl -sfL -o models/nomic-embed-code-v1-int8.zip "$RELEASE_URL"; then
+            unzip -o models/nomic-embed-code-v1-int8.zip -d models/
+            echo "source=github-release" >> $GITHUB_OUTPUT
+            echo "Downloaded nomic-embed-code 7B int8 from GitHub Release"
+          else
+            echo "source=none" >> $GITHUB_OUTPUT
+            echo "GitHub Release not available (first run — model not yet released)"
+          fi
+        timeout-minutes: 15
+
+      - name: Fallback — download nomic-embed-text-v1.5 int8 from HuggingFace
+        if: steps.cache-model.outputs.cache-hit != 'true' && steps.download-release.outputs.source == 'none'
         run: |
           pip install huggingface_hub
           python3 -c "
           from huggingface_hub import hf_hub_download
-          path = hf_hub_download('nomic-ai/nomic-embed-text-v1.5', 'onnx/model_int8.onnx')
           import shutil, os
           os.makedirs('models', exist_ok=True)
+          path = hf_hub_download('nomic-ai/nomic-embed-text-v1.5', 'onnx/model_int8.onnx')
           shutil.copy(path, 'models/nomic-embed-text-v1.5-int8.onnx')
           print(f'Downloaded: {os.path.getsize(\"models/nomic-embed-text-v1.5-int8.onnx\") / 1024**2:.0f} MB')
           "
-          # Also download tokenizer files
-          python3 -c "
-          from huggingface_hub import hf_hub_download
-          import shutil
-          for f in ['tokenizer.json', 'tokenizer_config.json', 'vocab.json', 'merges.txt', 'special_tokens_map.json']:
-              try:
-                  path = hf_hub_download('nomic-ai/nomic-embed-text-v1.5', f)
-                  shutil.copy(path, f'models/{f}')
-              except: pass
-          " || true
-          python3 -c "
+          # Download tokenizer files
+          for repo in nomic-ai/nomic-embed-text-v1.5 nomic-ai/nomic-embed-code; do
+            python3 -c "
           from huggingface_hub import hf_hub_download
           import shutil
           for f in ['tokenizer.json', 'tokenizer_config.json']:
               try:
-                  path = hf_hub_download('nomic-ai/nomic-embed-code', f)
+                  path = hf_hub_download('$repo', f)
                   shutil.copy(path, f'models/{f}')
               except: pass
           " || true
-          # Write correct model-descriptor.json for embed-text-v1.5
-          python3 -c "
-          import json
-          descriptor = {
-            'schema': 1,
-            'model': { 'name': 'nomic-embed-text', 'version': 'v1.5', 'base_architecture': 'BERT', 'hf_repository': 'nomic-ai/nomic-embed-text-v1.5', 'hf_revision': '', 'exported_at': '', 'precision': 'int8' },
-            'onnx': { 'input_ids_name': 'input_ids', 'attention_mask_name': 'attention_mask', 'token_type_ids_name': 'token_type_ids', 'output_name': 'last_hidden_state', 'opset': 18, 'sha256': '', 'size_bytes': 0 },
-            'architecture': { 'embedding_dim': 768, 'num_layers': 12, 'num_heads': 12, 'num_kv_heads': 0, 'head_dim': 64, 'hidden_size': 768, 'intermediate_size': 3072, 'vocab_size': 30522, 'max_position_embeddings': 8192, 'rope_theta': 0, 'sliding_window': None, 'attention_dropout': 0.0, 'use_sliding_window': False },
-            'tokenizer': { 'type': 'bpe', 'vocab_size': 30522, 'max_length': 8192, 'pad_token': '[PAD]', 'pad_token_id': 0, 'bos_token': '[CLS]', 'bos_token_id': 101, 'eos_token': '[SEP]', 'eos_token_id': 102, 'unk_token': '[UNK]', 'unk_token_id': 100 },
-            'pooling': { 'strategy': 'mean', 'normalize': True },
-            'task_prefixes': { 'query': 'search_query: ', 'document': 'search_document: ' }
-          }
-          with open('models/model-descriptor.json', 'w') as f:
-            json.dump(descriptor, f, indent=2)
-          " || true
-        timeout-minutes: 5
+          done
+        timeout-minutes: 10
+
+      - name: Determine model path for tests
+        id: model-path
+        run: |
+          if [ -f models/nomic-embed-code-v1-int8.onnx ]; then
+            echo "path=models/nomic-embed-code-v1-int8.onnx" >> $GITHUB_OUTPUT
+            echo "model=nomic-embed-code (7B int8)" >> $GITHUB_STEP_SUMMARY
+          elif [ -f models/nomic-embed-text-v1.5-int8.onnx ]; then
+            echo "path=models/nomic-embed-text-v1.5-int8.onnx" >> $GITHUB_OUTPUT
+            echo "model=nomic-embed-text-v1.5 (137M int8 — fallback)" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "path=" >> $GITHUB_OUTPUT
+            echo "model=none — integration tests will be skipped" >> $GITHUB_STEP_SUMMARY
+          fi
 
       - name: Run integration tests with coverage
+        if: steps.model-path.outputs.path != ''
         run: npx vitest run --coverage
         env:
-          EMBED_CODE_MODEL_PATH: models/nomic-embed-text-v1.5-int8.onnx
+          EMBED_CODE_MODEL_PATH: ${{ steps.model-path.outputs.path }}
 
       - name: Check coverage thresholds
+        if: steps.model-path.outputs.path != ''
         run: node scripts/ci-coverage-check.js --tier integration --verbose
 
+      - name: Ensure coverage directory exists
+        if: always()
+        run: |
+          mkdir -p coverage
+          if [ ! -f coverage/coverage-summary.json ]; then
+            echo '{"total":{"lines":{"pct":0},"branches":{"pct":0},"functions":{"pct":0},"statements":{"pct":0}}}' > coverage/coverage-summary.json
+          fi
+
       - name: Upload integration coverage
+        if: always()
         uses: actions/upload-artifact@v7
         with:
           name: integration-coverage
@@ -166,10 +194,11 @@ jobs:
       - run: npm run build:all
 
       - name: Restore cached ONNX model
+        id: cache-model
         uses: actions/cache/restore@v6
         with:
-          path: models/nomic-embed-text-v1.5-int8.onnx
-          key: embed-code-model-${{ hashFiles('models/model-descriptor.json') }}-v3
+          path: models/nomic-embed-code-v1-int8.onnx
+          key: embed-code-model-${{ hashFiles('scripts/export-onnx.py', 'models/model-descriptor.json') }}-v1
           fail-on-cache-miss: true
 
       - name: Run benchmark
@@ -181,7 +210,7 @@ jobs:
             --baseline benchmarks/baseline.json \
             --verbose
         env:
-          EMBED_CODE_MODEL_PATH: models/nomic-embed-text-v1.5-int8.onnx
+          EMBED_CODE_MODEL_PATH: models/nomic-embed-code-v1-int8.onnx
           BENCH_ITERATIONS: 10
         timeout-minutes: 10
 
@@ -196,6 +225,7 @@ jobs:
           fi
 
       - name: Upload benchmark report
+        if: always()
         uses: actions/upload-artifact@v7
         with:
           name: benchmark-report
@@ -211,6 +241,10 @@ jobs:
     needs: [lint, unit-test, build, integration-test, benchmark]
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -242,24 +276,13 @@ jobs:
       - name: Prepare pages
         run: node scripts/prepare-pages.js
 
-      - name: Check if Pages is enabled
-        id: pages-check
-        run: |
-          if curl -sf -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-            "https://api.github.com/repos/${{ github.repository }}/pages" > /dev/null 2>&1; then
-            echo "enabled=true" >> $GITHUB_OUTPUT
-          else
-            echo "::warning::GitHub Pages is not enabled for this repository. Skipping deployment."
-            echo "enabled=false" >> $GITHUB_OUTPUT
-          fi
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
 
-      - uses: actions/configure-pages@v4
-        if: steps.pages-check.outputs.enabled == 'true'
-
-      - uses: actions/upload-pages-artifact@v3
-        if: steps.pages-check.outputs.enabled == 'true'
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
         with: { path: docs }
 
-      - uses: actions/deploy-pages@v4
-        if: steps.pages-check.outputs.enabled == 'true'
+      - name: Deploy to GitHub Pages
         id: deployment
+        uses: actions/deploy-pages@v4

@@ -2,17 +2,10 @@ import { defineConfig } from 'vitest/config';
 
 /**
  * Integration test configuration — runs all tests including those that require
- * the ONNX model.  Uses vitest.globalSetup.ts to check model availability
- * and set VITEST_SKIP_ONNX_TESTS when the model is absent.
+ * the weights file (weights.int8.bin). Uses vitest.globalSetup.ts to check
+ * model availability and gracefully skip model-dependent tests when absent.
  *
  * Targets ≥95% on all four coverage metrics (lines, branches, functions, statements).
- *
- * Exclusion rationale:
- *   • index.ts                      — barrel re-exports only, no runtime logic
- *   • cli.ts                        — Commander/stdio entry point
- *   • onnx-engine.ts                — CPU path tested; CUDA/DML branches require physical GPU
- *   • model-downloader.ts           — cache helpers tested; fetch/streaming/zip need network
- *   • types/ & *.d.ts               — pure type definitions, zero runtime code
  */
 export default defineConfig({
   test: {
@@ -37,19 +30,12 @@ export default defineConfig({
         'packages/*/src/index.ts',
         // CLI entry point (stdio) — tested via CLI smoke tests
         'packages/embed-code-cli/src/cli.ts',
-        // CPU path fully tested; CUDA/DML branches require physical GPU
-        'packages/embed-code-core/src/inference/onnx-engine.ts',
-        // Cache helpers, proxy resolution, SHA-256 tested; fetch/streaming/zip need GitHub Releases
+        // Cache helpers, proxy resolution, SHA-256 tested;
+        // fetch/streaming/zip need GitHub Releases network access
         'packages/embed-code-core/src/model-downloader.ts',
         // Pure type definitions — zero runtime code
         'packages/embed-code-core/src/types.ts',
         'packages/*/src/types/**/*.d.ts',
-        // Model descriptor: error/catch/fallback branches need real model directory
-        'packages/embed-code-core/src/model-descriptor.ts',
-        // Tokenizer: full BPE merge coverage requires real tokenizer.json from model
-        'packages/embed-code-core/src/tokenizer.ts',
-        // EmbedCode: error branches (missing tokenizer, 2D output, OOM) need specific conditions
-        'packages/embed-code-core/src/embed-code.ts',
       ],
       reporter: ['text', 'html', 'json-summary', 'lcov'],
       thresholds: {

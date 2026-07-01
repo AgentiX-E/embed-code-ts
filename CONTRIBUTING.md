@@ -29,7 +29,7 @@ embed-code-ts/
 # Install dependencies and build
 npm install && npm run build:all
 
-# Run all tests (requires ONNX model)
+# Run all tests (requires weights file)
 npm test
 
 # Watch mode
@@ -41,7 +41,7 @@ npm run test:unit
 # Unit tests with coverage (≥95% thresholds enforced)
 npm run test:unit:coverage
 
-# Full coverage report (unit + integration, requires ONNX model, ≥95% thresholds)
+# Full coverage report (unit + integration, requires weights file, ≥95% thresholds)
 npm run test:coverage
 
 # Lint
@@ -58,28 +58,28 @@ npm run format:check
 Before submitting a PR, ensure:
 
 1. **Unit tests pass with ≥95% coverage**: `npm run test:unit:coverage`
-2. **Integration tests pass with ≥95% coverage** (requires ONNX model): `npm run test:coverage`
+2. **Integration tests pass with ≥95% coverage** (requires weights file): `npm run test:coverage`
 3. **Lint passes**: `npm run lint && npm run format:check`
 4. **Build succeeds**: `npm run build:all`
 
 > **Local ↔ CI parity**: The local test configs use the exact same vitest configs as CI. If it passes locally, it will pass on CI — no surprises.
 
-### Setting Up the ONNX Model Locally
+### Setting Up the Weights File Locally
 
-For integration tests and benchmarks, you need the ~140 MB int8 ONNX model:
+For integration tests and benchmarks, you need the ~137 MB int8 weights file:
 
 ```bash
 # Option A: One-click pipeline (exports model, runs tests, runs benchmarks)
 npm run pipeline
 
 # Option B: Export only (requires Python 3.10+ and PyTorch)
-python3 scripts/export-onnx.py --output models/nomic-embed-text-v1.5-int8.onnx
+python3 scripts/export-weights.py --output models/nomic-embed-text-v1.5-int8.weights.bin
 
 # Option C: Download from GitHub Releases (requires network)
-node -e "const {downloadModel}=require('@agentix-e/embed-code-core');downloadModel({dest:'./models/nomic-embed-text-v1.5-int8.onnx'})"
+node -e "const {downloadModel}=require('@agentix-e/embed-code-core');downloadModel({dest:'./models/nomic-embed-text-v1.5-int8.weights.bin'})"
 ```
 
-The model file is gitignored — it should be at `models/nomic-embed-text-v1.5-int8.onnx` for local development.
+The model file is gitignored — it should be at `models/nomic-embed-text-v1.5-int8.weights.bin` for local development.
 
 ### Pre-commit Hook
 
@@ -88,8 +88,8 @@ On `git commit`, the **pre-commit hook** runs lint and format checks automatical
 ## Model Management
 
 ```bash
-# Export ONNX model
-python3 scripts/export-onnx.py
+# Export weights file
+python3 scripts/export-weights.py
 
 # Check latest HuggingFace version
 npm run check:latest
@@ -120,7 +120,7 @@ refactor: restructure module W
 - TypeScript strict mode
 - Functions over classes (utils module)
 - Float32Array/Int32Array for all tensor operations
-- No `any` types (unless required by ONNX Runtime interfaces)
+- No `any` types (unless required by pure-TypeScript interfaces)
 - Clear export naming: `camelCase` function names, `PascalCase` class names
 - Interfaces use `I` prefix (e.g. `IEmbedCode`, `IInferenceEngine`)
 

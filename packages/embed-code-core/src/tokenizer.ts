@@ -30,9 +30,14 @@ export class Tokenizer {
     }
 
     // Load BPE merges
+    // HuggingFace format: ["h e", "l l", ...] — space-separated token pairs.
+    // BPE algorithm looks up concatenated pairs (no space), so we store
+    // keys as "he" instead of "h e".
     if (data.model?.merges) {
       for (const [idx, merge] of (data.model.merges as string[]).entries()) {
-        this.merges.set(merge, idx);
+        // Normalize: remove spaces from merge pair for lookup compatibility
+        const normalized = merge.replace(/ /g, '');
+        this.merges.set(normalized, idx);
       }
     }
 

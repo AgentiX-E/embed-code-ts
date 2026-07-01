@@ -17,7 +17,15 @@ export interface ModelDescriptor {
     exported_at: string;
     precision: string;
   };
-  onnx: {
+  weights?: {
+    input_ids_name: string;
+    attention_mask_name: string;
+    output_name: string;
+    sha256: string;
+    size_bytes: number;
+  };
+  /** @deprecated — use `weights` instead */
+  onnx?: {
     input_ids_name: string;
     attention_mask_name: string;
     output_name: string;
@@ -76,16 +84,16 @@ export interface TaskPrefixDescriptor {
 // ─── Model Load Options ─────────────────────────────────────
 
 export interface ModelLoadOptions {
-  /** Path to the ONNX model file. Required. */
-  modelPath: string;
-  /** ONNX Runtime execution provider: 'cpu' (default), 'cuda', 'dml' */
-  executionProvider?: string;
-  /** Number of intra-op threads for CPU provider */
-  intraOpNumThreads?: number;
-  /** Skip the warmup inference run */
-  skipWarmup?: boolean;
+  /** Path to the weights binary file (weights.int8.bin). Required if weightsBuffer not set. */
+  modelPath?: string;
+  /** Pre-loaded weights buffer (ArrayBuffer or Uint8Array) for incbin-style embedding. */
+  weightsBuffer?: ArrayBuffer | Uint8Array | any;
   /** Path to tokenizer.json (default: resolve from model directory) */
   tokenizerPath?: string;
+  /** Skip the warmup inference run */
+  skipWarmup?: boolean;
+  /** Number of intra-op threads for CPU provider */
+  intraOpNumThreads?: number;
 }
 
 // ─── Embed Options ──────────────────────────────────────────
@@ -123,7 +131,7 @@ export interface EmbeddingResult {
 // ─── Download Types ─────────────────────────────────────────
 
 export interface DownloadOptions {
-  /** Target file path (default: ~/.cache/agentix-embed-code-ts/nomic-embed-code-v1-int8.onnx) */
+  /** Target file path (default: ~/.cache/agentix-embed-code-ts/nomic-embed-code-v1-int8.weights.bin) */
   dest?: string;
   /** Force re-download even if file exists */
   force?: boolean;
@@ -149,12 +157,12 @@ export interface ProxyConfig {
 
 export interface IInferenceEngine {
   isLoaded(): boolean;
-  load(modelPath: string, options?: { skipWarmup?: boolean }): Promise<void>;
-  run(feeds: Record<string, OrtTensor>): Promise<Record<string, OrtTensor>>;
+  load(source: any, options?: { skipWarmup?: boolean }): Promise<void>;
+  run(feeds: Record<string, Tensor>): Promise<Record<string, Tensor>>;
   dispose(): Promise<void>;
 }
 
-export interface OrtTensor {
+export interface Tensor {
   data: Float32Array | Int32Array | BigInt64Array;
   dims: number[];
   type: string;

@@ -25,14 +25,14 @@
 │  ┌──────────────────────────────────────────┐              │
 │  │         Embedding Pipeline                │              │
 │  │  Step 1: Tokenize (BPE)                   │              │
-│  │  Step 2: ONNX Inference (int8 ONNX)       │              │
+│  │  Step 2: 
 │  │  Step 3: Pool (last_token/mean/cls)       │              │
 │  │  Step 4: Normalize (L2)                   │              │
 │  └────────────────┬─────────────────────────┘              │
 │                   │ uses                                     │
 │  ┌────────────────▼─────────────────────────┐              │
 │  │    EmbedCodeInferenceEngine               │              │
-│  │  IInferenceEngine → ONNX Runtime backend   │              │
+│  │  IInferenceEngine → pure-TypeScript backend   │              │
 │  │  CPU / CUDA / DirectML                     │              │
 │  └──────────────────────────────────────────┘              │
 │                                                              │
@@ -90,7 +90,7 @@ Input Text(s)
     │       └─ Generate attention mask
     │
     ├─→ [infer()]
-    │       ├─ Build ONNX input tensors
+    │       ├─ Build build input tensors
     │       ├─ engine.forward() → hidden states
     │       └─ Extract last_hidden_state [B, L, 3584]
     │
@@ -100,15 +100,15 @@ Input Text(s)
             └─ Return Float32Array(N × 3584)
 ```
 
-### 4. ONNX Inference Engine
+### 4. TS Inference Engine
 
-**File**: `packages/embed-code-core/src/inference/onnx-engine.ts`
+**File**: `packages/embed-code-core/src/inference/ts-engine.ts`
 
 Implements `IInferenceEngine`:
 
 - **Pluggable execution providers**: CPU / CUDA / DirectML
 - **Dynamic shape handling**: Variable-length inputs auto-padded to model maxTokens
-- **Concurrent batch inference**: `Promise.all` for parallel ONNX session calls
+- **Concurrent batch inference**: `Promise.all` for parallel TS session calls
 - **Proper resource cleanup**: Calls `session.release()` on dispose
 
 ### 5. Pooling Strategies
@@ -125,9 +125,9 @@ Implements `IInferenceEngine`:
 
 **File**: `packages/embed-code-core/src/model-downloader.ts`
 
-- **Streaming download**: Uses Node.js `fetch` reader → file `writeStream` (no 140 MB heap buffer)
+- **Streaming download**: Uses Node.js `fetch` reader → file `writeStream` (no large heap buffer for multi-GB models)
 - **Proxy support**: Environment variables (`EMBED_CODE_PROXY_URL/USERNAME/PASSWORD`, `HTTPS_PROXY`) or programmatic `DownloadOptions.proxy` with username/password. Uses undici `ProxyAgent` for clean proxy handling without global environment mutations
-- **SHA-256 integrity**: Hashes the ONNX file after download for verification
+- **SHA-256 integrity**: Hashes the TS file after download for verification
 - **Cache management**: Platform-aware cache directory (`XDG_CACHE_HOME`)
 - **Error hierarchy**: `ProxyAuthError` (HTTP 407), `DownloadError`, `ChecksumMismatchError`
 
@@ -142,7 +142,7 @@ model-descriptor.json → resolveModelConfig() → ModelConfig
     │
     └─ Single source of truth for:
        ├─ model.hf_revision    (HuggingFace checkpoint)
-       ├─ onnx.sha256          (download integrity)
+       ├─ weights.sha256          (download integrity)
        ├─ architecture.*       (dim, maxTokens, vocabSize)
        └─ processing.*         (tokenizer config, pooling defaults)
 ```
@@ -184,7 +184,7 @@ EmbedOptions         — mutable options (passed to embed())
 ModelConfig          — frozen, read-only (resolved from descriptor)
 EmbeddingResult      — { embeddings: Float32Array, shape: [number, number], elapsedMs: number }
 EmbedProgress        — { phase: 'tokenize' | 'inference' | 'pool' | 'normalize', step: number, total: number }
-IInferenceEngine     — pluggable backend (ONNX)
+IInferenceEngine     — pluggable backend (TS)
 ```
 
 ---
@@ -193,7 +193,7 @@ IInferenceEngine     — pluggable backend (ONNX)
 
 1. **Incbin-inspired delivery**: npm package is code-only (~50 KB); model is downloaded on-demand and cached
 2. **Functional core, imperative shell**: All utility functions are pure; only `EmbedCode` manages state
-3. **Interface-based abstraction**: `IInferenceEngine` decouples the model from ONNX Runtime
+3. **Interface-based abstraction**: `IInferenceEngine` decouples the model from pure-TypeScript
 4. **Self-describing models**: `model-descriptor.json` is the single source of truth for architecture constants — `fromPretrained()` resolves `ModelConfig` via `resolveModelConfig()` from the descriptor
 5. **Zero-dependency core for basic usage**: Only `onnxruntime-node` (dynamic import) at inference time
 6. **Python parity**: Every source file cites the corresponding HuggingFace/Python source for cross-verification
@@ -205,7 +205,7 @@ IInferenceEngine     — pluggable backend (ONNX)
 
 | Package                      | Code Size | Dependencies                 |
 | ---------------------------- | --------- | ---------------------------- |
-| `@agentix-e/embed-code-core` | ~50 KB    | `onnxruntime-node` (dynamic) |
+| `@agentix-e/embed-code-core` | ~50 KB    | embedded weights |
 | `@agentix-e/embed-code-cli`  | ~10 KB    | `commander`                  |
 
-Model weights (~140 MB int8 ONNX) are downloaded separately from GitHub Releases.
+Model weights (~137 MB int8 TS for nomic-embed-code 7B) are downloaded separately from GitHub Releases.

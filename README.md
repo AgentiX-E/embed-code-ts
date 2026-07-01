@@ -7,7 +7,7 @@
 [![Benchmark Report](https://img.shields.io/badge/benchmark-latest-blue)](https://agentix-e.github.io/embed-code-ts/benchmark/)
 [![Coverage](https://img.shields.io/badge/coverage-report-blue)](https://agentix-e.github.io/embed-code-ts/coverage/)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue)](https://www.typescriptlang.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-6.0-blue)](https://www.typescriptlang.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-%3E%3D22-green)](https://nodejs.org/)
 
 ## Overview
@@ -19,9 +19,9 @@ The model weights are distributed with an **incbin-inspired approach**: the npm 
 ### Architecture
 
 ```
-Input Text → [Tokenizer] → [ONNX Runtime] → [Pooling] → [Normalize] → Embedding
+Input Text → [Tokenizer] → [inference engine] → [Pooling] → [Normalize] → Embedding
                (BPE)       (nomic-embed-code   (last_token/    (L2 norm)
-                             int8 ONNX)          mean/cls)
+                             int8 weights)          mean/cls)
 ```
 
 ### Key Features
@@ -31,7 +31,7 @@ Input Text → [Tokenizer] → [ONNX Runtime] → [Pooling] → [Normalize] → 
 - **Incbin-style delivery** — npm package is code-only; model downloaded on-demand and cached
 - **Task prefix support** — `search_query:`, `search_document:` for semantic search
 - **Multiple pooling strategies** — last_token, mean, cls pooling
-- **Production-grade** — built on ONNX Runtime's native C++ backend (CPU, CUDA, DirectML)
+- **Production-grade** — built on inference engine's native C++ backend (CPU, CUDA, DirectML)
 - **Verified accuracy** — cosine similarity preservation verified in benchmarks, see [latest benchmark](https://agentix-e.github.io/embed-code-ts/benchmark/)
 
 ## Packages
@@ -41,16 +41,16 @@ Input Text → [Tokenizer] → [ONNX Runtime] → [Pooling] → [Normalize] → 
 | `@agentix-e/embed-code-core` | [![npm](https://img.shields.io/npm/v/@agentix-e/embed-code-core?color=blue)](https://www.npmjs.com/package/@agentix-e/embed-code-core) | Core inference engine + tokenizer + pooling + model downloader |
 | `@agentix-e/embed-code-cli`  | [![npm](https://img.shields.io/npm/v/@agentix-e/embed-code-cli?color=blue)](https://www.npmjs.com/package/@agentix-e/embed-code-cli)   | CLI tool (includes `embed-code setup` auto model download)     |
 
-> **Layered strategy**: npm packages contain only code (~50 KB), models (~140 MB int8 ONNX) are downloaded on-demand via GitHub Releases.
+> **Layered strategy**: npm packages contain only code (~50 KB), models (~137 MB int8 weights for 7B Qwen2.5-based nomic-embed-code) are downloaded on-demand via GitHub Releases.
 
 ## Quick Start
 
 ### Option 1 — npm install (recommended, code only)
 
 ```bash
-npm install @agentix-e/embed-code-core onnxruntime-node
 
-# Auto download model ~140 MB (first time only)
+
+# Auto download model ~7 GB (first time only)
 node -e "const {downloadModel}=require('@agentix-e/embed-code-core');downloadModel()"
 ```
 
@@ -66,7 +66,7 @@ const modelPath = await downloadModel({
   },
 });
 
-// Create embedder from pretrained ONNX
+// Create embedder from pretrained weights
 const embedder = await EmbedCode.fromPretrained({ modelPath });
 
 // Generate code embeddings
@@ -148,9 +148,9 @@ embed-code-ts/
 │   │   │   ├── model-descriptor.ts # Model descriptor resolver
 │   │   │   ├── model-downloader.ts # Model downloader + proxy
 │   │   │   ├── inference/
-│   │   │   │   └── onnx-engine.ts  # ONNX Runtime inference engine
+│   │   │   │   └── ts-engine.ts  # inference engine inference engine
 │   │   │   └── types/
-│   │   │       ├── onnx.d.ts       # ONNX Runtime type shims
+│   │   │       ├── weights.ts       # inference engine type shims
 │   │   │       └── undici.d.ts     # undici ProxyAgent type shims
 │   │   └── test/
 │   │       ├── unit/               # Fast unit tests (no model needed)
@@ -166,7 +166,7 @@ embed-code-ts/
 │   ├── ci-benchmark-check.js    # Benchmark quality gate
 │   ├── ci-coverage-check.js     # Coverage threshold verification
 │   ├── prepare-pages.js         # GitHub Pages preparation
-│   └── export-onnx.py           # PyTorch → ONNX exporter
+│   └── export-weights.py           # PyTorch → int8 weights exporter
 ├── benchmarks/
 │   └── baseline.json            # Performance regression baseline
 ├── .github/
@@ -212,7 +212,7 @@ npm run format:check
 
 - **Model**: [nomic-ai/nomic-embed-code](https://huggingface.co/nomic-ai/nomic-embed-code) on HuggingFace
 - **Paper**: [Nomic Embed: Training a Reproducible Long Context Text Embedder](https://arxiv.org/abs/2402.01613)
-- **ONNX Runtime**: [onnxruntime.ai](https://onnxruntime.ai/)
+- **inference engine**: [github.com/AgentiX-E/embed-code-ts](https://github.com/AgentiX-E/embed-code-ts)
 
 ## Known Limitations
 
@@ -239,7 +239,7 @@ npm run format:check
 | **Node.js**           | ≥ 22.x                  | ≥ 22.x                             |
 | **RAM**               | 512 MB                  | 2 GB+                              |
 | **Disk (code)**       | 10 MB                   | —                                  |
-| **Disk (model)**      | 140 MB                  | SSD                                |
+| **Disk (model)**      | 7 GB                    | SSD                                |
 | **GPU** (optional)    | 2 GB VRAM               | 4 GB+ VRAM (CUDA)                  |
 | **Python** (optional) | ≥ 3.10                  | Only needed for HuggingFace export |
 
@@ -247,24 +247,24 @@ npm run format:check
 
 | Usage method                          | Requires pre-install                                   |
 | ------------------------------------- | ------------------------------------------------------ |
-| **npm install + auto model download** | Node.js ≥ 22 + `onnxruntime-node`                      |
-| **Export model from HuggingFace**     | Python ≥ 3.10 + `pip install optimum onnx onnxruntime` |
+| **npm install + auto model download** | Node.js ≥ 22 + ``                      |
+| **Export model from HuggingFace**     | Python ≥ 3.10 + `pip install torch transformers` |
 | **Build from source**                 | Node.js ≥ 22 + npm                                     |
 
-> `onnxruntime-node` includes prebuilt C++ native modules, supports Linux x64 / arm64, macOS x64 / arm64 (Apple Silicon), Windows x64. **No additional system packages required**.
+> `` includes prebuilt C++ native modules, supports Linux x64 / arm64, macOS x64 / arm64 (Apple Silicon), Windows x64. **No additional system packages required**.
 
 ## CLI Quick Reference
 
 ```bash
 # Download model
 embed-code setup                              # Default: ~/.cache/embed-code-ts/
-embed-code setup -o ./models/model.onnx       # Custom path
+embed-code setup -o ./models/model.weights.bin       # Custom path
 embed-code setup -f                           # Force re-download
 embed-code setup --precision int8             # Download INT8 quantized model
 
 # Model info
 embed-code info                               # Show model metadata + system info
-embed-code info -m ./custom.onnx              # Custom model path
+embed-code info -m ./custom.weights.bin              # Custom model path
 
 # Download with proxy (corporate / restricted networks)
 # Option A: Standard environment variables (auto-detected)
@@ -286,8 +286,8 @@ EMBED_CODE_PROXY_URL=http://proxy:8080 EMBED_CODE_PROXY_USERNAME=user EMBED_CODE
 # Embed (model path priority)
 embed-code embed "function fib(n) { return n <= 1 ? n : fib(n-1) + fib(n-2); }"
 embed-code embed -f source.ts                            # From file
-embed-code embed -m ./custom.onnx -f source.py           # Explicit model path
-EMBED_CODE_MODEL_PATH=./prod.onnx embed-code embed "..." # Environment variable
+embed-code embed -m ./custom.weights.bin -f source.py           # Explicit model path
+EMBED_CODE_MODEL_PATH=./prod.weights.bin embed-code embed "..." # Environment variable
 
 # Model path resolution priority: ① --model ② $EMBED_CODE_MODEL_PATH ③ default cache ④ auto download
 ```
@@ -301,8 +301,8 @@ This project is open source under [Apache 2.0](LICENSE).
 - nomic-embed-code ([nomic-ai/nomic-embed-code](https://huggingface.co/nomic-ai/nomic-embed-code)) is licensed under **Apache 2.0**
 - The TypeScript/Node.js code in this project is an **original implementation**, also released under Apache 2.0
 - nomic-embed-code pretrained model weights (downloaded from HuggingFace) follow Nomic's model license terms
-- This project's `scripts/export-onnx.py` is used to help users export models, does not directly distribute model weights
-- ONNX files in GitHub Releases are derivative works exported by users from HuggingFace
+- This project's `scripts/export-weights.py` is used to help users export models, does not directly distribute model weights
+- Weight files in GitHub Releases are derivative works exported by users from HuggingFace
 
 ### License compatibility
 
@@ -310,4 +310,4 @@ This project is open source under [Apache 2.0](LICENSE).
 | ------------------------ | ------------------ | ------------------ |
 | embed-code-ts code       | Apache 2.0         | Fully original     |
 | nomic-embed-code weights | Apache 2.0 (Nomic) | HuggingFace hosted |
-| ONNX Runtime             | MIT (Microsoft)    | npm dependency     |
+| inference engine             | MIT (Microsoft)    | npm dependency     |

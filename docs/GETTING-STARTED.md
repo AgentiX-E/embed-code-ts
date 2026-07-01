@@ -29,7 +29,7 @@ npm install
 npm run build:all
 ```
 
-### Minimal Example (requires ONNX model file, see Section 2)
+### Minimal Example (requires weights file, see Section 2)
 
 ```typescript
 import { EmbedCode, downloadModel } from '@agentix-e/embed-code-core';
@@ -73,14 +73,14 @@ await embedder.dispose();
 ### 2.1 Auto Download (Recommended)
 
 ```bash
-npm install @agentix-e/embed-code-core onnxruntime-node
+
 ```
 
 ```typescript
 import { downloadModel } from '@agentix-e/embed-code-core';
 
 const modelPath = await downloadModel();
-// → ~/.cache/embed-code-ts/nomic-embed-text-v1.5-int8.onnx
+// → ~/.cache/embed-code-ts/nomic-embed-text-v1.5-int8.weights.bin
 ```
 
 The model is downloaded once, SHA-256 verified, and cached for all subsequent uses.
@@ -102,21 +102,21 @@ node scripts/pipeline.js
 **Step 1: Install Python dependencies**
 
 ```bash
-pip install optimum onnx onnxruntime torch
+pip install torch transformers
 ```
 
 **Step 2: Run the export script**
 
 ```bash
-# Basic usage — auto-download nomic-embed-code and export int8 ONNX
-python3 scripts/export-onnx.py \
-  --output models/nomic-embed-text-v1.5-int8.onnx \
+# Basic usage — auto-download nomic-embed-code and export int8 weights
+python3 scripts/export-weights.py \
+  --output models/nomic-embed-text-v1.5-int8.weights.bin \
   --model nomic-ai/nomic-embed-code \
   --precision int8
 
 # Skip validation (faster)
-python3 scripts/export-onnx.py \
-  --output models/nomic-embed-text-v1.5-int8.onnx \
+python3 scripts/export-weights.py \
+  --output models/nomic-embed-text-v1.5-int8.weights.bin \
   --skip-validation
 ```
 
@@ -126,23 +126,23 @@ python3 scripts/export-onnx.py \
 HuggingFace Hub              Local Disk
 ┌──────────────────┐        ┌─────────────────────────────────┐
 │ nomic-ai/         │ pip    │ models/                          │
-│ nomic-embed-code  │──────→│ nomic-embed-text-v1.5-int8.onnx │
-│ (safetensors)     │ export │ (~140 MB)                         │
+│ nomic-embed-code  │──────→│ nomic-embed-text-v1.5-int8.weights.bin │
+│ (safetensors)     │ export │ (~7 GB int8)                      │
 └──────────────────┘        └─────────────────────────────────┘
-      ~550 MB                   ~140 MB (int8)
+      ~28 GB (fp32)             ~7 GB (int8)
 ```
 
 ### 2.4 Model File Specifications
 
 | Property | Value                                               |
 | -------- | --------------------------------------------------- |
-| Filename | `nomic-embed-code-v1-int8.onnx`                     |
+| Filename | `nomic-embed-code-v1-int8.weights.bin`                     |
 | Size     | ~7 GB                                               |
-| Format   | ONNX (opset 20, int8 quantized)                     |
+| Format   | int8 binary format                     |
 | Input    | `input_ids: [batch, 32768]` (int64)                 |
 | Input    | `attention_mask: [batch, 32768]` (int64)            |
 | Output   | `last_hidden_state: [batch, 32768, 3584]` (float32) |
-| Backend  | ONNX Runtime: CPU / CUDA / DirectML                 |
+| Backend  | pure-TypeScript engine                 |
 
 ### 2.5 Hardware Requirements
 
@@ -171,7 +171,7 @@ Load a pretrained model.
 
 ```typescript
 const embedder = await EmbedCode.fromPretrained({
-  modelPath: './models/nomic-embed-text-v1.5-int8.onnx', // Required
+  modelPath: './models/nomic-embed-text-v1.5-int8.weights.bin', // Required
   executionProvider: 'cpu', // Optional: 'cpu' | 'cuda' | 'dml'
   intraOpNumThreads: 4, // Optional: CPU thread count
   skipWarmup: false, // Optional: skip warmup inference
@@ -205,7 +205,7 @@ const sim = embedder.similarity(embeddingA, embeddingB);
 
 #### `dispose()`
 
-Release ONNX Runtime resources and GPU memory.
+Release engine resources and GPU memory.
 
 ```typescript
 await embedder.dispose();
@@ -286,11 +286,11 @@ embed-code embed "function hello() { console.log('Hello World'); }"
 embed-code embed -f source.py
 
 # With custom model
-embed-code embed -m ./custom.onnx -f source.ts
+embed-code embed -m ./custom.weights.bin -f source.ts
 
 # Show model info
 embed-code info
-embed-code info -m ./custom.onnx
+embed-code info -m ./custom.weights.bin
 ```
 
 ### CLI Parameters
@@ -299,7 +299,7 @@ embed-code info -m ./custom.onnx
 | ---------------------- | -------- | ---------------------------------------------------- |
 | `<text>`               | ❌       | Text to embed (alternative to -f)                    |
 | `-f, --file <path>`    | ❌       | Input file path                                      |
-| `-m, --model <path>`   | ❌       | ONNX model file path                                 |
+| `-m, --model <path>`   | ❌       | weights file path                                 |
 | `-o, --output <path>`  | ❌       | Output file path                                     |
 | `--max-tokens <n>`     | ❌       | Max input tokens (default: 32768)                    |
 | `--no-normalize`       | ❌       | Disable L2 normalization                             |
@@ -393,9 +393,9 @@ https://huggingface.co/nomic-ai/nomic-embed-code
 
 ```bash
 # Re-export latest version
-python3 scripts/export-onnx.py \
+python3 scripts/export-weights.py \
   --model nomic-ai/nomic-embed-code \
-  --output models/nomic-embed-text-v1.5-int8.onnx \
+  --output models/nomic-embed-text-v1.5-int8.weights.bin \
   --precision int8 \
   --skip-validation
 
@@ -419,14 +419,14 @@ If all tests pass, the new model is compatible with current code.
 ### Model Load Failure
 
 ```
-Error: ONNX engine not loaded. Call load() first.
+Error: Engine not loaded. Call load() first.
 ```
 
 **Solution**:
 
 1. Verify model file exists and is ≥ 100 MB
-2. Run `python3 scripts/export-onnx.py --output <path>` to re-export
-3. Check that `onnxruntime-node` is installed
+2. Run `python3 scripts/export-weights.py --output <path>` to re-export
+3. Check that `` is installed
 
 ### Model Download Fails Behind Proxy
 
@@ -465,16 +465,16 @@ for (let i = 0; i < texts.length; i += CHUNK) {
 }
 ```
 
-### ONNX Runtime Not Found
+### Weights Not Found
 
 ```
-Cannot find module 'onnxruntime-node'
+Cannot find module ''
 ```
 
 **Solution**:
 
 ```bash
-npm install onnxruntime-node
+npm install 
 ```
 
 ---
@@ -524,7 +524,7 @@ for (let i = 0; i < allTexts.length; i += CHUNK) {
 │      ▼                                   │
 │  ┌──────────┐    ┌───────────────┐      │
 │  │Tokenizer │───→│EmbedCodeInfer │      │
-│  │          │    │ (ONNX Runtime) │      │
+│  │          │    │ pure-TypeScript │      │
 │  │•BPE      │    │               │      │
 │  │•Pad/Trunc│    │ C++ native inf│      │
 │  │•Attn Mask│    │ CPU/CUDA/DML  │      │
@@ -560,4 +560,4 @@ for (let i = 0; i < allTexts.length; i += CHUNK) {
 - **Project Repository**: https://github.com/AgentiX-E/embed-code-ts
 - **nomic-embed-code on HuggingFace**: https://huggingface.co/nomic-ai/nomic-embed-code
 - **Nomic Embed Paper**: https://arxiv.org/abs/2402.01613
-- **ONNX Runtime**: https://onnxruntime.ai/
+- **pure-TypeScript engine**: https://github.com/AgentiX-E/embed-code-ts

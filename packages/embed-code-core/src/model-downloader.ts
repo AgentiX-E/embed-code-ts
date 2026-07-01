@@ -1,7 +1,7 @@
 /**
  * Embed Code Model Downloader
  *
- * Downloads the pre-exported nomic-embed-code int8 ONNX model from
+ * Downloads the pre-exported nomic-embed-code int8 weights from
  * GitHub Releases.  The npm package is code-only (~50 KB).  The model
  * is stored as a GitHub Release asset and fetched on first use.
  *
@@ -35,7 +35,7 @@ const DESCRIPTOR_FILENAME = 'model-descriptor.json';
 interface PrecisionProfile {
   readonly suffix: string;
   readonly zipFilename: string;
-  readonly onnxFilename: string;
+  readonly weightsFilename: string;
   readonly expectedZipSize: number;
   readonly minCachedSize: number;
 }
@@ -44,16 +44,16 @@ const PRECISION_PROFILES: Readonly<Record<string, PrecisionProfile>> = Object.fr
   int8: {
     suffix: '-int8',
     zipFilename: 'nomic-embed-code-v1-int8.zip',
-    onnxFilename: 'nomic-embed-code-v1-int8.onnx',
-    expectedZipSize: 7000 * 1024 * 1024, // ~7GB for 7B int8
-    minCachedSize: 6000 * 1024 * 1024,
+    weightsFilename: 'nomic-embed-code-v1-int8.weights.bin',
+    expectedZipSize: 140 * 1024 * 1024, // ~140 MB for 137M-param BERT-base int8
+    minCachedSize: 100 * 1024 * 1024,
   },
-  // nomic-embed-text-v1.5 (137M params, much smaller)
+  // nomic-embed-text-v1.5 (137M params, same BERT-base architecture)
   'text-int8': {
     suffix: '-text-int8',
     zipFilename: 'nomic-embed-text-v1.5-int8.zip',
-    onnxFilename: 'nomic-embed-text-v1.5-int8.onnx',
-    expectedZipSize: 137 * 1024 * 1024,
+    weightsFilename: 'nomic-embed-text-v1.5-int8.weights.bin',
+    expectedZipSize: 140 * 1024 * 1024,
     minCachedSize: 100 * 1024 * 1024,
   },
 });
@@ -76,7 +76,7 @@ function defaultCacheDir(): string {
 }
 
 export function defaultModelPath(precision?: string): string {
-  return path.join(defaultCacheDir(), precisionProfile(precision).onnxFilename);
+  return path.join(defaultCacheDir(), precisionProfile(precision).weightsFilename);
 }
 
 export function getCachedModelPath(): string | null {
@@ -340,7 +340,7 @@ export async function downloadModel(options: DownloadOptions = {}): Promise<stri
     const descriptorPath = path.join(cacheDir, DESCRIPTOR_FILENAME);
     try {
       const desc = JSON.parse(fs.readFileSync(descriptorPath, 'utf-8'));
-      expectedSha256 = desc?.onnx?.sha256 ?? null;
+      expectedSha256 = desc?.weights.bin?.sha256 ?? null;
     } catch {
       /* skip verification */
     }
@@ -475,7 +475,7 @@ function sha256FileSync(filePath: string): string {
 }
 
 function cleanupPartial(cacheDir: string, profile: PrecisionProfile): void {
-  for (const f of [profile.onnxFilename, DESCRIPTOR_FILENAME]) {
+  for (const f of [profile.weightsFilename, DESCRIPTOR_FILENAME]) {
     try {
       fs.unlinkSync(path.join(cacheDir, f));
     } catch {
