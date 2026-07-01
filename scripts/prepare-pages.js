@@ -18,7 +18,9 @@ function writeCoverageIndex() {
   ensureDir('docs/coverage');
   let html;
   try {
-    const summary = JSON.parse(fs.readFileSync(path.join('docs', 'coverage', 'coverage-summary.json'), 'utf-8')).total;
+    const summary = JSON.parse(
+      fs.readFileSync(path.join('docs', 'coverage', 'coverage-summary.json'), 'utf-8'),
+    ).total;
     const pct = (k) => (summary[k]?.pct ?? 0).toFixed(1);
     const hasLcov = fs.existsSync(path.join('docs', 'coverage', 'lcov-report', 'index.html'));
 
@@ -46,7 +48,8 @@ function writeCoverageIndex() {
       '</body></html>',
     ].join('\n');
   } catch (e) {
-    html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Coverage</title></head><body><h1>📈 Coverage</h1><p>Report pending — check back after CI completes.</p></body></html>';
+    html =
+      '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Coverage</title></head><body><h1>📈 Coverage</h1><p>Report pending — check back after CI completes.</p></body></html>';
   }
   fs.writeFileSync('docs/coverage/index.html', html);
   console.log('[prepare-pages] Coverage index generated');

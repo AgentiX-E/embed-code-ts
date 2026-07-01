@@ -29,7 +29,12 @@
   "sort": ["source-order"],
   "categorizeByGroup": true,
   "navigation": { "includeCategories": true, "includeGroups": true },
-  "visibilityFilters": { "protected": true, "private": false, "inherited": true, "external": false },
+  "visibilityFilters": {
+    "protected": true,
+    "private": false,
+    "inherited": true,
+    "external": false
+  },
   "cleanOutputDir": true,
   "githubPages": true
 }

@@ -12,7 +12,9 @@ const __dirname = path.dirname(__filename);
 
 export function setup(): void {
   const envPath = process.env.EMBED_CODE_MODEL_PATH;
-  if (envPath && fs.existsSync(envPath)) { return; }
+  if (envPath && fs.existsSync(envPath)) {
+    return;
+  }
 
   const searchPaths = [
     path.resolve(__dirname, 'models'),
@@ -28,7 +30,9 @@ export function setup(): void {
 
   for (const dir of searchPaths) {
     for (const name of filenames) {
-      if (fs.existsSync(path.join(dir, name))) { return; }
+      if (fs.existsSync(path.join(dir, name))) {
+        return;
+      }
     }
   }
 

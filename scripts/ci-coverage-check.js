@@ -26,13 +26,26 @@ function main() {
   }
 
   let summary;
-  try { summary = JSON.parse(fs.readFileSync(summaryPath, 'utf-8')); } catch { console.error(`[${TIER}] FAIL: Cannot parse coverage JSON.`); process.exit(1); }
+  try {
+    summary = JSON.parse(fs.readFileSync(summaryPath, 'utf-8'));
+  } catch {
+    console.error(`[${TIER}] FAIL: Cannot parse coverage JSON.`);
+    process.exit(1);
+  }
 
-  if (!summary || !summary.total) { console.error(`[${TIER}] FAIL: No total coverage data.`); process.exit(1); }
+  if (!summary || !summary.total) {
+    console.error(`[${TIER}] FAIL: No total coverage data.`);
+    process.exit(1);
+  }
 
   const s = summary.total;
-  const allZero = ['lines', 'branches', 'functions', 'statements'].every((k) => !s[k] || s[k].pct === 0);
-  if (allZero) { console.error(`[${TIER}] FAIL: All metrics are 0% — tests likely failed silently.`); process.exit(1); }
+  const allZero = ['lines', 'branches', 'functions', 'statements'].every(
+    (k) => !s[k] || s[k].pct === 0,
+  );
+  if (allZero) {
+    console.error(`[${TIER}] FAIL: All metrics are 0% — tests likely failed silently.`);
+    process.exit(1);
+  }
 
   let failed = false;
   for (const [metric, threshold] of Object.entries(THRESHOLDS)) {
