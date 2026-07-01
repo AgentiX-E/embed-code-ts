@@ -47,7 +47,7 @@ jobs:
       - uses: actions/setup-node@v6
         with: { node-version: '22', cache: 'npm' }
       - run: npm ci
-      - run: npm run build:all
+      - run: npm run build
 
   integration-test:
     needs: [lint, build]
@@ -61,7 +61,7 @@ jobs:
         with: { python-version: '3.11' }
 
       - run: npm ci
-      - run: npm run build:all
+      - run: npm run build
 
       - name: Cache ONNX model
         id: cache-model
@@ -120,7 +120,7 @@ jobs:
       - uses: actions/setup-node@v6
         with: { node-version: '22', cache: 'npm' }
       - run: npm ci
-      - run: npm run build:all
+      - run: npm run build
 
       - name: Generate API documentation
         run: npx typedoc
