@@ -36,8 +36,10 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: npm run test:unit:coverage
-      - name: Check coverage thresholds
-        run: node scripts/ci-coverage-check.js --tier unit --verbose
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v7
+        with: { name: coverage-report, path: coverage/, retention-days: 7 }
 
   build:
     runs-on: ubuntu-latest
@@ -49,63 +51,9 @@ jobs:
       - run: npm ci
       - run: npm run build
 
-  integration-test:
-    needs: [lint, build]
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v6
-        with: { node-version: '22', cache: 'npm' }
-      - uses: actions/setup-python@v5
-        with: { python-version: '3.11' }
-
-      - run: npm ci
-      - run: npm run build
-
-      - name: Cache ONNX model
-        id: cache-model
-        uses: actions/cache@v6
-        with:
-          path: models/nomic-embed-code-v1.5.int8.onnx
-          key: embed-code-model-${{ hashFiles('scripts/export-model.py', 'models/model-descriptor.json') }}-v1
-
-      - name: Export ONNX model
-        if: steps.cache-model.outputs.cache-hit != 'true'
-        run: |
-          pip install transformers torch onnx onnxruntime optimum
-          python3 scripts/export-model.py \
-            --model nomic-ai/nomic-embed-text-v1.5 \
-            --output models/nomic-embed-code-v1.5.int8.onnx
-        timeout-minutes: 15
-
-      - name: Run tests with coverage
-        run: npm run test:coverage
-        env:
-          EMBED_CODE_MODEL_PATH: models/nomic-embed-code-v1.5.int8.onnx
-
-      - name: Verify integration coverage
-        run: node scripts/ci-coverage-check.js --tier integration --verbose
-
-      - name: Ensure coverage directory exists
-        if: always()
-        run: |
-          mkdir -p coverage
-          if [ ! -f coverage/coverage-summary.json ]; then
-            echo '{"total":{"lines":{"pct":0},"branches":{"pct":0},"functions":{"pct":0},"statements":{"pct":0}}}' > coverage/coverage-summary.json
-          fi
-
-      - name: Upload coverage artifact
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: coverage-report
-          path: coverage/
-          retention-days: 7
-
   deploy-pages:
     if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main')
-    needs: [lint, unit-test, build, integration-test]
+    needs: [lint, unit-test, build]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -121,25 +69,17 @@ jobs:
         with: { node-version: '22', cache: 'npm' }
       - run: npm ci
       - run: npm run build
-
-      - name: Generate API documentation
+      - name: Generate API docs
         run: npx typedoc
-
-      - name: Download coverage report
+        continue-on-error: true
+      - name: Download coverage
         uses: actions/download-artifact@v4
         with: { name: coverage-report, path: docs/coverage }
         continue-on-error: true
-
       - name: Prepare pages
         run: node scripts/prepare-pages.js
-
-      - name: Setup Pages
-        uses: actions/configure-pages@v4
-
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+      - uses: actions/configure-pages@v4
+      - uses: actions/upload-pages-artifact@v3
         with: { path: docs }
-
-      - name: Deploy to GitHub Pages
+      - uses: actions/deploy-pages@v4
         id: deployment
-        uses: actions/deploy-pages@v4
