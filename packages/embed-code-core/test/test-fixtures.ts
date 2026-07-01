@@ -110,4 +110,23 @@ export const benchmarkFixtures = Object.freeze({
     'search_document: func isEven(n int) bool { return n%2 == 0 }',
     'search_document: let clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v))',
   ],
+  // Large batch for benchmark throughput testing
+  batch16: [
+    'search_document: const a = 1',
+    'search_document: const b = 2',
+    'search_document: def f1(): pass',
+    'search_document: def f2(): pass',
+    'search_document: let x = "hello"',
+    'search_document: let y = "world"',
+    'search_document: func g1() {}',
+    'search_document: func g2() {}',
+    'search_document: class C1 {}',
+    'search_document: class C2 {}',
+    'search_document: import os',
+    'search_document: import sys',
+    'search_document: export default {}',
+    'search_document: export const z = 0',
+    'search_document: module M1 end',
+    'search_document: module M2 end',
+  ],
 } as const);

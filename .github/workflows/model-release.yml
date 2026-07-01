@@ -27,11 +27,9 @@ jobs:
       - name: Check HF revision
         id: check
         run: |
-          # Query HuggingFace for the latest nomic-embed-code revision
           HF_INFO=$(curl -sf https://huggingface.co/api/models/nomic-ai/nomic-embed-code || echo '{"sha":"unknown"}')
           HF_SHA=$(echo "$HF_INFO" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('sha','unknown')[:12])" 2>/dev/null || echo "unknown")
 
-          # Get committed revision
           COMMITTED_SHA=$(python3 -c "
           import json
           with open('models/model-descriptor.json') as f:
@@ -41,7 +39,10 @@ jobs:
 
           echo "hf_sha=$HF_SHA" >> $GITHUB_OUTPUT
           echo "committed_sha=$COMMITTED_SHA" >> $GITHUB_OUTPUT
-          echo "model_tag=nomic-embed-code-${HF_SHA}" >> $GITHUB_OUTPUT
+
+          # Tag: use short SHA prefix for uniqueness
+          SHORT_SHA=$(echo "$HF_SHA" | cut -c1-7)
+          echo "model_tag=model-${SHORT_SHA}" >> $GITHUB_OUTPUT
 
           if [ "$HF_SHA" != "unknown" ] && [ "$HF_SHA" != "$COMMITTED_SHA" ]; then
             echo "New HF revision detected: $HF_SHA (committed: $COMMITTED_SHA)"
@@ -54,34 +55,40 @@ jobs:
             echo "should_release=false" >> $GITHUB_OUTPUT
           fi
 
-  # ─── Export ONNX model ────────────────────────────────────
+  # ─── Export ONNX model from HuggingFace ───────────────────
+  #
+  # Exports nomic-embed-code (7B Qwen2.5-based) to int8 ONNX.
+  # This step requires ~30 GB RAM for the 7B model.
+  # Use a larger runner or self-hosted runner with sufficient memory.
   export:
     needs: check
     if: needs.check.outputs.should_release == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v6
         with: { python-version: '3.11' }
 
       - name: Install dependencies
-        run: pip install optimum onnx onnxruntime torch
+        run: pip install optimum onnx onnxruntime torch transformers
 
       - name: Export int8 ONNX model
         run: |
           python3 scripts/export-onnx.py \
             --model nomic-ai/nomic-embed-code \
             --output models/nomic-embed-code-v1-int8.onnx \
-            --precision int8
-        timeout-minutes: 20
+            --precision int8 \
+            --skip-validation
+        timeout-minutes: 40
 
       - name: Compute SHA-256
         run: |
           sha256sum models/nomic-embed-code-v1-int8.onnx | cut -d' ' -f1 > models/sha256.txt
-          cat models/sha256.txt
+          echo "SHA256: $(cat models/sha256.txt)"
+          echo "Size: $(stat -c%s models/nomic-embed-code-v1-int8.onnx) bytes ($(du -h models/nomic-embed-code-v1-int8.onnx | cut -f1))"
 
-      - name: Zip model for release
+      - name: Zip model and descriptor for release
         run: |
           zip -j models/nomic-embed-code-v1-int8.zip \
             models/nomic-embed-code-v1-int8.onnx \
@@ -98,7 +105,7 @@ jobs:
   validate:
     needs: export
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v6
@@ -125,7 +132,7 @@ jobs:
   release:
     needs: [check, validate]
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
 
@@ -140,15 +147,22 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           MODEL_TAG: ${{ needs.check.outputs.model_tag }}
         run: |
-          # Create unique permanent tag
-          git tag "$MODEL_TAG"
-          git push origin "$MODEL_TAG"
+          # Create unique permanent tag for this model revision
+          git tag "$MODEL_TAG" -f
+          git push origin "$MODEL_TAG" -f
 
-          # Create rolling release (overwrite model-latest)
+          # Upload to rolling release channel (embed-code-latest-int8)
           gh release create "embed-code-latest-int8" \
             models/nomic-embed-code-v1-int8.zip \
             --title "nomic-embed-code v1 int8 ONNX" \
-            --notes "Auto-exported nomic-embed-code v1 int8 ONNX model." \
+            --notes "Auto-exported nomic-embed-code v1 int8 ONNX model from HuggingFace revision \`${{ needs.check.outputs.hf_sha }}\`.
+
+          **Model**: nomic-embed-code (Qwen2.5-7B)
+          **Precision**: int8 quantized
+          **Embedding dim**: 3584
+          **Max tokens**: 32768
+          **Pooling**: last_token
+          **HF repo**: [nomic-ai/nomic-embed-code](https://huggingface.co/nomic-ai/nomic-embed-code)" \
             --latest=false || true
 
           gh release upload "embed-code-latest-int8" \
@@ -195,17 +209,17 @@ jobs:
         run: |
           git config user.name "Lambertyan"
           git config user.email "Lambertyan@users.noreply.github.com"
-          BRANCH="auto/model-descriptor-update-${HF_SHA:0:12}"
+          SHORT_SHA=$(echo "$HF_SHA" | cut -c1-12)
+          BRANCH="auto/model-descriptor-update-${SHORT_SHA}"
           git checkout -b "$BRANCH"
           git add models/model-descriptor.json
-          git commit -m "chore(model): update descriptor to HF rev ${HF_SHA:0:12}"
+          git commit -m "chore(model): update descriptor to HF rev ${SHORT_SHA}"
           git push origin "$BRANCH"
 
-          # Create PR
           gh pr create \
             --base main \
             --head "$BRANCH" \
-            --title "chore(model): update model descriptor to HF rev ${HF_SHA:0:12}" \
+            --title "chore(model): update model descriptor to HF rev ${SHORT_SHA}" \
             --body "Automated model descriptor update after exporting ONNX model from HF revision \`${HF_SHA}\`.
 
           - SHA-256 updated

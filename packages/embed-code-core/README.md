@@ -1,6 +1,6 @@
 # @agentix-e/embed-code-core
 
-> Core inference engine for nomic-embed-code — int8 code embeddings for Node.js powered by ONNX Runtime.
+> Core inference engine for nomic-embed-code — int8 code embeddings for Node.js pure-TypeScript incbin inference.
 
 [![npm](https://img.shields.io/npm/v/@agentix-e/embed-code-core?color=blue)](https://www.npmjs.com/package/@agentix-e/embed-code-core)
 [![API Docs](https://img.shields.io/badge/docs-TypeDoc-blue)](https://agentix-e.github.io/embed-code-ts/api/modules/embed-code-core.html)
@@ -12,15 +12,15 @@
 ### Architecture
 
 ```
-Input Text → [Tokenizer] → [ONNX Runtime] → [Pooling] → [Normalize] → Embedding
-               (BPE)        (int8 ONNX)       (last/mean/    (L2 norm)
+Input Text → [Tokenizer] → [inference engine] → [Pooling] → [Normalize] → Embedding
+               (BPE)        (int8 weights)       (last/mean/    (L2 norm)
                                                 cls)
 ```
 
 ## Installation
 
 ```bash
-npm install @agentix-e/embed-code-core onnxruntime-node
+
 ```
 
 Requires Node.js ≥ 22.
@@ -30,7 +30,7 @@ Requires Node.js ≥ 22.
 ```typescript
 import { EmbedCode, downloadModel } from '@agentix-e/embed-code-core';
 
-// Auto-download model (~140 MB, first time only, cached thereafter)
+// Auto-download model (~7 GB, first time only, cached thereafter)
 const modelPath = await downloadModel({
   onProgress: (received, total, speed) =>
     console.log(`${received.toFixed(0)}/${total.toFixed(0)} MB @ ${speed.toFixed(1)} MB/s`),
@@ -55,10 +55,13 @@ await embedder.dispose();
 
 Key exports:
 
-- `EmbedCode` — Main model class (`fromPretrained`, `embed`, `embedStream`, `similarity`, `dispose`)
+- `EmbedCode` — Main model class (`fromPretrained`, `embed`, `similarity`, `dispose`)
 - `downloadModel` / `defaultModelPath` / `getCachedModelPath` / `isModelCached` — Model download & cache management
-- `EmbedCodeInferenceEngine` — ONNX Runtime inference engine
-- `EmbedOptions` / `EmbedResult` / `EmbedProgress` / `DownloadOptions` — Type definitions
+- `EmbedCodeInferenceEngine` — inference engine inference engine (advanced use)
+- `Tokenizer` — BPE tokenizer (advanced use)
+- `poolEmbeddings` / `normalizeEmbeddings` / `cosineSimilarity` — Pooling utilities
+- `EmbedOptions` / `EmbeddingResult` / `EmbedProgress` / `DownloadOptions` — Type definitions
+- Error hierarchy: `EmbedCodeError`, `ModelNotFoundError`, `DownloadError`, etc.
 - Task prefix support via `embedder.taskPrefixes` (`{ query, document }`)
 
 ## Model Download
@@ -66,7 +69,7 @@ Key exports:
 ```typescript
 import { downloadModel } from '@agentix-e/embed-code-core';
 
-// Default: ~/.cache/embed-code-ts/nomic-embed-text-v1.5-int8.onnx
+// Default: ~/.cache/embed-code-ts/nomic-embed-text-v1.5-int8.weights.bin
 const path = await downloadModel();
 
 // With proxy (corporate network)

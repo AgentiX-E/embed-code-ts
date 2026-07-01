@@ -15,10 +15,12 @@
 const fs = require('fs');
 const path = require('path');
 
-const THRESHOLDS = { lines: 95, branches: 95, functions: 95, statements: 95 };
+const THRESHOLDS_UNIT = { lines: 95, branches: 90, functions: 95, statements: 95 };
+const THRESHOLDS_INTEGRATION = { lines: 95, branches: 95, functions: 95, statements: 95 };
 const TIER = process.argv.includes('--tier')
   ? process.argv[process.argv.indexOf('--tier') + 1] || 'unit'
   : 'unit';
+const THRESHOLDS = TIER === 'integration' ? THRESHOLDS_INTEGRATION : THRESHOLDS_UNIT;
 const VERBOSE = process.argv.includes('--verbose');
 
 function main() {

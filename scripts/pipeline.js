@@ -4,7 +4,7 @@
  *
  * Usage:
  *   node scripts/pipeline.js              # Full pipeline
- *   node scripts/pipeline.js --export      # Export ONNX only
+ *   node scripts/pipeline.js --export      # Export weights only
  *   node scripts/pipeline.js --test        # Run tests only
  *   node scripts/pipeline.js --quick       # Skip export (quick mode)
  */
@@ -15,7 +15,8 @@ const path = require('path');
 
 const ROOT = path.resolve(__dirname, '..');
 const MODEL_PATH =
-  process.env.EMBED_CODE_MODEL_PATH || path.join(ROOT, 'models', 'nomic-embed-code-v1-int8.onnx');
+  process.env.EMBED_CODE_MODEL_PATH ||
+  path.join(ROOT, 'models', 'nomic-embed-code-v1-int8.weights.bin');
 const HF_MODEL = process.env.EMBED_CODE_HF_MODEL || 'nomic-ai/nomic-embed-code';
 
 const COLORS = {
@@ -71,16 +72,16 @@ async function main() {
 
   title('embed-code-ts Pipeline');
 
-  // Step 1: Export ONNX
+  // Step 1: Export Weights
   if (doExport && !quick) {
-    title('Step 1: Export ONNX Model');
+    title('Step 1: Export Weights');
     const pyCheck = run('python3 --version', { fatal: false, silent: true });
     if (!pyCheck) {
-      warn('Python3 not found. Skipping ONNX export.');
-      info('The model must already exist at: ' + MODEL_PATH);
+      warn('Python3 not found. Skipping weights export.');
+      info('The weights file must already exist at: ' + MODEL_PATH);
     } else {
-      const cmd = `python3 scripts/export-onnx.py --output ${MODEL_PATH} --model ${HF_MODEL}`;
-      run(cmd, { label: 'python3 export-onnx.py', timeout: 1800_000 });
+      const cmd = `python3 scripts/export-weights.py --output ${MODEL_PATH} --model ${HF_MODEL}`;
+      run(cmd, { label: 'python3 export-weights.py', timeout: 1800_000 });
     }
   }
 

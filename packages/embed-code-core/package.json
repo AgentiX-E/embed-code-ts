@@ -2,7 +2,7 @@
   "name": "@agentix-e/embed-code-core",
   "version": "0.1.0",
   "type": "module",
-  "description": "Core inference engine for nomic-embed-code — int8 code embeddings shipped with npm",
+  "description": "Pure-TypeScript BERT-base code embedding engine — int8 weights embedded incbin-style, zero native deps",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -14,6 +14,7 @@
   "files": [
     "dist",
     "src",
+    "weights",
     "README.md"
   ],
   "scripts": {
@@ -21,9 +22,7 @@
     "test": "vitest run",
     "prepublishOnly": "tsup"
   },
-  "dependencies": {
-    "onnxruntime-node": "^1.20.0"
-  },
+  "dependencies": {},
   "devDependencies": {
     "@types/node": "^26.0.1",
     "tsup": "^8.0.0",
@@ -34,11 +33,11 @@
     "nomic",
     "embed-code",
     "code-embedding",
-    "onnx",
     "int8",
     "quantized",
     "typescript",
     "incbin",
+    "pure-ts",
     "embedding",
     "semantic-search",
     "code-search"

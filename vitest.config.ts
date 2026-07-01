@@ -1,18 +1,8 @@
 import { defineConfig } from 'vitest/config';
 
 /**
- * Integration test configuration — runs all tests including those that require
- * the ONNX model.  Uses vitest.globalSetup.ts to check model availability
- * and set VITEST_SKIP_ONNX_TESTS when the model is absent.
- *
- * Targets ≥95% on all four coverage metrics (lines, branches, functions, statements).
- *
- * Exclusion rationale:
- *   • index.ts                      — barrel re-exports only, no runtime logic
- *   • cli.ts                        — Commander/stdio entry point
- *   • onnx-engine.ts                — CPU path tested; CUDA/DML branches require physical GPU
- *   • model-downloader.ts           — cache helpers tested; fetch/streaming/zip need network
- *   • types/ & *.d.ts               — pure type definitions, zero runtime code
+ * Integration test configuration — all tests including those requiring ONNX model.
+ * Targets ≥95% on all four coverage metrics.
  */
 export default defineConfig({
   test: {
@@ -23,33 +13,22 @@ export default defineConfig({
     exclude: ['node_modules', 'dist'],
     pool: 'forks',
     poolOptions: {
-      forks: {
-        singleFork: true,
-      },
+      forks: { singleFork: true },
     },
     testTimeout: 120000,
     hookTimeout: 120000,
     coverage: {
       provider: 'v8',
-      include: ['packages/embed-code-core/src/**/*.ts', 'packages/embed-code-cli/src/**/*.ts'],
+      include: [
+        'packages/embed-code-core/src/**/*.ts',
+        'packages/embed-code-node/src/**/*.ts',
+        'packages/embed-code-cli/src/**/*.ts',
+      ],
       exclude: [
-        // Barrel re-exports — no runtime logic
         'packages/*/src/index.ts',
-        // CLI entry point (stdio) — tested via CLI smoke tests
         'packages/embed-code-cli/src/cli.ts',
-        // CPU path fully tested; CUDA/DML branches require physical GPU
-        'packages/embed-code-core/src/inference/onnx-engine.ts',
-        // Cache helpers, proxy resolution, SHA-256 tested; fetch/streaming/zip need GitHub Releases
-        'packages/embed-code-core/src/model-downloader.ts',
-        // Pure type definitions — zero runtime code
         'packages/embed-code-core/src/types.ts',
         'packages/*/src/types/**/*.d.ts',
-        // Model descriptor: error/catch/fallback branches need real model directory
-        'packages/embed-code-core/src/model-descriptor.ts',
-        // Tokenizer: full BPE merge coverage requires real tokenizer.json from model
-        'packages/embed-code-core/src/tokenizer.ts',
-        // EmbedCode: error branches (missing tokenizer, 2D output, OOM) need specific conditions
-        'packages/embed-code-core/src/embed-code.ts',
       ],
       reporter: ['text', 'html', 'json-summary', 'lcov'],
       thresholds: {

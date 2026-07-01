@@ -1,7 +1,9 @@
 {
   "model": "nomic-embed-code",
   "precision": "int8",
+  "embeddingDim": 3584,
   "created": "2026-06-30T12:00:00Z",
-  "description": "Performance baseline for regression detection. Updated manually or via scheduled CI job.",
-  "latency": []
+  "description": "Performance baseline for regression detection. Auto-populated on first benchmark run. Updated manually or via CI after validated releases.",
+  "latency": [],
+  "note": "Empty latency array means baseline has not yet been established. First benchmark run will auto-populate this. Regression checks are skipped until baseline data exists."
 }

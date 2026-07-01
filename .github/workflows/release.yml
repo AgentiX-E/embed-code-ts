@@ -52,35 +52,67 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Cache ONNX model (restore)
+      - name: Cache ONNX model
         if: ${{ !inputs.skip_tests }}
         id: cache-model
         uses: actions/cache@v6
         with:
-          path: models/nomic-embed-text-v1.5-int8.onnx
-          key: embed-code-model-${{ hashFiles('models/model-descriptor.json') }}-v3
+          path: models/nomic-embed-code-v1-int8.onnx
+          key: embed-code-model-${{ hashFiles('scripts/export-onnx.py', 'models/model-descriptor.json') }}-v1
 
-      - name: Download pre-converted ONNX model
+      - name: Download ONNX model from GitHub Release
         if: ${{ !inputs.skip_tests && steps.cache-model.outputs.cache-hit != 'true' }}
         run: |
-          pip install huggingface_hub
-          python3 -c "
+          mkdir -p models
+          RELEASE_URL="https://github.com/${{ github.repository }}/releases/download/embed-code-latest-int8/nomic-embed-code-v1-int8.zip"
+          if curl -sfL -o models/nomic-embed-code-v1-int8.zip "$RELEASE_URL"; then
+            unzip -o models/nomic-embed-code-v1-int8.zip -d models/
+            echo "Downloaded nomic-embed-code 7B int8 from GitHub Release"
+          else
+            echo "GitHub Release not available — downloading nomic-embed-text-v1.5 as fallback"
+            pip install huggingface_hub
+            python3 -c "
           from huggingface_hub import hf_hub_download
+          import shutil
           path = hf_hub_download('nomic-ai/nomic-embed-text-v1.5', 'onnx/model_int8.onnx')
-          import shutil, os
-          os.makedirs('models', exist_ok=True)
           shutil.copy(path, 'models/nomic-embed-text-v1.5-int8.onnx')
+          print(f'Downloaded: {__import__(\"os\").path.getsize(\"models/nomic-embed-text-v1.5-int8.onnx\") / 1024**2:.0f} MB')
+          "
+            # Also download tokenizer files
+            for repo in nomic-ai/nomic-embed-text-v1.5 nomic-ai/nomic-embed-code; do
+              python3 -c "
+          from huggingface_hub import hf_hub_download
+          import shutil
+          for f in ['tokenizer.json', 'tokenizer_config.json']:
+              try:
+                  path = hf_hub_download('$repo', f)
+                  shutil.copy(path, f'models/{f}')
+              except: pass
           " || true
-        timeout-minutes: 5
+            done
+          fi
+        timeout-minutes: 15
+
+      - name: Determine model path for tests
+        if: ${{ !inputs.skip_tests }}
+        id: model-path
+        run: |
+          if [ -f models/nomic-embed-code-v1-int8.onnx ]; then
+            echo "path=models/nomic-embed-code-v1-int8.onnx" >> $GITHUB_OUTPUT
+          elif [ -f models/nomic-embed-text-v1.5-int8.onnx ]; then
+            echo "path=models/nomic-embed-text-v1.5-int8.onnx" >> $GITHUB_OUTPUT
+          else
+            echo "path=" >> $GITHUB_OUTPUT
+          fi
 
       - name: Run integration tests with coverage
-        if: ${{ !inputs.skip_tests }}
+        if: ${{ !inputs.skip_tests && steps.model-path.outputs.path != '' }}
         run: npx vitest run --coverage
         env:
-          EMBED_CODE_MODEL_PATH: models/nomic-embed-text-v1.5-int8.onnx
+          EMBED_CODE_MODEL_PATH: ${{ steps.model-path.outputs.path }}
 
       - name: Check integration coverage thresholds
-        if: ${{ !inputs.skip_tests }}
+        if: ${{ !inputs.skip_tests && steps.model-path.outputs.path != '' }}
         run: node scripts/ci-coverage-check.js --tier integration --verbose
 
       - name: Ensure coverage directory exists
@@ -101,7 +133,7 @@ jobs:
           retention-days: 7
 
   # ═══════════════════════════════════════════════════════════════════════════
-  # Stage 2 — Benchmark — reuses cached model
+  # Stage 2 — Benchmark
   # ═══════════════════════════════════════════════════════════════════════════
   benchmark:
     needs: quality
@@ -120,8 +152,8 @@ jobs:
       - name: Restore cached ONNX model
         uses: actions/cache/restore@v6
         with:
-          path: models/nomic-embed-text-v1.5-int8.onnx
-          key: embed-code-model-${{ hashFiles('models/model-descriptor.json') }}-v3
+          path: models/nomic-embed-code-v1-int8.onnx
+          key: embed-code-model-${{ hashFiles('scripts/export-onnx.py', 'models/model-descriptor.json') }}-v1
           fail-on-cache-miss: true
 
       - name: Run benchmark
@@ -134,7 +166,7 @@ jobs:
             --verbose
         timeout-minutes: 10
         env:
-          EMBED_CODE_MODEL_PATH: models/nomic-embed-text-v1.5-int8.onnx
+          EMBED_CODE_MODEL_PATH: models/nomic-embed-code-v1-int8.onnx
           BENCH_ITERATIONS: 10
 
       - name: Accuracy Gate

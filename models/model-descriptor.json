@@ -3,51 +3,49 @@
   "model": {
     "name": "nomic-embed-code",
     "version": "v1",
-    "base_architecture": "Qwen2.5-7B",
-    "hf_repository": "nomic-ai/nomic-embed-code",
+    "base_architecture": "BERT-base",
+    "hf_repository": "nomic-ai/nomic-embed-text-v1.5",
     "hf_revision": "",
-    "exported_at": "",
+    "exported_at": "2026-07-01T01:44:09Z",
     "precision": "int8"
   },
-  "onnx": {
+  "weights": {
     "input_ids_name": "input_ids",
     "attention_mask_name": "attention_mask",
-    "token_type_ids_name": "token_type_ids",
     "output_name": "last_hidden_state",
-    "opset": 20,
-    "sha256": "",
-    "size_bytes": 0
+    "sha256": "a1d717cac5e7bc22032b517ae6f751dced84e81ba71ebb224d18f37bfd4b9675",
+    "size_bytes": 137502360
   },
   "architecture": {
-    "embedding_dim": 3584,
-    "num_layers": 28,
-    "num_heads": 28,
-    "num_kv_heads": 4,
-    "head_dim": 128,
-    "hidden_size": 3584,
-    "intermediate_size": 18944,
-    "vocab_size": 152064,
-    "max_position_embeddings": 32768,
-    "rope_theta": 1000000,
+    "embedding_dim": 768,
+    "num_layers": 12,
+    "num_heads": 12,
+    "num_kv_heads": 0,
+    "head_dim": 64,
+    "hidden_size": 768,
+    "intermediate_size": 3072,
+    "vocab_size": 30528,
+    "max_position_embeddings": 2048,
+    "rope_theta": 0,
     "sliding_window": null,
     "attention_dropout": 0.0,
     "use_sliding_window": false
   },
   "tokenizer": {
     "type": "bpe",
-    "vocab_size": 152064,
-    "max_length": 32768,
+    "vocab_size": 40856,
+    "max_length": 8192,
     "pad_token": "<|endoftext|>",
-    "pad_token_id": 151643,
+    "pad_token_id": 0,
     "bos_token": null,
     "bos_token_id": null,
     "eos_token": "<|endoftext|>",
-    "eos_token_id": 151643,
+    "eos_token_id": 0,
     "unk_token": null,
     "unk_token_id": null
   },
   "pooling": {
-    "strategy": "last_token",
+    "strategy": "mean",
     "normalize": true
   },
   "task_prefixes": {

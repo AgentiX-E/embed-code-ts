@@ -2,7 +2,7 @@
 /**
  * Benchmark script for embed-code-ts.
  *
- * Runs embedding benchmarks with the real ONNX model. Measures:
+ * Runs embedding benchmarks with the real nomic-embed-code weights. Measures:
  *   - Latency (ms) per batch configuration
  *   - Throughput (tokens/second)
  *   - Memory usage
@@ -17,7 +17,7 @@
  *                               [--baseline <path>] [--verbose]
  *
  * Environment:
- *   EMBED_CODE_MODEL_PATH  — Path to ONNX model (required)
+ *   EMBED_CODE_MODEL_PATH  — Path to nomic-embed-code weights (required)
  *   BENCH_ITERATIONS       — Number of iterations per config (default: 5)
  *   BENCH_STABILITY_ITERS  — Number of stability iterations (default: 100)
  */
@@ -226,6 +226,7 @@ async function main() {
 
   // ── Regression detection ─────────────────────────────────
   let regression = null;
+  let baselineUpdated = false;
   if (BASELINE_PATH && fs.existsSync(BASELINE_PATH)) {
     try {
       const baseline = JSON.parse(fs.readFileSync(BASELINE_PATH, 'utf-8'));
@@ -253,6 +254,22 @@ async function main() {
             );
           }
         }
+      } else {
+        // Auto-populate baseline on first run
+        console.log('\nFirst benchmark run — auto-populating baseline.');
+        baseline.latency = results.map((c) => ({
+          config: c.config,
+          batchSize: c.batchSize,
+          avgLatencyMs: c.avgLatencyMs,
+          p50LatencyMs: c.p50LatencyMs,
+          throughputTokensPerSec: c.throughputTokensPerSec,
+        }));
+        baseline.created = new Date().toISOString();
+        baseline.embeddingDim = dim;
+        baseline.model = path.basename(MODEL_PATH);
+        fs.writeFileSync(BASELINE_PATH, JSON.stringify(baseline, null, 2));
+        baselineUpdated = true;
+        console.log(`  Baseline written to ${BASELINE_PATH}`);
       }
     } catch (e) {
       if (VERBOSE) console.log(`  Regression check skipped: ${e.message}`);
@@ -277,6 +294,7 @@ async function main() {
     accuracy,
     stability,
     regression,
+    baselineUpdated,
   };
 
   // ── Write reports ────────────────────────────────────────
@@ -370,6 +388,13 @@ function generateMarkdown(report) {
     lines.push(
       `| ${report.memory.heapUsedMB} MB | ${report.memory.heapTotalMB} MB | ${report.memory.rssMB} MB |`,
     );
+    lines.push('');
+  }
+
+  if (report.baselineUpdated) {
+    lines.push('## Baseline');
+    lines.push('');
+    lines.push('> ⚡ First benchmark run — baseline auto-populated from these results.');
     lines.push('');
   }
 

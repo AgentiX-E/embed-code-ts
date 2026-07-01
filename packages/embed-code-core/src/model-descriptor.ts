@@ -10,13 +10,13 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 
 /**
- * Default config for nomic-embed-code-v1 (Qwen2.5-7B based).
+ * Default config for nomic-embed-code-v1 (BERT-base, 137M parameters).
  * Used as fallback when no model-descriptor.json is found.
  */
 export const EMBED_CODE_V1_CONFIG: Readonly<ModelConfig> = Object.freeze({
-  embeddingDim: 3584,
-  maxTokens: 32768,
-  poolingStrategy: 'last_token' as const,
+  embeddingDim: 768,
+  maxTokens: 8192,
+  poolingStrategy: 'mean' as const,
   normalize: true,
   inputIdsName: 'input_ids',
   attentionMaskName: 'attention_mask',
@@ -28,7 +28,7 @@ export const EMBED_CODE_V1_CONFIG: Readonly<ModelConfig> = Object.freeze({
 });
 
 /**
- * Default config for nomic-embed-text-v1.5 (137M).
+ * Default config for nomic-embed-text-v1.5 (137M BERT-based).
  */
 export const EMBED_TEXT_V15_CONFIG: Readonly<ModelConfig> = Object.freeze({
   embeddingDim: 768,
@@ -48,13 +48,13 @@ export const EMBED_TEXT_V15_CONFIG: Readonly<ModelConfig> = Object.freeze({
 const FALLBACK_CONFIG = EMBED_CODE_V1_CONFIG;
 
 /**
- * Resolve model config from the model-descriptor.json co-located with the ONNX file.
+ * Resolve model config from the model-descriptor.json co-located with the weights file.
  *
  * This is the single source of truth pattern — the descriptor that ships alongside
- * the ONNX model defines the architecture, input/output names, and runtime config.
+ * the weights defines the architecture, input/output names, and runtime config.
  * Falls back to EMBED_CODE_V1_CONFIG when no descriptor is present.
  *
- * @param modelPath Path to the ONNX model file
+ * @param modelPath Path to the weights file (weights.int8.bin)
  * @param fallbackConfig Config to use when no descriptor is found
  * @returns { config, descriptor } — validated ModelConfig and the raw descriptor (or null)
  */
@@ -69,16 +69,18 @@ export function resolveModelConfig(
     const raw = fs.readFileSync(descriptorPath, 'utf-8');
     const descriptor: ModelDescriptor = JSON.parse(raw);
 
-    // Build ModelConfig from descriptor
+    // Build ModelConfig from descriptor — try `weights`, fall back to `onnx` for compat
+    const d = descriptor;
+    const w = d.weights ?? d.onnx;
     const config: ModelConfig = {
-      embeddingDim: descriptor.architecture.embedding_dim,
-      maxTokens: descriptor.architecture.max_position_embeddings,
-      poolingStrategy: descriptor.pooling.strategy,
-      normalize: descriptor.pooling.normalize,
-      inputIdsName: descriptor.onnx.input_ids_name,
-      attentionMaskName: descriptor.onnx.attention_mask_name,
-      outputName: descriptor.onnx.output_name,
-      taskPrefixes: descriptor.task_prefixes,
+      embeddingDim: d.architecture.embedding_dim,
+      maxTokens: d.architecture.max_position_embeddings,
+      poolingStrategy: d.pooling.strategy,
+      normalize: d.pooling.normalize,
+      inputIdsName: w?.input_ids_name ?? 'input_ids',
+      attentionMaskName: w?.attention_mask_name ?? 'attention_mask',
+      outputName: w?.output_name ?? 'last_hidden_state',
+      taskPrefixes: d.task_prefixes,
     };
 
     return { config: Object.freeze(config), descriptor };

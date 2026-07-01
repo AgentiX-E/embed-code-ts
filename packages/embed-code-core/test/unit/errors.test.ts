@@ -63,4 +63,41 @@ describe('Error classes', () => {
     const err = new ModelNotCompiledError('not compiled');
     expect(err.name).toBe('ModelNotCompiledError');
   });
+
+  it('EmbedCodeError supports cause chaining', () => {
+    const inner = new Error('inner error');
+    const err = new EmbedCodeError('outer error', inner);
+    expect(err.cause).toBe(inner);
+    expect(err.message).toBe('outer error');
+  });
+
+  it('DownloadError with status code provides useful info', () => {
+    const err = new DownloadError('not found', 404);
+    expect(err.message).toContain('not found');
+    expect(err.statusCode).toBe(404);
+    expect(err).toBeInstanceOf(EmbedCodeError);
+  });
+
+  it('ProxyAuthError is distinguishable from DownloadError', () => {
+    const proxyErr = new ProxyAuthError('proxy auth required', 407);
+    const downloadErr = new DownloadError('download failed', 500);
+    expect(proxyErr).toBeInstanceOf(EmbedCodeError);
+    expect(proxyErr).not.toBeInstanceOf(DownloadError);
+    expect(downloadErr).toBeInstanceOf(EmbedCodeError);
+  });
+
+  it('all error classes have distinct names for runtime discrimination', () => {
+    const errors = [
+      new EmbedCodeError(''),
+      new ModelNotFoundError(''),
+      new DownloadError(''),
+      new ChecksumMismatchError(''),
+      new ProxyAuthError('', 407),
+      new InferenceError(''),
+      new TokenizationError(''),
+      new ModelNotCompiledError(''),
+    ];
+    const names = new Set(errors.map((e) => e.name));
+    expect(names.size).toBe(errors.length); // all distinct
+  });
 });

@@ -1,0 +1,37 @@
+{
+  "name": "@agentix-e/embed-code-web",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Browser ONNX Runtime adapter for nomic-embed-code — WASM + WebGPU",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "models"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "prepublishOnly": "tsc"
+  },
+  "dependencies": {
+    "@agentix-e/embed-code-core": "^0.1.0",
+    "onnxruntime-web": "^1.20.0"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.9"
+  },
+  "keywords": [
+    "nomic",
+    "embed-code",
+    "onnx",
+    "wasm",
+    "webgpu",
+    "browser"
+  ],
+  "license": "Apache-2.0",
+  "publishConfig": {
+    "access": "public"
+  }
+}

@@ -9,5 +9,5 @@ export default defineConfig({
   splitting: false,
   treeshake: true,
   minify: false,
-  external: ['onnxruntime-node'],
+  external: [],
 });
