@@ -15,7 +15,9 @@ import { WeightBuffer } from '../../src/inference/weights';
 // Resolve model paths from project root (process.cwd() when run from project root)
 const PROJECT_ROOT = process.cwd();
 const MODELS_DIR = path.join(PROJECT_ROOT, 'models');
-const WEIGHTS_PATH = process.env.EMBED_CODE_MODEL_PATH || path.join(MODELS_DIR, 'nomic-embed-code-v1-int8.weights.bin');
+const WEIGHTS_PATH =
+  process.env.EMBED_CODE_MODEL_PATH ||
+  path.join(MODELS_DIR, 'nomic-embed-code-v1-int8.weights.bin');
 const REFERENCE_PATH = path.join(MODELS_DIR, 'reference-embeddings.json');
 const TOKENIZER_PATH = path.join(MODELS_DIR, 'tokenizer.json');
 
@@ -99,9 +101,7 @@ describe.runIf(hasWeights && hasReference && hasTokenizer)(
         expect(sim).toBeGreaterThanOrEqual(0.99);
       }
 
-      console.log(
-        `  Batch4 similarities: ${allPassed.map((s) => s.toFixed(6)).join(', ')}`,
-      );
+      console.log(`  Batch4 similarities: ${allPassed.map((s) => s.toFixed(6)).join(', ')}`);
     }, 30000);
 
     it('query-document similarity ordering preserved', async () => {

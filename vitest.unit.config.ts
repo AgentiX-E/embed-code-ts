@@ -1,14 +1,10 @@
 import { defineConfig } from 'vitest/config';
 
 /**
- * Unit test configuration — runs tests that do NOT require the weights file.
+ * Unit test configuration — all pure-logic tests (no ONNX model needed).
+ * Core: tokenizer, pooler, normalizer, vocab-loader, errors, pre-tokenizer.
  *
- * These tests are fast, lightweight, and suitable for CI pre-merge checks.
- * They cover all pure-logic modules: pooling strategies, tokenizer (BPE),
- * model descriptor resolution, model downloader cache helpers, error classes,
- * and inference math primitives (matmul, activations, dequantize).
- *
- * Targets ≥95% on all four coverage metrics (lines, branches, functions, statements).
+ * Targets ≥95% on all four coverage metrics.
  */
 export default defineConfig({
   test: {
@@ -24,16 +20,7 @@ export default defineConfig({
       exclude: [
         'packages/*/src/index.ts',
         'packages/embed-code-cli/src/cli.ts',
-        'packages/embed-code-core/src/embed-code.ts',
-        'packages/embed-code-core/src/inference/ts-engine.ts',
-        'packages/embed-code-core/src/inference/weights.ts',
-        'packages/embed-code-core/src/inference/attention.ts',
-        'packages/embed-code-core/src/inference/embedding.ts',
-        'packages/embed-code-core/src/inference/layernorm.ts',
-        'packages/embed-code-core/src/inference/ffn.ts',
-        'packages/embed-code-core/src/model-downloader.ts',
         'packages/embed-code-core/src/types.ts',
-        'packages/embed-code-core/src/tokenizer.ts',
         'packages/embed-code-core/src/model-descriptor.ts',
         'packages/*/src/types/**/*.d.ts',
       ],

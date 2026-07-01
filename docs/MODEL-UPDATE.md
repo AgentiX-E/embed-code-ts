@@ -107,14 +107,14 @@ git commit -m "chore(model): update descriptor to HF rev <sha>"
 
 The `model-descriptor.json` file (committed to the repo and distributed with each weight file release) defines the architecture contract between the model and the TypeScript engine:
 
-| Field               | Source                  | Purpose                                    |
-| ------------------- | ----------------------- | ------------------------------------------ |
-| `schema`            | Constant (1)            | Forward compatibility version              |
-| `model.hf_revision` | HuggingFace API         | Traceability to exact PyTorch checkpoint   |
-| `weights`  | weight file              | Runtime shape validation                   |
-| `weights.sha256`       | Computed from weight file | Download integrity verification            |
-| `architecture.*`    | PyTorch model params    | Configures the TypeScript engine           |
-| `tokenizer.*`       | Model config            | Vocabulary size, maxTokens, special tokens |
+| Field               | Source                    | Purpose                                    |
+| ------------------- | ------------------------- | ------------------------------------------ |
+| `schema`            | Constant (1)              | Forward compatibility version              |
+| `model.hf_revision` | HuggingFace API           | Traceability to exact PyTorch checkpoint   |
+| `weights`           | weight file               | Runtime shape validation                   |
+| `weights.sha256`    | Computed from weight file | Download integrity verification            |
+| `architecture.*`    | PyTorch model params      | Configures the TypeScript engine           |
+| `tokenizer.*`       | Model config              | Vocabulary size, maxTokens, special tokens |
 
 The engine reads this descriptor at runtime via `loadModelDescriptor()` and converts it to a `ModelConfig` via `descriptorToModelConfig()`. All hardcoded architecture constants in the TypeScript code have been eliminated — the descriptor is the single source of truth.
 
@@ -155,12 +155,12 @@ When a new model version is released:
 
 ## Troubleshooting
 
-| Issue                                | Solution                                                                                        |
-| ------------------------------------ | ----------------------------------------------------------------------------------------------- |
-| Nightly check not detecting changes  | Verify `models/model-descriptor.json` is committed with the current HF revision                 |
-| Model release fails                  | Check the workflow run logs; force re-run with `force: true`                                    |
-| `downloadModel()` fails              | Verify `model-latest` release exists and contains both `.weights.bin` and `model-descriptor.json`      |
-| `downloadModel()` fails behind proxy | Set `HTTPS_PROXY` or `EMBED_CODE_PROXY_URL` environment variables (see README Proxy section)    |
-| `downloadModel()` fails with 407     | Proxy authentication required — set `EMBED_CODE_PROXY_USERNAME` and `EMBED_CODE_PROXY_PASSWORD` |
-| Engine rejects model                 | Descriptor schema > `ENGINE_SUPPORTED_SCHEMA` — upgrade `@agentix-e/embed-code-core`            |
-| Local tests need weight file          | Export locally: `python3 scripts/export-weights.py` or `npm run pipeline:export`                   |
+| Issue                                | Solution                                                                                          |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------- |
+| Nightly check not detecting changes  | Verify `models/model-descriptor.json` is committed with the current HF revision                   |
+| Model release fails                  | Check the workflow run logs; force re-run with `force: true`                                      |
+| `downloadModel()` fails              | Verify `model-latest` release exists and contains both `.weights.bin` and `model-descriptor.json` |
+| `downloadModel()` fails behind proxy | Set `HTTPS_PROXY` or `EMBED_CODE_PROXY_URL` environment variables (see README Proxy section)      |
+| `downloadModel()` fails with 407     | Proxy authentication required — set `EMBED_CODE_PROXY_USERNAME` and `EMBED_CODE_PROXY_PASSWORD`   |
+| Engine rejects model                 | Descriptor schema > `ENGINE_SUPPORTED_SCHEMA` — upgrade `@agentix-e/embed-code-core`              |
+| Local tests need weight file         | Export locally: `python3 scripts/export-weights.py` or `npm run pipeline:export`                  |

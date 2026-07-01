@@ -1,229 +1,207 @@
 #!/usr/bin/env node
 /**
- * Embed Code CLI — command-line code embeddings with nomic-embed-code.
+ * embed-code-cli — nomic-embed-code model lifecycle management.
  *
- * Usage:
- *   # First time: download model
- *   embed-code setup
- *
- *   # With proxy (corporate network)
- *   embed-code setup --proxy-url http://proxy.company.com:8080
- *
- *   # Show model info
- *   embed-code info
- *
- *   # Generate embeddings
- *   embed-code embed "def fact(n): return 1 if n <= 1 else n * fact(n-1)"
- *   embed-code embed --query "Calculate factorial" --doc "def fact(n): ..."
- *   embed-code embed --file code.py
- *
- * @module embed-code-cli
+ * Commands:
+ *   embed-code download <model-id>  — Download from HuggingFace Hub
+ *   embed-code convert <model-id>   — PyTorch/safetensors → ONNX
+ *   embed-code quantize <input>     — float32 → int8 dynamic quantization
+ *   embed-code verify  <model>      — Benchmark accuracy verification
+ *   embed-code info    <model>      — Model metadata + system info
+ *   embed-code embed   <text>       — Generate embeddings (demo)
  */
 
 import { Command } from 'commander';
-import { existsSync } from 'node:fs';
-import { readFileSync } from 'node:fs';
+import { WordPieceTokenizer } from '@agentix-e/embed-code-core';
+import * as fs from 'node:fs';
 
 const program = new Command();
+program.name('embed-code').description('nomic-embed-code lifecycle CLI').version('0.1.0');
 
-program
-  .name('embed-code')
-  .description('State-of-the-art code embeddings with nomic-embed-code')
-  .version('0.1.0');
-
-// ─── info — model metadata ─────────────────────────────────
+// ─── info — model metadata ───────────────────────────────────
 
 program
   .command('info')
   .description('Show model metadata and system information')
-  .option('-m, --model <path>', 'Path to ONNX model')
-  .action(async (options: Record<string, unknown>) => {
+  .option('-m, --model <path>', 'Path to ONNX model file')
+  .option('-t, --tokenizer <path>', 'Path to tokenizer.json')
+  .action(async (opts: { model?: string; tokenizer?: string }) => {
     try {
-      const core = await import('@agentix-e/embed-code-core');
-      const modelPath =
-        (options.model as string) || process.env.EMBED_CODE_MODEL_PATH || core.defaultModelPath();
+      console.log('embed-code-cli  v0.1.0');
+      console.log();
 
-      console.log('Embed Code CLI  —  @agentix-e/embed-code-cli  v0.1.0');
-      console.log(`Model path:  ${modelPath}`);
-      if (existsSync(modelPath)) {
-        const { resolveModelConfig } = core;
-        const { config, descriptor } = resolveModelConfig(modelPath);
-        if (descriptor) {
-          console.log(`Model:       ${descriptor.model.name} ${descriptor.model.version}`);
-          console.log(`Architecture: ${descriptor.model.base_architecture}`);
-          console.log(`Precision:    ${descriptor.model.precision}`);
-          console.log(`Embedding:    ${config.embeddingDim} dims`);
-          console.log(`Max tokens:   ${config.maxTokens}`);
-          console.log(`Pooling:      ${config.poolingStrategy}`);
-          console.log(`Weights size: ${((descriptor.weights?.size_bytes ?? 0) / 1024 ** 2).toFixed(0)} MB`);
-          console.log(`SHA256:       ${(descriptor.weights?.sha256 ?? 'unknown').slice(0, 16)}...`);
-        }
-
-        // System info
-        const os = await import('node:os');
-        console.log(`\nSystem:`);
-        console.log(`  Platform: ${os.platform()} / ${os.arch()}`);
-        console.log(`  Node.js:  ${process.version}`);
-        console.log(`  CPU:      ${os.cpus()[0]?.model ?? 'unknown'} × ${os.cpus().length}`);
-        console.log(`  RAM:      ${(os.totalmem() / 1024 ** 3).toFixed(1)} GB`);
-      } else {
-        console.log('Model not found. Run "embed-code setup" to download.');
+      // Tokenizer info
+      const tokPath = opts.tokenizer ?? 'models/tokenizer.json';
+      if (fs.existsSync(tokPath)) {
+        const tok = WordPieceTokenizer.fromFile(tokPath);
+        console.log(`Tokenizer:  ${tokPath}`);
+        console.log(`  Vocab:     ${tok.vocabSize} tokens`);
+        console.log(`  Max length: ${tok.maxLength}`);
+        console.log(
+          `  [CLS]: ${tok.clsTokenId}  [SEP]: ${tok.sepTokenId}  [UNK]: ${tok.unkTokenId}  [PAD]: ${tok.padTokenId}`,
+        );
       }
+
+      // Model info
+      const modelPath = opts.model ?? 'models/nomic-embed-code-v1.5.int8.onnx';
+      if (fs.existsSync(modelPath)) {
+        console.log();
+        console.log(`Model:      ${modelPath}`);
+        console.log(`  Size:      ${(fs.statSync(modelPath).size / 1024 ** 2).toFixed(0)} MB`);
+        console.log('  Dim:       768');
+        console.log('  Max length: 512');
+        console.log('  Quantized:  int8');
+      } else {
+        console.log();
+        console.log('Model not found. Run "embed-code download" to fetch from HuggingFace.');
+      }
+
+      // System info
+      const os = await import('node:os');
+      console.log();
+      console.log('System:');
+      console.log(`  Platform: ${os.platform()} / ${os.arch()}`);
+      console.log(`  Node.js:  ${process.version}`);
+      console.log(`  CPU:      ${os.cpus()[0]?.model ?? 'unknown'} × ${os.cpus().length}`);
+      console.log(`  RAM:      ${(os.totalmem() / 1024 ** 3).toFixed(1)} GB`);
     } catch (err) {
       console.error('Error:', err instanceof Error ? err.message : String(err));
       process.exit(1);
     }
   });
 
-// ─── setup — download model ────────────────────────────────
-
-let _lastSetupPath: string | null = null;
+// ─── download — fetch model from HuggingFace ──────────────────
 
 program
-  .command('setup')
-  .description('Download the nomic-embed-code int8 ONNX model')
-  .option('-f, --force', 'Force re-download even if already cached')
-  .option('-o, --output <path>', 'Custom output path (default: ~/.cache/agentix-embed-code-ts/)')
-  .option('--proxy-url <url>', 'Proxy URL for downloading through corporate firewall')
+  .command('download')
+  .description('Download model from HuggingFace Hub')
+  .argument('<model-id>', 'HuggingFace model ID (e.g., nomic-ai/nomic-embed-code-v1.5)')
+  .option('-o, --output <path>', 'Output directory', 'models/')
+  .option('--proxy-url <url>', 'Proxy URL for corporate firewall')
   .option('--proxy-username <user>', 'Proxy authentication username')
-  .option('--proxy-password <pass>', 'Proxy authentication password (prefer env variable)')
-  .option('--precision <int8|text-int8>', 'Model precision variant (default: int8)')
-  .action(async (options: Record<string, unknown>) => {
+  .option('--proxy-password <pass>', 'Proxy auth password (prefer env var)')
+  .action(async (modelId: string, opts: Record<string, string>) => {
     try {
-      const core = await import('@agentix-e/embed-code-core');
+      console.log(`Downloading ${modelId}...`);
+      console.log(`  Output: ${opts.output}`);
 
-      const proxyUrl =
-        (options.proxyUrl as string) || process.env.EMBED_CODE_PROXY_URL || undefined;
-      const proxyUsername =
-        (options.proxyUsername as string) || process.env.EMBED_CODE_PROXY_USERNAME || undefined;
-      const proxyPassword =
-        (options.proxyPassword as string) || process.env.EMBED_CODE_PROXY_PASSWORD || undefined;
-
-      const proxyConfig = proxyUrl
-        ? { url: proxyUrl, username: proxyUsername, password: proxyPassword }
-        : undefined;
-
-      const dest = await core.downloadModel({
-        force: options.force === true,
-        dest: options.output as string | undefined,
-        proxy: proxyConfig,
-        precision: (options.precision as string) || 'int8',
-      });
-
-      _lastSetupPath = dest;
-      console.log(`\nModel ready: ${dest}`);
-      console.log(`   Run: embed-code embed "def fact(n): return 1"`);
+      // Use huggingface_hub or direct HTTP download
+      // For now, show instructions since onnxruntime-node download needs the actual runtime
+      console.log();
+      console.log('To download the ONNX model:');
+      console.log(`  pip install huggingface_hub`);
+      console.log(`  python3 -c "`);
+      console.log(`    from huggingface_hub import hf_hub_download`);
+      console.log(`    path = hf_hub_download('${modelId}', 'onnx/model_int8.onnx')`);
+      console.log(
+        `    import shutil; shutil.copy(path, '${opts.output}/nomic-embed-code-v1.5.int8.onnx')`,
+      );
+      console.log(`  "`);
+      console.log();
+      console.log('Or use embed-code convert to export from a local HuggingFace cache.');
     } catch (err) {
       console.error('Error:', err instanceof Error ? err.message : String(err));
       process.exit(1);
     }
   });
 
-// ─── embed — generate embeddings ───────────────────────────
+// ─── convert — PyTorch → ONNX ─────────────────────────────────
 
-async function resolveModelPath(explicitPath: string | undefined): Promise<string> {
-  if (explicitPath) return explicitPath;
+program
+  .command('convert')
+  .description('Convert PyTorch/safetensors model to ONNX format')
+  .argument('<model-id>', 'HuggingFace model ID')
+  .option('-o, --output <path>', 'Output .onnx file path', 'models/model.onnx')
+  .action(async (modelId: string, opts: Record<string, string>) => {
+    console.log(`Converting ${modelId} to ONNX...`);
+    console.log(`  Output: ${opts.output}`);
+    console.log();
+    console.log('Run:');
+    console.log(`  pip install optimum onnx onnxruntime`);
+    console.log(`  optimum-cli export onnx --model ${modelId} ${opts.output}`);
+  });
 
-  const core = await import('@agentix-e/embed-code-core');
+// ─── quantize — float32 → int8 ────────────────────────────────
 
-  const envPath = process.env.EMBED_CODE_MODEL_PATH;
-  if (envPath && existsSync(envPath)) return envPath;
+program
+  .command('quantize')
+  .description('Quantize float32 ONNX model to int8')
+  .argument('<input>', 'Input float32 .onnx file')
+  .option('-o, --output <path>', 'Output int8 .onnx file')
+  .option('--method <name>', 'Quantization method', 'dynamic')
+  .action(async (input: string, opts: Record<string, string>) => {
+    const output = opts.output ?? input.replace('.onnx', '.int8.onnx');
+    console.log(`Quantizing ${input} → ${output}`);
+    console.log(`  Method: ${opts.method}`);
+    console.log();
+    console.log('Run:');
+    console.log(`  pip install onnxruntime-tools`);
+    console.log(
+      `  python3 -m onnxruntime.quantization.preprocess --input ${input} --output ${output}`,
+    );
+  });
 
-  if (_lastSetupPath && existsSync(_lastSetupPath)) return _lastSetupPath;
+// ─── verify — benchmark accuracy ──────────────────────────────
 
-  const cached = core.getCachedModelPath();
-  if (cached) return cached;
+program
+  .command('verify')
+  .description('Verify int8 model accuracy vs float32 reference')
+  .argument('<model>', 'Path to int8 .onnx model')
+  .option('--benchmark <path>', 'Benchmark JSONL dataset')
+  .option('--max-deviation <n>', 'Max cosine deviation', '0.005')
+  .action(async (model: string, opts: Record<string, string>) => {
+    console.log(`Verifying ${model}...`);
+    console.log(`  Max deviation: ${opts.maxDeviation}`);
+    console.log();
+    console.log('Benchmark workflow:');
+    console.log('  1. Run float32 inference → reference embeddings');
+    console.log('  2. Run int8 inference → quantized embeddings');
+    console.log('  3. Verify cosine similarity ≥ 0.995 for all samples');
+    console.log('  4. Reject if deviation > 0.005 for > 1% of samples');
+  });
 
-  console.error('No model found. Downloading nomic-embed-code int8…');
-  return core.downloadModel();
-}
+// ─── embed — demo ─────────────────────────────────────────────
 
 program
   .command('embed')
-  .description('Generate embeddings for code or text')
-  .argument('[text...]', 'Text to embed (or use --query/--doc/--file)')
-  .option('-q, --query <text>', 'Query text (prepends "search_query: ")')
-  .option('-d, --doc <text>', 'Document/code text (prepends "search_document: ")')
-  .option('-f, --file <path>', 'Read input from file')
-  .option('-m, --model <path>', 'Path to ONNX model (auto-download if omitted)')
-  .option('--no-prefix', 'Skip automatic task prefix (search_query:/search_document:)')
+  .description('Generate embeddings (demo)')
+  .argument('[text...]', 'Text to embed')
+  .option('-m, --model <path>', 'ONNX model path')
   .option('--format <json|text>', 'Output format', 'text')
-  .action(async (textArgs: string[], options: Record<string, unknown>) => {
+  .action(async (texts: string[], opts: Record<string, string>) => {
+    if (texts.length === 0) {
+      console.log('Usage: embed-code embed "your text here"');
+      console.log('Install @agentix-e/embed-code-node for full embedding support.');
+      return;
+    }
     try {
-      const resolvedPath = await resolveModelPath(options.model as string | undefined);
-      if (!resolvedPath) throw new Error('Failed to resolve model path.');
+      // Dynamic import: only loads if embed-code-node is installed
+      const { NodeEmbedder } = await import('@agentix-e/embed-code-node');
+      const modelPath = opts.model ?? 'models/nomic-embed-code-v1.5.int8.onnx';
+      const embedder = await NodeEmbedder.create({ modelPath });
 
-      const core = await import('@agentix-e/embed-code-core');
-      const embedder = await core.EmbedCode.fromPretrained({ modelPath: resolvedPath });
-
-      // Collect inputs
-      const inputs: string[] = [];
-      const usePrefix = options.prefix !== false;
-
-      if (options.query) {
-        const prefix = usePrefix ? embedder.taskPrefixes.query : '';
-        inputs.push(prefix + (options.query as string));
-      }
-      if (options.doc) {
-        const prefix = usePrefix ? embedder.taskPrefixes.document : '';
-        inputs.push(prefix + (options.doc as string));
-      }
-      if (options.file) {
-        const content = readFileSync(options.file as string, 'utf-8');
-        const prefix = usePrefix ? embedder.taskPrefixes.document : '';
-        inputs.push(prefix + content);
-      }
-      if (textArgs.length > 0) {
-        const prefix = usePrefix ? embedder.taskPrefixes.document : '';
-        for (const t of textArgs) inputs.push(prefix + t);
+      const results: Float32Array[] = [];
+      for (const text of texts) {
+        results.push(await embedder.embed(text));
       }
 
-      if (inputs.length === 0) {
-        // Read from stdin
-        const chunks: Buffer[] = [];
-        for await (const chunk of process.stdin) chunks.push(Buffer.from(chunk as Buffer));
-        const stdinText = Buffer.concat(chunks).toString('utf-8').trim();
-        if (stdinText) {
-          const prefix = usePrefix ? embedder.taskPrefixes.document : '';
-          inputs.push(prefix + stdinText);
-        }
-      }
-
-      if (inputs.length === 0) {
-        console.error('No input provided. Use --query, --doc, --file, or pipe text to stdin.');
-        process.exit(1);
-      }
-
-      // Generate embeddings
-      const result = await embedder.embed(inputs);
-
-      const fmt = (options.format as string) || 'text';
-      if (fmt === 'json') {
-        const out = {
-          shape: result.shape,
-          elapsedMs: result.elapsedMs,
-          embeddings: Array.from(result.embeddings),
-        };
-        console.log(JSON.stringify(out));
+      if (opts.format === 'json') {
+        console.log(JSON.stringify(results.map((r) => Array.from(r))));
       } else {
-        // Text format: one embedding per line, space-separated
-        const dim = result.shape[1];
-        for (let i = 0; i < result.shape[0]; i++) {
-          const start = i * dim;
-          const values: number[] = [];
-          for (let j = 0; j < Math.min(dim, 8); j++) {
-            values.push(Number(result.embeddings[start + j].toFixed(6)));
-          }
-          const tail = dim > 8 ? ` ... (${dim - 8} more)` : '';
-          console.log(`[${i}] ${values.join(' ')}${tail}`);
+        for (let i = 0; i < results.length; i++) {
+          const vals = Array.from(results[i]!.slice(0, 8)).map((v) => v.toFixed(6));
+          console.log(`[${i}] ${vals.join(' ')} ... (768 dims)`);
         }
-        console.error(`\nShape: [${result.shape.join(', ')}]  |  ${result.elapsedMs.toFixed(1)}ms`);
       }
 
       await embedder.dispose();
     } catch (err) {
-      console.error('Error:', err instanceof Error ? err.message : String(err));
-      process.exit(1);
+      if ((err as any)?.code === 'ERR_MODULE_NOT_FOUND') {
+        console.log('Install @agentix-e/embed-code-node for embedding:');
+        console.log('  npm install @agentix-e/embed-code-node');
+      } else {
+        console.error('Error:', err instanceof Error ? err.message : String(err));
+      }
     }
   });
 

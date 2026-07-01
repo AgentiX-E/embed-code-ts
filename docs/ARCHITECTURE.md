@@ -25,7 +25,7 @@
 │  ┌──────────────────────────────────────────┐              │
 │  │         Embedding Pipeline                │              │
 │  │  Step 1: Tokenize (BPE)                   │              │
-│  │  Step 2: 
+│  │  Step 2:
 │  │  Step 3: Pool (last_token/mean/cls)       │              │
 │  │  Step 4: Normalize (L2)                   │              │
 │  └────────────────┬─────────────────────────┘              │
@@ -203,9 +203,9 @@ IInferenceEngine     — pluggable backend (TS)
 
 ## Package Sizes
 
-| Package                      | Code Size | Dependencies                 |
-| ---------------------------- | --------- | ---------------------------- |
+| Package                      | Code Size | Dependencies     |
+| ---------------------------- | --------- | ---------------- |
 | `@agentix-e/embed-code-core` | ~50 KB    | embedded weights |
-| `@agentix-e/embed-code-cli`  | ~10 KB    | `commander`                  |
+| `@agentix-e/embed-code-cli`  | ~10 KB    | `commander`      |
 
 Model weights (~137 MB int8 TS for nomic-embed-code 7B) are downloaded separately from GitHub Releases.

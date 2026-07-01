@@ -136,13 +136,13 @@ HuggingFace Hub              Local Disk
 
 | Property | Value                                               |
 | -------- | --------------------------------------------------- |
-| Filename | `nomic-embed-code-v1-int8.weights.bin`                     |
+| Filename | `nomic-embed-code-v1-int8.weights.bin`              |
 | Size     | ~7 GB                                               |
-| Format   | int8 binary format                     |
+| Format   | int8 binary format                                  |
 | Input    | `input_ids: [batch, 32768]` (int64)                 |
 | Input    | `attention_mask: [batch, 32768]` (int64)            |
 | Output   | `last_hidden_state: [batch, 32768, 3584]` (float32) |
-| Backend  | pure-TypeScript engine                 |
+| Backend  | pure-TypeScript engine                              |
 
 ### 2.5 Hardware Requirements
 
@@ -299,7 +299,7 @@ embed-code info -m ./custom.weights.bin
 | ---------------------- | -------- | ---------------------------------------------------- |
 | `<text>`               | ❌       | Text to embed (alternative to -f)                    |
 | `-f, --file <path>`    | ❌       | Input file path                                      |
-| `-m, --model <path>`   | ❌       | weights file path                                 |
+| `-m, --model <path>`   | ❌       | weights file path                                    |
 | `-o, --output <path>`  | ❌       | Output file path                                     |
 | `--max-tokens <n>`     | ❌       | Max input tokens (default: 32768)                    |
 | `--no-normalize`       | ❌       | Disable L2 normalization                             |
@@ -474,7 +474,7 @@ Cannot find module ''
 **Solution**:
 
 ```bash
-npm install 
+npm install
 ```
 
 ---

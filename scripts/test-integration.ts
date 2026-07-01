@@ -14,7 +14,9 @@ const TOKENIZER = path.join(MODELS_DIR, 'tokenizer.json');
 const REFERENCE = path.join(MODELS_DIR, 'reference-pre-norm.json');
 
 function cosineSimilarity(a: number[], b: number[]): number {
-  let dot = 0, normA = 0, normB = 0;
+  let dot = 0,
+    normA = 0,
+    normB = 0;
   for (let i = 0; i < a.length; i++) {
     dot += a[i]! * b[i]!;
     normA += a[i]! ** 2;
@@ -36,7 +38,9 @@ async function main() {
   }
   const rawData = fs.readFileSync(WEIGHTS);
   const wb = WeightBuffer.fromBuffer(new Uint8Array(rawData.buffer));
-  console.log(`\n📦 Weights: ${(rawData.length / 1024**2).toFixed(1)} MB, ${wb.names.length} tensors, arch: ${JSON.stringify(wb.archParams)}`);
+  console.log(
+    `\n📦 Weights: ${(rawData.length / 1024 ** 2).toFixed(1)} MB, ${wb.names.length} tensors, arch: ${JSON.stringify(wb.archParams)}`,
+  );
 
   // Load reference
   let reference: any = null;
@@ -53,13 +57,21 @@ async function main() {
     tokenizerPath: TOKENIZER,
     skipWarmup: true,
   });
-  console.log(`   Loaded in ${Date.now() - t0}ms, dim=${embedder.embeddingDim}, maxTokens=${embedder.maxTokens}`);
+  console.log(
+    `   Loaded in ${Date.now() - t0}ms, dim=${embedder.embeddingDim}, maxTokens=${embedder.maxTokens}`,
+  );
 
   // Test 1: Single text embedding
   console.log('\n📏 Test 1: Single text embedding...');
   const t1 = Date.now();
   const r1 = await embedder.embed(['search_query: How to sort an array?'], { maxTokens: 32 });
-  console.log(`   Shape: ${r1.shape}, time: ${Date.now()-t1}ms, first 5: [${Array.from(r1.embeddings.slice(0,5)).map(v=>v.toFixed(6)).join(', ')}]`);
+  console.log(
+    `   Shape: ${r1.shape}, time: ${Date.now() - t1}ms, first 5: [${Array.from(
+      r1.embeddings.slice(0, 5),
+    )
+      .map((v) => v.toFixed(6))
+      .join(', ')}]`,
+  );
   let nans = 0;
   for (let i = 0; i < r1.embeddings.length; i++) if (isNaN(r1.embeddings[i])) nans++;
   console.log(`   NaN count: ${nans}/${r1.embeddings.length} ${nans === 0 ? '✅' : '❌'}`);
@@ -74,7 +86,7 @@ async function main() {
   console.log('\n📏 Test 2: Batch 4 texts...');
   const t2 = Date.now();
   const r2 = await embedder.embed(texts, { maxTokens: 64 });
-  console.log(`   Shape: ${r2.shape}, time: ${Date.now()-t2}ms`);
+  console.log(`   Shape: ${r2.shape}, time: ${Date.now() - t2}ms`);
   nans = 0;
   for (let i = 0; i < Math.min(100, r2.embeddings.length); i++) if (isNaN(r2.embeddings[i])) nans++;
   console.log(`   NaN count (first 100): ${nans} ${nans === 0 ? '✅' : '❌'}`);
@@ -84,11 +96,11 @@ async function main() {
   const dim = embedder.embeddingDim;
   const tsSim01 = cosineSimilarity(
     Array.from(r2.embeddings.slice(0, dim)),
-    Array.from(r2.embeddings.slice(dim, dim * 2))
+    Array.from(r2.embeddings.slice(dim, dim * 2)),
   );
   const tsSim23 = cosineSimilarity(
     Array.from(r2.embeddings.slice(dim * 2, dim * 3)),
-    Array.from(r2.embeddings.slice(dim * 3, dim * 4))
+    Array.from(r2.embeddings.slice(dim * 3, dim * 4)),
   );
   console.log(`   sim(query0,doc1) = ${tsSim01.toFixed(6)}`);
   console.log(`   sim(query2,doc3) = ${tsSim23.toFixed(6)}`);
@@ -99,7 +111,7 @@ async function main() {
     const refTexts = reference.texts;
     const t3 = Date.now();
     const r3 = await embedder.embed(refTexts, { maxTokens: 64 });
-    console.log(`   Shape: ${r3.shape}, time: ${Date.now()-t3}ms`);
+    console.log(`   Shape: ${r3.shape}, time: ${Date.now() - t3}ms`);
 
     const refEmbs = reference.embeddings;
     const sims: number[] = [];
@@ -109,7 +121,7 @@ async function main() {
       const sim = cosineSimilarity(tsEmb, refEmb);
       sims.push(sim);
     }
-    const avgSim = sims.reduce((a,b)=>a+b,0)/sims.length;
+    const avgSim = sims.reduce((a, b) => a + b, 0) / sims.length;
     const minSim = Math.min(...sims);
     console.log(`   Avg cosine sim: ${avgSim.toFixed(6)}, min: ${minSim.toFixed(6)}`);
     console.log(`   ${minSim >= 0.95 ? '✅ Accuracy verified (≥0.95)' : '❌ Below threshold'}`);
@@ -118,13 +130,15 @@ async function main() {
     console.log('\n   Pair similarities (TS vs Ref):');
     for (let i = 0; i < refTexts.length; i += 2) {
       if (i + 1 >= refTexts.length) break;
-      const tsQE = Array.from(r3.embeddings.slice(i*dim, (i+1)*dim));
-      const tsDE = Array.from(r3.embeddings.slice((i+1)*dim, (i+2)*dim));
+      const tsQE = Array.from(r3.embeddings.slice(i * dim, (i + 1) * dim));
+      const tsDE = Array.from(r3.embeddings.slice((i + 1) * dim, (i + 2) * dim));
       const refQE = refEmbs[i];
-      const refDE = refEmbs[i+1];
+      const refDE = refEmbs[i + 1];
       const tsS = cosineSimilarity(tsQE, tsDE);
       const refS = cosineSimilarity(refQE, refDE);
-      console.log(`   Pair ${i/2+1}: TS=${tsS.toFixed(6)}, Ref=${refS.toFixed(6)}, Δ=${Math.abs(tsS-refS).toFixed(6)}`);
+      console.log(
+        `   Pair ${i / 2 + 1}: TS=${tsS.toFixed(6)}, Ref=${refS.toFixed(6)}, Δ=${Math.abs(tsS - refS).toFixed(6)}`,
+      );
     }
   }
 
@@ -134,4 +148,7 @@ async function main() {
   console.log('═'.repeat(60));
 }
 
-main().catch(e => { console.error('❌', e.message); process.exit(1); });
+main().catch((e) => {
+  console.error('❌', e.message);
+  process.exit(1);
+});

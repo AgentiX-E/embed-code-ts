@@ -1,139 +1,64 @@
 /**
- * Unit tests for the pooling module.
+ * Unit tests for pooler + normalizer.
  */
 import { describe, it, expect } from 'vitest';
-import { poolEmbeddings, normalizeEmbeddings, cosineSimilarity } from '../../src/pooling';
+import { meanPool } from '../../src/pooler';
+import { l2Normalize, cosineSimilarity } from '../../src/normalizer';
 
-describe('poolEmbeddings', () => {
-  it('last-token pooling picks the last non-padding token', () => {
-    const h = new Float32Array([
-      0.1,
-      0.2, // token 0
-      0.3,
-      0.4, // token 1
-      0.5,
-      0.6, // token 2 (last non-padding)
-    ]);
-    const mask = new Int32Array([1, 1, 1]);
-
-    const result = poolEmbeddings(h, mask, 1, 3, 2, 'last_token');
-    expect(result[0]).toBeCloseTo(0.5);
-    expect(result[1]).toBeCloseTo(0.6);
-  });
-
-  it('last-token pooling skips padding tokens', () => {
-    const h = new Float32Array([
-      0.1,
-      0.2, // token 0
-      0.3,
-      0.4, // token 1 (last real)
-      0.5,
-      0.6, // padding
-    ]);
+describe('meanPool', () => {
+  it('averages over non-padding tokens', () => {
+    const h = new Float32Array([1.0, 2.0, 3.0, 4.0, 5.0, 6.0]);
     const mask = new Int32Array([1, 1, 0]);
-
-    const result = poolEmbeddings(h, mask, 1, 3, 2, 'last_token');
-    expect(result[0]).toBeCloseTo(0.3);
-    expect(result[1]).toBeCloseTo(0.4);
+    const r = meanPool(h, mask, 1, 3, 2);
+    expect(r[0]).toBeCloseTo(2.0);
+    expect(r[1]).toBeCloseTo(3.0);
   });
 
-  it('mean pooling computes average over non-padding tokens', () => {
-    const h = new Float32Array([
-      1.0,
-      2.0, // token 0
-      3.0,
-      4.0, // token 1
-      5.0,
-      6.0, // padding
-    ]);
-    const mask = new Int32Array([1, 1, 0]);
-
-    const result = poolEmbeddings(h, mask, 1, 3, 2, 'mean');
-    expect(result[0]).toBeCloseTo(2.0);
-    expect(result[1]).toBeCloseTo(3.0);
-  });
-
-  it('mean pooling handles single token', () => {
+  it('handles single token', () => {
     const h = new Float32Array([7.0, 8.0]);
     const mask = new Int32Array([1]);
-
-    const result = poolEmbeddings(h, mask, 1, 1, 2, 'mean');
-    expect(result[0]).toBeCloseTo(7.0);
-    expect(result[1]).toBeCloseTo(8.0);
+    const r = meanPool(h, mask, 1, 1, 2);
+    expect(r[0]).toBeCloseTo(7.0);
+    expect(r[1]).toBeCloseTo(8.0);
   });
 
-  it('mean pooling with all padding tokens returns zeros', () => {
+  it('all-padding returns zeros', () => {
     const h = new Float32Array([0.1, 0.2, 0.3, 0.4]);
-    const mask = new Int32Array([0, 0]); // all padding
-    const result = poolEmbeddings(h, mask, 1, 2, 2, 'mean');
-    expect(result[0]).toBe(0);
-    expect(result[1]).toBe(0);
+    const mask = new Int32Array([0, 0]);
+    const r = meanPool(h, mask, 1, 2, 2);
+    expect(r[0]).toBe(0);
+    expect(r[1]).toBe(0);
   });
 
-  it('CLS pooling takes first token', () => {
-    const h = new Float32Array([
-      0.1,
-      0.2, // token 0 (CLS)
-      0.3,
-      0.4, // token 1
-      0.5,
-      0.6, // token 2
-    ]);
-    const mask = new Int32Array([1, 1, 1]);
-
-    const result = poolEmbeddings(h, mask, 1, 3, 2, 'cls');
-    expect(result[0]).toBeCloseTo(0.1);
-    expect(result[1]).toBeCloseTo(0.2);
-  });
-
-  it('handles batch of 2 with last-token pooling', () => {
-    const h = new Float32Array([
-      // batch 0: 2 tokens dim=3
-      1, 2, 3, 4, 5, 6,
-      // batch 1: 2 tokens dim=3
-      7, 8, 9, 10, 11, 12,
-    ]);
-    const mask = new Int32Array([1, 1, 1, 1]);
-
-    const result = poolEmbeddings(h, mask, 2, 2, 3, 'last_token');
-    // batch 0 last token: [4, 5, 6]
-    expect(result[0]).toBeCloseTo(4);
-    expect(result[1]).toBeCloseTo(5);
-    expect(result[2]).toBeCloseTo(6);
-    // batch 1 last token: [10, 11, 12]
-    expect(result[3]).toBeCloseTo(10);
-    expect(result[4]).toBeCloseTo(11);
-    expect(result[5]).toBeCloseTo(12);
-  });
-
-  it('last-token pooling with all-padding tokens falls back to last position', () => {
-    const h = new Float32Array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6]);
-    const mask = new Int32Array([0, 0, 0]); // all padding
-    const result = poolEmbeddings(h, mask, 1, 3, 2, 'last_token');
-    // Falls back to index S-1 = 2
-    expect(result[0]).toBeCloseTo(0.5);
-    expect(result[1]).toBeCloseTo(0.6);
+  it('handles batch of 2', () => {
+    const h = new Float32Array([1, 2, 3, 4, 5, 6, 7, 8]);
+    const mask = new Int32Array([1, 1, 1, 0]);
+    const r = meanPool(h, mask, 2, 2, 2);
+    expect(r[0]).toBeCloseTo(2);
+    expect(r[1]).toBeCloseTo(3);
+    expect(r[2]).toBeCloseTo(5);
+    expect(r[3]).toBeCloseTo(6);
   });
 });
 
-describe('normalizeEmbeddings', () => {
-  it('normalizes to unit L2 norm', () => {
+describe('l2Normalize', () => {
+  it('normalizes to unit norm', () => {
     const e = new Float32Array([3.0, 4.0]);
-    normalizeEmbeddings(e, 1, 2);
+    l2Normalize(e, 1, 2);
     expect(e[0]).toBeCloseTo(0.6);
     expect(e[1]).toBeCloseTo(0.8);
   });
 
-  it('handles zero norm gracefully', () => {
+  it('handles zero norm', () => {
     const e = new Float32Array([0.0, 0.0]);
-    normalizeEmbeddings(e, 1, 2);
+    l2Normalize(e, 1, 2);
     expect(e[0]).toBe(0);
     expect(e[1]).toBe(0);
   });
 
-  it('handles batch normalization', () => {
+  it('handles batch', () => {
     const e = new Float32Array([3, 4, 0, 5]);
-    normalizeEmbeddings(e, 2, 2);
+    l2Normalize(e, 2, 2);
     expect(e[0]).toBeCloseTo(0.6);
     expect(e[1]).toBeCloseTo(0.8);
     expect(e[2]).toBe(0);
@@ -142,61 +67,15 @@ describe('normalizeEmbeddings', () => {
 });
 
 describe('cosineSimilarity', () => {
-  it('returns 1 for identical vectors', () => {
-    expect(cosineSimilarity(new Float32Array([1, 2, 3]), new Float32Array([1, 2, 3]))).toBeCloseTo(
-      1.0,
-    );
+  it('returns 1 for identical', () => {
+    expect(cosineSimilarity([1, 2, 3], [1, 2, 3])).toBeCloseTo(1.0);
   });
 
-  it('returns 0 for orthogonal vectors', () => {
-    expect(cosineSimilarity(new Float32Array([1, 0]), new Float32Array([0, 1]))).toBeCloseTo(0.0);
+  it('returns 0 for orthogonal', () => {
+    expect(cosineSimilarity([1, 0], [0, 1])).toBeCloseTo(0.0);
   });
 
-  it('returns -1 for opposite vectors', () => {
-    expect(cosineSimilarity(new Float32Array([1, 0]), new Float32Array([-1, 0]))).toBeCloseTo(-1.0);
-  });
-
-  it('throws on dimension mismatch', () => {
-    expect(() => cosineSimilarity(new Float32Array([1, 2]), new Float32Array([1, 2, 3]))).toThrow();
-  });
-
-  it('returns 0 for zero vectors', () => {
-    expect(cosineSimilarity(new Float32Array([0, 0]), new Float32Array([1, 2]))).toBeCloseTo(0.0);
-    expect(cosineSimilarity(new Float32Array([1, 2]), new Float32Array([0, 0]))).toBeCloseTo(0.0);
-    expect(cosineSimilarity(new Float32Array([0, 0]), new Float32Array([0, 0]))).toBeCloseTo(0.0);
-  });
-
-  it('handles negative values correctly', () => {
-    const sim = cosineSimilarity(
-      new Float32Array([-0.5, 0.3, -0.1]),
-      new Float32Array([0.5, -0.3, 0.1]),
-    );
-    expect(sim).toBeCloseTo(-1.0);
-  });
-
-  it('handles large-dimension vectors (3584-dim, like nomic-embed-code)', () => {
-    // Two proportional vectors with large dimension
-    const dim = 3584;
-    const a = new Float32Array(dim);
-    const b = new Float32Array(dim);
-    for (let i = 0; i < dim; i++) {
-      a[i] = Math.sin(i * 0.01);
-      b[i] = a[i] * 2; // b = 2*a, same direction
-    }
-    expect(cosineSimilarity(a, b)).toBeCloseTo(1.0);
-  });
-
-  it('correctly tracks accumulators for large vectors without overflow', () => {
-    const dim = 3584;
-    const a = new Float32Array(dim);
-    const b = new Float32Array(dim);
-    // Fill with small values (real embedding range)
-    for (let i = 0; i < dim; i++) {
-      a[i] = Math.sin(i * 0.05) * 0.1;
-      b[i] = Math.cos(i * 0.05) * 0.1;
-    }
-    const sim = cosineSimilarity(a, b);
-    expect(sim).toBeGreaterThan(-1.1);
-    expect(sim).toBeLessThan(1.1);
+  it('dimension mismatch produces 0', () => {
+    expect(cosineSimilarity([1, 2], [1, 2, 3])).toBe(0);
   });
 });

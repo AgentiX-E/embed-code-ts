@@ -3,9 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "description": "nomic-embed-code int8 weights in a TypeScript npm package — pure-TS incbin-style inference",
-
   "workspaces": [
     "packages/embed-code-core",
+    "packages/embed-code-node",
+    "packages/embed-code-web",
     "packages/embed-code-cli"
   ],
   "scripts": {

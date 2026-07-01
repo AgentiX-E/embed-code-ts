@@ -1,115 +1,29 @@
 /**
- * Type definitions for embed-code-ts.
- *
- * Mirroring the model-descriptor.json schema as TypeScript types.
+ * Shared types for @agentix-e/embed-code-core.
  */
 
-// ─── Model Descriptor (mirrors models/model-descriptor.json) ──
+// ─── Re-exports from interface modules ──────────────────────────
 
-export interface ModelDescriptor {
-  schema: number;
-  model: {
-    name: string;
-    version: string;
-    base_architecture: string;
-    hf_repository: string;
-    hf_revision: string;
-    exported_at: string;
-    precision: string;
-  };
-  weights?: {
-    input_ids_name: string;
-    attention_mask_name: string;
-    output_name: string;
-    sha256: string;
-    size_bytes: number;
-  };
-  /** @deprecated — use `weights` instead */
-  onnx?: {
-    input_ids_name: string;
-    attention_mask_name: string;
-    output_name: string;
-    input_shape?: number[];
-    output_shape?: number[];
-    opset: number;
-    sha256: string;
-    size_bytes: number;
-  };
-  architecture: ModelArchitecture;
-  tokenizer: TokenizerDescriptor;
-  pooling: PoolingDescriptor;
-  task_prefixes: TaskPrefixDescriptor;
+export type { IEmbedder, BatchOptions, ModelInfo } from './embedder-interface';
+export type { IOrtBackend, IOrtSession, IOrtTensor } from './ort-backend-interface';
+
+// ─── Tokenizer types ────────────────────────────────────────────
+
+export interface TokenizedInput {
+  inputIds: Int32Array;
+  attentionMask: Int32Array;
+  tokenTypeIds: Int32Array;
 }
 
-export interface ModelArchitecture {
-  embedding_dim: number;
-  num_layers: number;
-  num_heads: number;
-  num_kv_heads: number;
-  head_dim: number;
-  hidden_size: number;
-  intermediate_size: number;
-  vocab_size: number;
-  max_position_embeddings: number;
-  rope_theta: number;
-  sliding_window: number | null;
-  attention_dropout: number;
-  use_sliding_window: boolean;
+// ─── Embedding result ───────────────────────────────────────────
+
+export interface EmbeddingResult {
+  embeddings: Float32Array;
+  shape: [number, number];
+  elapsedMs: number;
 }
 
-export interface TokenizerDescriptor {
-  type: 'bpe';
-  vocab_size: number;
-  max_length: number;
-  pad_token: string | null;
-  pad_token_id: number;
-  bos_token: string | null;
-  bos_token_id: number | null;
-  eos_token: string | null;
-  eos_token_id: number | null;
-  unk_token: string | null;
-  unk_token_id: number | null;
-}
-
-export interface PoolingDescriptor {
-  strategy: 'mean' | 'cls' | 'last_token';
-  normalize: boolean;
-}
-
-export interface TaskPrefixDescriptor {
-  query: string;
-  document: string;
-}
-
-// ─── Model Load Options ─────────────────────────────────────
-
-export interface ModelLoadOptions {
-  /** Path to the weights binary file (weights.int8.bin). Required if weightsBuffer not set. */
-  modelPath?: string;
-  /** Pre-loaded weights buffer (ArrayBuffer or Uint8Array) for incbin-style embedding. */
-  weightsBuffer?: ArrayBuffer | Uint8Array | any;
-  /** Path to tokenizer.json (default: resolve from model directory) */
-  tokenizerPath?: string;
-  /** Skip the warmup inference run */
-  skipWarmup?: boolean;
-  /** Number of intra-op threads for CPU provider */
-  intraOpNumThreads?: number;
-}
-
-// ─── Embed Options ──────────────────────────────────────────
-
-export interface EmbedOptions {
-  /** Maximum tokens per input (truncation) */
-  maxTokens?: number;
-  /** Override pooling strategy */
-  poolingStrategy?: 'mean' | 'cls' | 'last_token';
-  /** Override normalization */
-  normalize?: boolean;
-  /** Abort signal for cancellation */
-  signal?: AbortSignal;
-  /** Progress callback */
-  onProgress?: (progress: EmbedProgress) => void;
-}
+// ─── Progress ────────────────────────────────────────────────────
 
 export interface EmbedProgress {
   phase: 'tokenize' | 'inference' | 'pool' | 'normalize';
@@ -117,33 +31,15 @@ export interface EmbedProgress {
   total: number;
 }
 
-// ─── Embedding Result ───────────────────────────────────────
-
-export interface EmbeddingResult {
-  /** Float32Array of embeddings [batchSize, embeddingDim] */
-  embeddings: Float32Array;
-  /** Shape of the output tensor */
-  shape: [number, number];
-  /** Time taken in milliseconds */
-  elapsedMs: number;
-}
-
-// ─── Download Types ─────────────────────────────────────────
+// ─── Download / proxy ────────────────────────────────────────────
 
 export interface DownloadOptions {
-  /** Target file path (default: ~/.cache/agentix-embed-code-ts/nomic-embed-code-v1-int8.weights.bin) */
   dest?: string;
-  /** Force re-download even if file exists */
   force?: boolean;
-  /** Progress callback: (receivedMB, totalMB, speedMBs) */
   onProgress?: (received: number, total: number, speed: number) => void;
-  /** Alternative download URL (for mirrors) */
   url?: string;
-  /** Custom logger (defaults to console.error) */
   logger?: (msg: string) => void;
-  /** Proxy configuration */
   proxy?: ProxyConfig;
-  /** Precision variant: 'int8' (default for embed-code) */
   precision?: string;
 }
 
@@ -151,40 +47,4 @@ export interface ProxyConfig {
   url: string;
   username?: string;
   password?: string;
-}
-
-// ─── Inference Engine Interface ─────────────────────────────
-
-export interface IInferenceEngine {
-  isLoaded(): boolean;
-  load(source: any, options?: { skipWarmup?: boolean }): Promise<void>;
-  run(feeds: Record<string, Tensor>): Promise<Record<string, Tensor>>;
-  dispose(): Promise<void>;
-}
-
-export interface Tensor {
-  data: Float32Array | Int32Array | BigInt64Array;
-  dims: number[];
-  type: string;
-}
-
-// ─── Tokenizer Types ────────────────────────────────────────
-
-export interface TokenizationResult {
-  inputIds: Int32Array;
-  attentionMask: Int32Array;
-}
-
-// ─── Model Config (frozen singleton derived from descriptor) ─
-
-export interface ModelConfig {
-  readonly embeddingDim: number;
-  readonly maxTokens: number;
-  readonly poolingStrategy: 'mean' | 'cls' | 'last_token';
-  readonly normalize: boolean;
-  readonly inputIdsName: string;
-  readonly attentionMaskName: string;
-  readonly tokenTypeIdsName?: string;
-  readonly outputName: string;
-  readonly taskPrefixes: TaskPrefixDescriptor;
 }

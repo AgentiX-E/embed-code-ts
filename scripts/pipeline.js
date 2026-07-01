@@ -15,7 +15,8 @@ const path = require('path');
 
 const ROOT = path.resolve(__dirname, '..');
 const MODEL_PATH =
-  process.env.EMBED_CODE_MODEL_PATH || path.join(ROOT, 'models', 'nomic-embed-code-v1-int8.weights.bin');
+  process.env.EMBED_CODE_MODEL_PATH ||
+  path.join(ROOT, 'models', 'nomic-embed-code-v1-int8.weights.bin');
 const HF_MODEL = process.env.EMBED_CODE_HF_MODEL || 'nomic-ai/nomic-embed-code';
 
 const COLORS = {
