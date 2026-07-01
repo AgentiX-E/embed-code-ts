@@ -84,7 +84,7 @@ jobs:
         with: { name: integration-coverage, path: coverage/, retention-days: 7 }
 
   deploy-pages:
-    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
     needs: [lint, unit-test, build, integration-test]
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -104,17 +104,17 @@ jobs:
       - name: Generate API docs
         run: npx typedoc
       - name: Download coverage
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with: { name: coverage-report, path: docs/coverage }
         continue-on-error: true
       - name: Download integration coverage
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with: { name: integration-coverage, path: docs/coverage-integration }
         continue-on-error: true
       - name: Prepare pages
         run: node scripts/prepare-pages.js
-      - uses: actions/configure-pages@v4
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/configure-pages@v6
+      - uses: actions/upload-pages-artifact@v5
         with: { path: docs }
-      - uses: actions/deploy-pages@v4
+      - uses: actions/deploy-pages@v5
         id: deployment
