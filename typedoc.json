@@ -2,22 +2,19 @@
   "$schema": "https://typedoc.org/schema.json",
   "entryPoints": [
     "packages/embed-code-core/src/index.ts",
-    "packages/embed-code-core/src/embed-code.ts",
     "packages/embed-code-core/src/types.ts",
     "packages/embed-code-core/src/errors.ts",
-    "packages/embed-code-core/src/model-descriptor.ts",
-    "packages/embed-code-core/src/model-downloader.ts",
-    "packages/embed-code-core/src/tokenizer.ts",
-    "packages/embed-code-core/src/pooling.ts",
-    "packages/embed-code-core/src/inference/ts-engine.ts",
-    "packages/embed-code-core/src/inference/weights.ts",
-    "packages/embed-code-core/src/inference/matmul.ts",
-    "packages/embed-code-core/src/inference/activations.ts",
-    "packages/embed-code-core/src/inference/dequantize.ts",
-    "packages/embed-code-core/src/inference/layernorm.ts",
-    "packages/embed-code-core/src/inference/embedding.ts",
-    "packages/embed-code-core/src/inference/attention.ts",
-    "packages/embed-code-core/src/inference/ffn.ts",
+    "packages/embed-code-core/src/embedder-interface.ts",
+    "packages/embed-code-core/src/ort-backend-interface.ts",
+    "packages/embed-code-core/src/pooler.ts",
+    "packages/embed-code-core/src/normalizer.ts",
+    "packages/embed-code-core/src/batch-processor.ts",
+    "packages/embed-code-core/src/tokenizer/wordpiece-tokenizer.ts",
+    "packages/embed-code-core/src/tokenizer/vocab-loader.ts",
+    "packages/embed-code-core/src/tokenizer/pre-tokenizer.ts",
+    "packages/embed-code-node/src/onnx-embedder.ts",
+    "packages/embed-code-node/src/ort-backend.ts",
+    "packages/embed-code-web/src/onnx-embedder.ts",
     "packages/embed-code-cli/src/cli.ts"
   ],
   "out": "docs/api",
@@ -31,16 +28,8 @@
   "hideGenerator": false,
   "sort": ["source-order"],
   "categorizeByGroup": true,
-  "navigation": {
-    "includeCategories": true,
-    "includeGroups": true
-  },
-  "visibilityFilters": {
-    "protected": true,
-    "private": false,
-    "inherited": true,
-    "external": false
-  },
+  "navigation": { "includeCategories": true, "includeGroups": true },
+  "visibilityFilters": { "protected": true, "private": false, "inherited": true, "external": false },
   "cleanOutputDir": true,
   "githubPages": true
 }
