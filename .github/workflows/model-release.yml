@@ -112,7 +112,7 @@ jobs:
         with: { node-version: '22', cache: 'npm' }
 
       - name: Download model zip
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: model-zip
           path: models/
@@ -137,7 +137,7 @@ jobs:
       - uses: actions/checkout@v7
 
       - name: Download model zip
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: model-zip
           path: models/
@@ -177,7 +177,7 @@ jobs:
       - uses: actions/checkout@v7
 
       - name: Download model zip
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: model-zip
           path: models/
