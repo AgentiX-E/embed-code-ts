@@ -60,6 +60,7 @@ jobs:
       contents: read
       pages: write
       id-token: write
+    continue-on-error: true
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
