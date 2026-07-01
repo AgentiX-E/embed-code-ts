@@ -89,3 +89,5 @@ For optimal retrieval performance, prefix inputs:
 ## License
 
 Apache 2.0. Model weights from [nomic-ai/nomic-embed-text-v1.5](https://huggingface.co/nomic-ai/nomic-embed-text-v1.5) (Apache 2.0).
+
+**CI Status**: [![CI](https://github.com/AgentiX-E/embed-code-ts/actions/workflows/ci.yml/badge.svg)](https://github.com/AgentiX-E/embed-code-ts/actions/workflows/ci.yml)
