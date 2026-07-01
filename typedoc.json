@@ -2,7 +2,6 @@
   "$schema": "https://typedoc.org/schema.json",
   "entryPoints": [
     "packages/embed-code-core/src/index.ts",
-    "packages/embed-code-core/src/types.ts",
     "packages/embed-code-core/src/errors.ts",
     "packages/embed-code-core/src/embedder-interface.ts",
     "packages/embed-code-core/src/ort-backend-interface.ts",
@@ -13,7 +12,6 @@
     "packages/embed-code-core/src/tokenizer/vocab-loader.ts",
     "packages/embed-code-core/src/tokenizer/pre-tokenizer.ts",
     "packages/embed-code-node/src/onnx-embedder.ts",
-    "packages/embed-code-node/src/ort-backend.ts",
     "packages/embed-code-web/src/onnx-embedder.ts",
     "packages/embed-code-cli/src/cli.ts"
   ],
