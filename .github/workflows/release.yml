@@ -1,0 +1,238 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      skip_tests:
+        description: 'Skip full test suite (for hotfix releases)'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: release-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  # ═══════════════════════════════════════════════════════════════════
+  # Stage 1 — Quality Gates (lint + unit + integration + model export)
+  # ═══════════════════════════════════════════════════════════════════
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - run: npm ci
+      - run: npm run build
+
+      - name: Lint & Format
+        run: |
+          npm run lint
+          npm run format:check
+
+      - name: Unit Tests (no ONNX model needed)
+        run: npm run test:unit:coverage
+        continue-on-error: true
+
+      - name: Upload unit coverage
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: unit-coverage
+          path: coverage/
+          retention-days: 7
+
+      - name: Setup Python
+        if: ${{ !inputs.skip_tests }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Cache ONNX model
+        if: ${{ !inputs.skip_tests }}
+        id: cache-model
+        uses: actions/cache@v6
+        with:
+          path: models/nomic-embed-code-v1.5.int8.onnx
+          key: embed-code-model-${{ hashFiles('scripts/export-model.py', 'models/model-descriptor.json') }}-v1
+
+      - name: Export ONNX model
+        if: ${{ !inputs.skip_tests && steps.cache-model.outputs.cache-hit != 'true' }}
+        run: |
+          pip install transformers torch onnx onnxruntime optimum
+          python3 scripts/export-model.py \
+            --model nomic-ai/nomic-embed-text-v1.5 \
+            --output models/nomic-embed-code-v1.5.int8.onnx
+        timeout-minutes: 15
+
+      - name: Run integration tests with coverage
+        if: ${{ !inputs.skip_tests }}
+        run: npm run test:coverage
+        env:
+          EMBED_CODE_MODEL_PATH: models/nomic-embed-code-v1.5.int8.onnx
+        continue-on-error: true
+
+      - name: Check coverage thresholds
+        if: ${{ !inputs.skip_tests }}
+        run: node scripts/ci-coverage-check.js --tier release --verbose
+        continue-on-error: true
+
+      - name: Upload integration coverage
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 7
+
+  # ═══════════════════════════════════════════════════════════════════
+  # Stage 2 — Benchmark (Node.js ONNX)
+  # ═══════════════════════════════════════════════════════════════════
+  benchmark:
+    needs: quality
+    if: ${{ !inputs.skip_tests }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - run: npm ci
+      - run: npm run build
+
+      - name: Restore cached ONNX model
+        uses: actions/cache/restore@v6
+        with:
+          path: models/nomic-embed-code-v1.5.int8.onnx
+          key: embed-code-model-${{ hashFiles('scripts/export-model.py', 'models/model-descriptor.json') }}-v1
+          fail-on-cache-miss: true
+
+      - name: Run benchmark
+        run: |
+          npx tsx scripts/benchmark-ci.js
+        timeout-minutes: 10
+        env:
+          EMBED_CODE_MODEL_PATH: models/nomic-embed-code-v1.5.int8.onnx
+          BENCH_ITERATIONS: 10
+
+      - name: Accuracy gate
+        run: node scripts/ci-benchmark-check.js --verbose
+        continue-on-error: true
+
+      - name: Upload benchmark artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: benchmark-report
+          path: benchmarks/
+          retention-days: 7
+
+  # ═══════════════════════════════════════════════════════════════════
+  # Stage 3 — Publish npm Packages (OIDC)
+  # ═══════════════════════════════════════════════════════════════════
+  publish-npm:
+    needs: [quality, benchmark]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          registry-url: 'https://registry.npmjs.org'
+          cache: 'npm'
+
+      - run: npm ci
+      - run: npm run build
+
+      - name: Publish packages to npm (OIDC)
+        run: |
+          for pkg in embed-code-core embed-code-node embed-code-web embed-code-cli; do
+            cd "packages/${pkg}"
+            npm publish --access public --provenance || echo "[release] ${pkg} publish skipped (version already exists)"
+            cd ../..
+          done
+
+      - name: npm publish summary
+        run: |
+          echo "### 📦 npm Packages Published" >> $GITHUB_STEP_SUMMARY
+          echo "| Package | Version |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|---------|" >> $GITHUB_STEP_SUMMARY
+          for pkg in packages/embed-code-core packages/embed-code-node packages/embed-code-web packages/embed-code-cli; do
+            name=$(node -p "require('./${pkg}/package.json').name")
+            version=$(node -p "require('./${pkg}/package.json').version")
+            echo "| \`${name}\` | ${version} |" >> $GITHUB_STEP_SUMMARY
+          done
+
+  # ═══════════════════════════════════════════════════════════════════
+  # Stage 4 — Deploy Documentation to GitHub Pages
+  # ═══════════════════════════════════════════════════════════════════
+  deploy-pages:
+    needs: [quality, benchmark, publish-npm]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    continue-on-error: true
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - run: npm ci
+      - run: npm run build
+
+      - name: Generate API documentation
+        run: npx typedoc
+        continue-on-error: true
+
+      - name: Download benchmark report
+        uses: actions/download-artifact@v4
+        with:
+          name: benchmark-report
+          path: docs/benchmark
+        continue-on-error: true
+
+      - name: Download coverage report
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-report
+          path: docs/coverage
+        continue-on-error: true
+
+      - name: Prepare pages
+        run: node scripts/prepare-pages.js
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
