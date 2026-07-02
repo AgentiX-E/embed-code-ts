@@ -91,11 +91,11 @@ For optimal retrieval performance, prefix inputs:
 
 ## Documentation & Reports
 
-| Resource | Description | URL |
-|---|---|---|
-| 📚 **API Docs** | Full TypeDoc reference for all packages | [agentix-e.github.io/embed-code-ts/api/](https://agentix-e.github.io/embed-code-ts/api/) |
+| Resource         | Description                                      | URL                                                                                                  |
+| ---------------- | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
+| 📚 **API Docs**  | Full TypeDoc reference for all packages          | [agentix-e.github.io/embed-code-ts/api/](https://agentix-e.github.io/embed-code-ts/api/)             |
 | 📊 **Benchmark** | Inference latency, throughput & accuracy reports | [agentix-e.github.io/embed-code-ts/benchmark/](https://agentix-e.github.io/embed-code-ts/benchmark/) |
-| 📈 **Coverage** | Line, branch, function & statement coverage | [agentix-e.github.io/embed-code-ts/coverage/](https://agentix-e.github.io/embed-code-ts/coverage/) |
+| 📈 **Coverage**  | Line, branch, function & statement coverage      | [agentix-e.github.io/embed-code-ts/coverage/](https://agentix-e.github.io/embed-code-ts/coverage/)   |
 
 ## License
 

@@ -62,10 +62,21 @@ function writeRootLandingPage() {
   const hasApi = fs.existsSync(path.join('docs', 'api', 'index.html'));
 
   const cards = [];
-  if (hasApi) cards.push('<div class="card"><h2>📚 <a href="api/index.html">API Documentation</a></h2><p>TypeDoc reference for all packages</p></div>');
-  if (hasBenchmark) cards.push('<div class="card"><h2>📊 <a href="benchmark/benchmark-report.html">Benchmark Report</a></h2><p>Inference latency, throughput &amp; accuracy</p></div>');
-  if (hasCoverage) cards.push('<div class="card"><h2>📈 <a href="coverage/">Test Coverage</a></h2><p>Code coverage reports</p></div>');
-  cards.push('<div class="card"><h2>📖 <a href="https://github.com/AgentiX-E/embed-code-ts">Source Code</a></h2><p>GitHub repository</p></div>');
+  if (hasApi)
+    cards.push(
+      '<div class="card"><h2>📚 <a href="api/index.html">API Documentation</a></h2><p>TypeDoc reference for all packages</p></div>',
+    );
+  if (hasBenchmark)
+    cards.push(
+      '<div class="card"><h2>📊 <a href="benchmark/benchmark-report.html">Benchmark Report</a></h2><p>Inference latency, throughput &amp; accuracy</p></div>',
+    );
+  if (hasCoverage)
+    cards.push(
+      '<div class="card"><h2>📈 <a href="coverage/">Test Coverage</a></h2><p>Code coverage reports</p></div>',
+    );
+  cards.push(
+    '<div class="card"><h2>📖 <a href="https://github.com/AgentiX-E/embed-code-ts">Source Code</a></h2><p>GitHub repository</p></div>',
+  );
 
   const html = [
     '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>embed-code-ts · Docs</title>',
