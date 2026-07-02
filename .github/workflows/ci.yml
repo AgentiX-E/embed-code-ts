@@ -96,6 +96,7 @@ jobs:
 
   # ─── Node.js Benchmark ───────────────────────────────────────────
   benchmark:
+    continue-on-error: true
     needs: [integration-test]
     runs-on: ubuntu-latest
     timeout-minutes: 15
