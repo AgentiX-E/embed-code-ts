@@ -33,9 +33,5 @@
   },
   "cleanOutputDir": true,
   "githubPages": true,
-  "exclude": [
-    "**/model-descriptor.ts",
-    "**/tokenizer.ts",
-    "**/model-downloader.ts"
-  ]
+  "exclude": ["**/model-descriptor.ts", "**/tokenizer.ts", "**/model-downloader.ts"]
 }
