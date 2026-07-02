@@ -142,7 +142,7 @@ jobs:
   # ═══════════════════════════════════════════════════════════════
   deploy-pages:
     if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main' || github.event_name == 'schedule')
-    needs: [lint, unit-test, build, integration-test, benchmark]
+    needs: [lint, unit-test, build]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
