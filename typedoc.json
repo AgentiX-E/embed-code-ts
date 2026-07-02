@@ -11,8 +11,6 @@
     "packages/embed-code-core/src/tokenizer/wordpiece-tokenizer.ts",
     "packages/embed-code-core/src/tokenizer/vocab-loader.ts",
     "packages/embed-code-core/src/tokenizer/pre-tokenizer.ts",
-    "packages/embed-code-node/src/onnx-embedder.ts",
-    "packages/embed-code-web/src/onnx-embedder.ts",
     "packages/embed-code-cli/src/cli.ts"
   ],
   "out": "docs/api",
@@ -34,5 +32,10 @@
     "external": false
   },
   "cleanOutputDir": true,
-  "githubPages": true
+  "githubPages": true,
+  "exclude": [
+    "**/model-descriptor.ts",
+    "**/tokenizer.ts",
+    "**/model-downloader.ts"
+  ]
 }
