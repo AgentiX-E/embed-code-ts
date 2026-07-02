@@ -1,0 +1,54 @@
+{
+  "model": "nomic-embed-code-v1.5.int8.onnx",
+  "torchModule": "onnxruntime",
+  "dim": 768,
+  "timestamp": "2026-07-02T14:29:00.611Z",
+  "system": {
+    "nodeVersion": "v22.23.1",
+    "platform": "linux",
+    "arch": "x64",
+    "cpuModel": "AMD EPYC 9K65 192-Core Processor",
+    "cpuCores": 32,
+    "ramGB": "123.3"
+  },
+  "memory": {
+    "heapUsedMB": 7,
+    "rssMB": 106
+  },
+  "latency": [
+    {
+      "config": "single-short",
+      "avgLatencyMs": 467.04,
+      "minLatencyMs": 415.43,
+      "maxLatencyMs": 494.2,
+      "p50LatencyMs": 491.48,
+      "coldStartMs": 424.18
+    },
+    {
+      "config": "single-medium",
+      "avgLatencyMs": 467.85,
+      "minLatencyMs": 415.76,
+      "maxLatencyMs": 494.32,
+      "p50LatencyMs": 493.46
+    },
+    {
+      "config": "single-long",
+      "avgLatencyMs": 467.62,
+      "minLatencyMs": 414.82,
+      "maxLatencyMs": 494.98,
+      "p50LatencyMs": 493.07
+    }
+  ],
+  "accuracy": {
+    "queryDocSimilarity": 0.5945,
+    "queryUnrelatedSimilarity": 0.4429,
+    "betterThanUnrelated": true
+  },
+  "stability": {
+    "firstMB": 18.13,
+    "lastMB": 7.35,
+    "deltaMB": -10.78,
+    "deltaPct": -59.46,
+    "stable": false
+  }
+}

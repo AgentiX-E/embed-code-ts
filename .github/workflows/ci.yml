@@ -39,7 +39,7 @@ jobs:
         with: { node-version: '22', cache: 'npm' }
       - run: npm ci
       - run: npm run build
-      - run: npm run test:unit:coverage || true
+      - run: npm run test:unit:coverage
       - name: Generate coverage summary
         if: always()
         run: |
@@ -49,7 +49,7 @@ jobs:
           fi
       - name: Report unit coverage
         if: always()
-        run: node scripts/ci-coverage-check.js --tier unit --verbose || true
+        run: node scripts/ci-coverage-check.js --tier unit --verbose
 
   # ─── Build check (TypeScript compile) ────────────────────────────────
   build:
@@ -94,10 +94,10 @@ jobs:
         timeout-minutes: 15
 
       - name: Run tests with coverage
-        run: npm run test:coverage || true
+        run: npm run test:coverage
 
       - name: Verify integration coverage
-        run: node scripts/ci-coverage-check.js --tier integration --verbose || true
+        run: node scripts/ci-coverage-check.js --tier integration --verbose
 
       - name: Ensure coverage directory exists
         if: always()
