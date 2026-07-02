@@ -120,9 +120,41 @@ jobs:
         uses: actions/upload-artifact@v7
         with: { name: benchmark-report, path: benchmark-report.json, retention-days: 7 }
 
+
+  web-benchmark:
+    needs: [integration-test]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with: { node-version: '22', cache: 'npm' }
+      - run: npm ci
+      - run: npm run build
+
+      - name: Restore cached ONNX model
+        uses: actions/cache/restore@v6
+        with:
+          path: |
+            models/nomic-embed-code-v1.5.int8.onnx
+            models/nomic-embed-code-v1.5.int8.onnx.data
+          key: embed-code-model-${{ hashFiles('scripts/export-model.py', 'models/model-descriptor.json') }}-v4
+          fail-on-cache-miss: true
+
+      - name: Run web benchmark (WASM)
+        run: npx tsx scripts/web-benchmark-ci.js --verbose
+        timeout-minutes: 10
+        env:
+          EMBED_CODE_MODEL_PATH: models/nomic-embed-code-v1.5.int8.onnx
+          BENCH_ITERATIONS: 5
+
+      - name: Upload web benchmark artifact
+        uses: actions/upload-artifact@v7
+        with: { name: web-benchmark-report, path: web-benchmark-report.json, retention-days: 7 }
+
   deploy-pages:
     if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main' || github.event_name == 'schedule')
-    needs: [lint, unit-test, build, integration-test, benchmark]
+    needs: [lint, unit-test, build, integration-test, benchmark, web-benchmark]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -146,6 +178,11 @@ jobs:
       - name: Download benchmark report
         uses: actions/download-artifact@v4
         with: { name: benchmark-report, path: docs/benchmark }
+        continue-on-error: true
+
+      - name: Download web benchmark report
+        uses: actions/download-artifact@v4
+        with: { name: web-benchmark-report, path: docs/web-benchmark }
         continue-on-error: true
 
       - name: Download coverage report
