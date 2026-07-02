@@ -5,9 +5,9 @@ on:
     branches: [master, main]
   push:
     branches: [master, main]
-  schedule:
-    - cron: '0 6 * * 1' # weekly Monday — drives benchmark
   workflow_dispatch:
+  schedule:
+    - cron: '0 6 * * 1'  # Weekly benchmark on Monday at 6 AM UTC
 
 permissions:
   contents: read
@@ -17,6 +17,7 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  # ─── Lint & Format ────────────────────────────────────────────────────
   lint:
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -28,6 +29,7 @@ jobs:
       - run: npm run lint
       - run: npm run format:check
 
+  # ─── Unit Tests (no model required — fast feedback) ──────────────────
   unit-test:
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -37,12 +39,19 @@ jobs:
         with: { node-version: '22', cache: 'npm' }
       - run: npm ci
       - run: npm run build
-      - run: npm run test:unit:coverage || true
-      - name: Upload coverage
+      - run: npm run test:unit:coverage
+      - name: Generate coverage summary
         if: always()
-        uses: actions/upload-artifact@v7
-        with: { name: coverage-report, path: coverage/, retention-days: 7 }
+        run: |
+          mkdir -p coverage
+          if [ ! -f coverage/coverage-summary.json ]; then
+            echo '{"total":{"lines":{"pct":0},"branches":{"pct":0},"functions":{"pct":0},"statements":{"pct":0}}}' > coverage/coverage-summary.json
+          fi
+      - name: Report unit coverage
+        if: always()
+        run: node scripts/ci-coverage-check.js --tier unit --verbose
 
+  # ─── Build check (TypeScript compile) ────────────────────────────────
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -53,8 +62,8 @@ jobs:
       - run: npm ci
       - run: npm run build
 
+  # ─── Integration Tests (requires ONNX model) ─────────────────────────
   integration-test:
-    continue-on-error: true
     needs: [lint, build]
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -73,30 +82,41 @@ jobs:
         uses: actions/cache@v6
         with:
           path: models/nomic-embed-code-v1.5.int8.onnx
-          key: embed-code-model-${{ hashFiles('scripts/export-model.py', 'models/model-descriptor.json') }}-v1
+          key: embed-code-model-${{ hashFiles('scripts/export-model.py', 'models/model-descriptor.json') }}-v2
 
       - name: Export ONNX model
         if: steps.cache-model.outputs.cache-hit != 'true'
         run: |
-          pip install transformers torch onnx onnxruntime optimum
+          pip install transformers torch onnx onnxscript onnxruntime optimum
           python3 scripts/export-model.py \
             --model nomic-ai/nomic-embed-text-v1.5 \
             --output models/nomic-embed-code-v1.5.int8.onnx
         timeout-minutes: 15
 
-      - name: Run integration tests
-        run: npm run test:coverage || true
-        env:
-          EMBED_CODE_MODEL_PATH: models/nomic-embed-code-v1.5.int8.onnx
+      - name: Run tests with coverage
+        run: npm run test:coverage
 
-      - name: Upload integration coverage
+      - name: Verify integration coverage
+        run: node scripts/ci-coverage-check.js --tier integration --verbose
+
+      - name: Ensure coverage directory exists
+        if: always()
+        run: |
+          mkdir -p coverage
+          if [ ! -f coverage/coverage-summary.json ]; then
+            echo '{"total":{"lines":{"pct":0},"branches":{"pct":0},"functions":{"pct":0},"statements":{"pct":0}}}' > coverage/coverage-summary.json
+          fi
+
+      - name: Upload coverage artifact
         if: always()
         uses: actions/upload-artifact@v7
-        with: { name: coverage-report, path: coverage/, retention-days: 7 }
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 7
 
-  # ─── Node.js Benchmark ───────────────────────────────────────────
+  # ─── Node.js Benchmark ──────────────────────────────────────────────
   benchmark:
-    continue-on-error: true
     needs: [integration-test]
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -111,7 +131,7 @@ jobs:
         uses: actions/cache/restore@v6
         with:
           path: models/nomic-embed-code-v1.5.int8.onnx
-          key: embed-code-model-${{ hashFiles('scripts/export-model.py', 'models/model-descriptor.json') }}-v1
+          key: embed-code-model-${{ hashFiles('scripts/export-model.py', 'models/model-descriptor.json') }}-v2
           fail-on-cache-miss: true
 
       - name: Run benchmark
@@ -138,19 +158,18 @@ jobs:
             benchmark-report.html
           retention-days: 7
 
-  # ═══════════════════════════════════════════════════════════════
-  # GitHub Pages — deploy API docs + coverage + benchmark on push to master
-  # ═══════════════════════════════════════════════════════════════
+  # ═══════════════════════════════════════════════════════════════════════
+  # GitHub Pages — API docs + coverage + benchmarks on push to master
+  # ═══════════════════════════════════════════════════════════════════════
   deploy-pages:
     if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main' || github.event_name == 'schedule')
-    needs: [lint, unit-test, build]
+    needs: [lint, unit-test, build, integration-test, benchmark]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
       contents: read
       pages: write
       id-token: write
-    continue-on-error: true
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -163,16 +182,19 @@ jobs:
 
       - name: Generate API documentation
         run: npx typedoc
-        continue-on-error: true
 
       - name: Download benchmark report
         uses: actions/download-artifact@v4
-        with: { name: benchmark-report, path: docs/benchmark }
+        with:
+          name: benchmark-report
+          path: docs/benchmark
         continue-on-error: true
 
       - name: Download coverage report
         uses: actions/download-artifact@v4
-        with: { name: coverage-report, path: docs/coverage }
+        with:
+          name: coverage-report
+          path: docs/coverage
         continue-on-error: true
 
       - name: Prepare pages

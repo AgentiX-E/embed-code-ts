@@ -34,7 +34,7 @@ def main():
             'token_type_ids': {0: 'batch', 1: 'sequence'},
             'last_hidden_state': {0: 'batch', 1: 'sequence'},
         },
-        opset_version=14,
+        opset_version=18,
     )
     
     import os
