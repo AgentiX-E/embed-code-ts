@@ -78,8 +78,10 @@ jobs:
         id: cache-model
         uses: actions/cache@v6
         with:
-          path: models/nomic-embed-code-v1.5.int8.onnx
-          key: embed-code-model-${{ hashFiles('scripts/export-model.py', 'models/model-descriptor.json') }}-v2
+          path: |
+          models/nomic-embed-code-v1.5.int8.onnx
+          models/nomic-embed-code-v1.5.int8.onnx.data
+          key: embed-code-model-${{ hashFiles("scripts/export-model.py", "models/model-descriptor.json") }}-v3
 
       - name: Export ONNX model
         if: steps.cache-model.outputs.cache-hit != 'true'
@@ -124,8 +126,10 @@ jobs:
       - name: Restore cached ONNX model
         uses: actions/cache/restore@v6
         with:
-          path: models/nomic-embed-code-v1.5.int8.onnx
-          key: embed-code-model-${{ hashFiles('scripts/export-model.py', 'models/model-descriptor.json') }}-v2
+          path: |
+          models/nomic-embed-code-v1.5.int8.onnx
+          models/nomic-embed-code-v1.5.int8.onnx.data
+          key: embed-code-model-${{ hashFiles("scripts/export-model.py", "models/model-descriptor.json") }}-v3
           fail-on-cache-miss: true
 
       - name: Run benchmark

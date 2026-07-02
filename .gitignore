@@ -15,3 +15,4 @@ models/test-export.onnx
 models/*.onnx
 models/*.onnx.data
 benchmark-report.json
+models/*.onnx.data
