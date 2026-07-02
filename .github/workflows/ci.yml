@@ -87,7 +87,7 @@ jobs:
       - name: Export ONNX model
         if: steps.cache-model.outputs.cache-hit != 'true'
         run: |
-          pip install transformers torch onnx onnxscript onnxruntime optimum
+          pip install transformers torch onnx onnxscript onnxruntime einops optimum
           python3 scripts/export-model.py \
             --model nomic-ai/nomic-embed-text-v1.5 \
             --output models/nomic-embed-code-v1.5.int8.onnx
