@@ -10,8 +10,6 @@ DESIGN.md
 *.tsbuildinfo
 coverage/
 models/*.weights.bin
-models/tokenizer.json
-models/tokenizer_config.json
 models/reference-*.json
 models/test-export.onnx
 models/*.onnx

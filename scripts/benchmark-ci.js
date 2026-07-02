@@ -218,5 +218,5 @@ async function main() {
 
 main().catch((err) => {
   console.error('Benchmark failed:', err.message);
-  process.exitCode = 0;
+  process.exit(1);
 });
