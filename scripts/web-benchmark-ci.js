@@ -19,11 +19,25 @@ const ITERATIONS = parseInt(process.env.BENCH_ITERATIONS || '5', 10);
 const JSON_OUT = process.argv.includes('--json')
   ? process.argv[process.argv.indexOf('--json') + 1]
   : 'web-benchmark-report.json';
-const MD_OUT = process.argv.includes('--md') ? process.argv[process.argv.indexOf('--md') + 1] : null;
-const HTML_OUT = process.argv.includes('--html') ? process.argv[process.argv.indexOf('--html') + 1] : null;
+const MD_OUT = process.argv.includes('--md')
+  ? process.argv[process.argv.indexOf('--md') + 1]
+  : null;
+const HTML_OUT = process.argv.includes('--html')
+  ? process.argv[process.argv.indexOf('--html') + 1]
+  : null;
 const VERBOSE = process.argv.includes('--verbose');
 
-function cos(a, b) { let d=0,na=0,nb=0; for(let i=0;i<a.length;i++){d+=a[i]*b[i];na+=a[i]**2;nb+=b[i]**2;} return na*nb===0?0:d/Math.sqrt(na*nb); }
+function cos(a, b) {
+  let d = 0,
+    na = 0,
+    nb = 0;
+  for (let i = 0; i < a.length; i++) {
+    d += a[i] * b[i];
+    na += a[i] ** 2;
+    nb += b[i] ** 2;
+  }
+  return na * nb === 0 ? 0 : d / Math.sqrt(na * nb);
+}
 
 async function main() {
   if (!MODEL_PATH || !fs.existsSync(MODEL_PATH)) {
@@ -56,9 +70,21 @@ async function main() {
   async function embedOne(text) {
     const { inputIds, attentionMask, tokenTypeIds } = tok.tokenize(text);
     const feeds = {
-      input_ids: new ort.Tensor('int64', BigInt64Array.from(Array.from(inputIds, (n) => BigInt(n))), [1, 512]),
-      attention_mask: new ort.Tensor('int64', BigInt64Array.from(Array.from(attentionMask, (n) => BigInt(n))), [1, 512]),
-      token_type_ids: new ort.Tensor('int64', BigInt64Array.from(Array.from(tokenTypeIds, (n) => BigInt(n))), [1, 512]),
+      input_ids: new ort.Tensor(
+        'int64',
+        BigInt64Array.from(Array.from(inputIds, (n) => BigInt(n))),
+        [1, 512],
+      ),
+      attention_mask: new ort.Tensor(
+        'int64',
+        BigInt64Array.from(Array.from(attentionMask, (n) => BigInt(n))),
+        [1, 512],
+      ),
+      token_type_ids: new ort.Tensor(
+        'int64',
+        BigInt64Array.from(Array.from(tokenTypeIds, (n) => BigInt(n))),
+        [1, 512],
+      ),
     };
     const outputs = await session.run(feeds);
     const hidden = outputs.last_hidden_state.data;
@@ -79,8 +105,11 @@ async function main() {
   console.log(`System: Node.js ${system.nodeVersion} | ${system.cpuModel} | WASM backend`);
 
   const configs = [
-    { name: 'single-short-wasm',  text: 'search_document: def hello(): return "world"' },
-    { name: 'single-medium-wasm', text: 'search_document: def factorial(n): return 1 if n <= 1 else n * factorial(n - 1)' },
+    { name: 'single-short-wasm', text: 'search_document: def hello(): return "world"' },
+    {
+      name: 'single-medium-wasm',
+      text: 'search_document: def factorial(n): return 1 if n <= 1 else n * factorial(n - 1)',
+    },
   ];
 
   const results = [];
@@ -107,14 +136,22 @@ async function main() {
   let accuracy = null;
   try {
     const qe = await embedOne('search_query: Recursive factorial implementation');
-    const de = await embedOne('search_document: def factorial(n): return 1 if n <= 1 else n * factorial(n - 1)');
-    const ue = await embedOne('search_document: class BinaryTree { constructor(v) { this.v = v; } }');
+    const de = await embedOne(
+      'search_document: def factorial(n): return 1 if n <= 1 else n * factorial(n - 1)',
+    );
+    const ue = await embedOne(
+      'search_document: class BinaryTree { constructor(v) { this.v = v; } }',
+    );
     accuracy = {
       queryDocSimilarity: Math.round(cos(Array.from(qe), Array.from(de)) * 10000) / 10000,
       queryUnrelatedSimilarity: Math.round(cos(Array.from(qe), Array.from(ue)) * 10000) / 10000,
     };
-    console.log(`  Accuracy: query-doc=${accuracy.queryDocSimilarity} query-unrelated=${accuracy.queryUnrelatedSimilarity} PASS`);
-  } catch (e) { console.log(`  Accuracy failed: ${e.message}`); }
+    console.log(
+      `  Accuracy: query-doc=${accuracy.queryDocSimilarity} query-unrelated=${accuracy.queryUnrelatedSimilarity} PASS`,
+    );
+  } catch (e) {
+    console.log(`  Accuracy failed: ${e.message}`);
+  }
 
   session.release();
 
@@ -125,7 +162,10 @@ async function main() {
     dim: DIM,
     timestamp: new Date().toISOString(),
     system,
-    memory: { heapUsedMB: Math.round(mem.heapUsed / 1024 / 1024), rssMB: Math.round(mem.rss / 1024 / 1024) },
+    memory: {
+      heapUsedMB: Math.round(mem.heapUsed / 1024 / 1024),
+      rssMB: Math.round(mem.rss / 1024 / 1024),
+    },
     latency: results,
     accuracy,
   };

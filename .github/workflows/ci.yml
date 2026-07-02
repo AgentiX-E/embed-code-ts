@@ -120,7 +120,6 @@ jobs:
         uses: actions/upload-artifact@v7
         with: { name: benchmark-report, path: benchmark-report.json, retention-days: 7 }
 
-
   web-benchmark:
     needs: [integration-test]
     runs-on: ubuntu-latest
