@@ -16,3 +16,4 @@ models/reference-*.json
 models/test-export.onnx
 models/*.onnx
 models/*.onnx.data
+benchmark-report.json

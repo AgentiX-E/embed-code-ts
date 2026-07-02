@@ -15,8 +15,12 @@ const ITERATIONS = parseInt(process.env.BENCH_ITERATIONS || '5', 10);
 const JSON_OUT = process.argv.includes('--json')
   ? process.argv[process.argv.indexOf('--json') + 1]
   : 'benchmark-report.json';
-const MD_OUT = process.argv.includes('--md') ? process.argv[process.argv.indexOf('--md') + 1] : null;
-const HTML_OUT = process.argv.includes('--html') ? process.argv[process.argv.indexOf('--html') + 1] : null;
+const MD_OUT = process.argv.includes('--md')
+  ? process.argv[process.argv.indexOf('--md') + 1]
+  : null;
+const HTML_OUT = process.argv.includes('--html')
+  ? process.argv[process.argv.indexOf('--html') + 1]
+  : null;
 const VERBOSE = process.argv.includes('--verbose');
 
 async function main() {
@@ -56,9 +60,21 @@ async function main() {
   async function embedOne(text) {
     const { inputIds, attentionMask, tokenTypeIds } = tok.tokenize(text);
     const feeds = {
-      input_ids: new ort.Tensor('int64', BigInt64Array.from(Array.from(inputIds, (n) => BigInt(n))), [1, 512]),
-      attention_mask: new ort.Tensor('int64', BigInt64Array.from(Array.from(attentionMask, (n) => BigInt(n))), [1, 512]),
-      token_type_ids: new ort.Tensor('int64', BigInt64Array.from(Array.from(tokenTypeIds, (n) => BigInt(n))), [1, 512]),
+      input_ids: new ort.Tensor(
+        'int64',
+        BigInt64Array.from(Array.from(inputIds, (n) => BigInt(n))),
+        [1, 512],
+      ),
+      attention_mask: new ort.Tensor(
+        'int64',
+        BigInt64Array.from(Array.from(attentionMask, (n) => BigInt(n))),
+        [1, 512],
+      ),
+      token_type_ids: new ort.Tensor(
+        'int64',
+        BigInt64Array.from(Array.from(tokenTypeIds, (n) => BigInt(n))),
+        [1, 512],
+      ),
     };
     const outputs = await session.run(feeds);
     const hidden = outputs.last_hidden_state.data;
@@ -81,9 +97,17 @@ async function main() {
 
   // Configs
   const configs = [
-    { name: 'single-short',  text: 'search_document: def hello(): return "world"' },
-    { name: 'single-medium', text: 'search_document: def factorial(n): return 1 if n <= 1 else n * factorial(n - 1)' },
-    { name: 'single-long',   text: 'search_document: ' + 'function fib(n) { return n <= 1 ? n : fib(n-1) + fib(n-2); } '.repeat(5) },
+    { name: 'single-short', text: 'search_document: def hello(): return "world"' },
+    {
+      name: 'single-medium',
+      text: 'search_document: def factorial(n): return 1 if n <= 1 else n * factorial(n - 1)',
+    },
+    {
+      name: 'single-long',
+      text:
+        'search_document: ' +
+        'function fib(n) { return n <= 1 ? n : fib(n-1) + fib(n-2); } '.repeat(5),
+    },
   ];
 
   const results = [];
@@ -122,8 +146,12 @@ async function main() {
   let accuracy = null;
   try {
     const qe = await embedOne('search_query: Recursive factorial implementation');
-    const de = await embedOne('search_document: def factorial(n): return 1 if n <= 1 else n * factorial(n - 1)');
-    const ue = await embedOne('search_document: class BinaryTree { constructor(v) { this.v = v; } }');
+    const de = await embedOne(
+      'search_document: def factorial(n): return 1 if n <= 1 else n * factorial(n - 1)',
+    );
+    const ue = await embedOne(
+      'search_document: class BinaryTree { constructor(v) { this.v = v; } }',
+    );
     const qdSim = cosineSimilarity(Array.from(qe), Array.from(de));
     const quSim = cosineSimilarity(Array.from(qe), Array.from(ue));
     accuracy = {
@@ -131,7 +159,9 @@ async function main() {
       queryUnrelatedSimilarity: Math.round(quSim * 10000) / 10000,
       betterThanUnrelated: qdSim > quSim,
     };
-    console.log(`  query-doc: ${qdSim.toFixed(4)}  query-unrelated: ${quSim.toFixed(4)}  ${qdSim > quSim ? 'PASS' : 'FAIL'}`);
+    console.log(
+      `  query-doc: ${qdSim.toFixed(4)}  query-unrelated: ${quSim.toFixed(4)}  ${qdSim > quSim ? 'PASS' : 'FAIL'}`,
+    );
   } catch (e) {
     console.log(`  Accuracy failed: ${e.message}`);
   }
@@ -145,13 +175,21 @@ async function main() {
       await embedOne('search_document: def stable(): pass');
       if (i % 25 === 0 || i === 99) {
         const mu = process.memoryUsage();
-        snaps.push({ iteration: i, heapMB: Math.round(mu.heapUsed / 1024 / 1024 * 100) / 100 });
+        snaps.push({ iteration: i, heapMB: Math.round((mu.heapUsed / 1024 / 1024) * 100) / 100 });
       }
     }
     const delta = snaps[snaps.length - 1].heapMB - snaps[0].heapMB;
     const deltaPct = snaps[0].heapMB > 0 ? (delta / snaps[0].heapMB) * 100 : 0;
-    stability = { firstMB: snaps[0].heapMB, lastMB: snaps[snaps.length - 1].heapMB, deltaMB: Math.round(delta * 100) / 100, deltaPct: Math.round(deltaPct * 100) / 100, stable: Math.abs(deltaPct) <= 5 };
-    console.log(`  ${stability.stable ? 'PASS' : 'WARN'}: ${stability.firstMB} → ${stability.lastMB} MB (Δ${stability.deltaPct}%)`);
+    stability = {
+      firstMB: snaps[0].heapMB,
+      lastMB: snaps[snaps.length - 1].heapMB,
+      deltaMB: Math.round(delta * 100) / 100,
+      deltaPct: Math.round(deltaPct * 100) / 100,
+      stable: Math.abs(deltaPct) <= 5,
+    };
+    console.log(
+      `  ${stability.stable ? 'PASS' : 'WARN'}: ${stability.firstMB} → ${stability.lastMB} MB (Δ${stability.deltaPct}%)`,
+    );
   } catch (e) {
     console.log(`  Stability failed: ${e.message}`);
   }
@@ -165,7 +203,10 @@ async function main() {
     dim: DIM,
     timestamp: new Date().toISOString(),
     system,
-    memory: { heapUsedMB: Math.round(mem.heapUsed / 1024 / 1024), rssMB: Math.round(mem.rss / 1024 / 1024) },
+    memory: {
+      heapUsedMB: Math.round(mem.heapUsed / 1024 / 1024),
+      rssMB: Math.round(mem.rss / 1024 / 1024),
+    },
     latency: results,
     accuracy,
     stability,
