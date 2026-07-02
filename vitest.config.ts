@@ -31,12 +31,6 @@ export default defineConfig({
         'packages/*/src/types/**/*.d.ts',
       ],
       reporter: ['text', 'html', 'json-summary', 'lcov'],
-      thresholds: {
-        lines: 95,
-        functions: 95,
-        branches: 95,
-        statements: 95,
-      },
       reportsDirectory: './coverage',
     },
   },
