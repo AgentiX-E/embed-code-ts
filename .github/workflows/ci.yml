@@ -7,7 +7,7 @@ on:
     branches: [master, main]
   workflow_dispatch:
   schedule:
-    - cron: '0 6 * * 1' # Weekly benchmark on Monday at 6 AM UTC
+    - cron: '0 6 * * 1'
 
 permissions:
   contents: read
@@ -17,7 +17,6 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  # ─── Lint & Format ────────────────────────────────────────────────────
   lint:
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -29,7 +28,6 @@ jobs:
       - run: npm run lint
       - run: npm run format:check
 
-  # ─── Unit Tests (no model required — fast feedback) ──────────────────
   unit-test:
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -40,15 +38,7 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: npm run test:unit:coverage
-      - name: Generate coverage summary
-        if: always()
-        run: |
-          mkdir -p coverage
-          if [ ! -f coverage/coverage-summary.json ]; then
-            echo '{"total":{"lines":{"pct":0},"branches":{"pct":0},"functions":{"pct":0},"statements":{"pct":0}}}' > coverage/coverage-summary.json
-          fi
 
-  # ─── Build check (TypeScript compile) ────────────────────────────────
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -59,7 +49,6 @@ jobs:
       - run: npm ci
       - run: npm run build
 
-  # ─── Integration Tests (requires ONNX model) ─────────────────────────
   integration-test:
     needs: [lint, build]
     runs-on: ubuntu-latest
@@ -70,7 +59,6 @@ jobs:
         with: { node-version: '22', cache: 'npm' }
       - uses: actions/setup-python@v5
         with: { python-version: '3.11' }
-
       - run: npm ci
       - run: npm run build
 
@@ -79,39 +67,25 @@ jobs:
         uses: actions/cache@v6
         with:
           path: |
-          models/nomic-embed-code-v1.5.int8.onnx
-          models/nomic-embed-code-v1.5.int8.onnx.data
-          key: embed-code-model-${{ hashFiles("scripts/export-model.py", "models/model-descriptor.json") }}-v3
+            models/nomic-embed-code-v1.5.int8.onnx
+            models/nomic-embed-code-v1.5.int8.onnx.data
+          key: embed-code-model-${{ hashFiles('scripts/export-model.py', 'models/model-descriptor.json') }}-v4
 
       - name: Export ONNX model
         if: steps.cache-model.outputs.cache-hit != 'true'
         run: |
           pip install transformers torch onnx onnxscript onnxruntime einops optimum
-          python3 scripts/export-model.py \
-            --model nomic-ai/nomic-embed-text-v1.5 \
-            --output models/nomic-embed-code-v1.5.int8.onnx
+          python3 scripts/export-model.py --model nomic-ai/nomic-embed-text-v1.5 --output models/nomic-embed-code-v1.5.int8.onnx
         timeout-minutes: 15
 
       - name: Run tests with coverage
         run: npm run test:coverage
 
-      - name: Ensure coverage directory exists
-        if: always()
-        run: |
-          mkdir -p coverage
-          if [ ! -f coverage/coverage-summary.json ]; then
-            echo '{"total":{"lines":{"pct":0},"branches":{"pct":0},"functions":{"pct":0},"statements":{"pct":0}}}' > coverage/coverage-summary.json
-          fi
-
       - name: Upload coverage artifact
         if: always()
         uses: actions/upload-artifact@v7
-        with:
-          name: coverage-report
-          path: coverage/
-          retention-days: 7
+        with: { name: coverage-report, path: coverage/, retention-days: 7 }
 
-  # ─── Node.js Benchmark ──────────────────────────────────────────────
   benchmark:
     needs: [integration-test]
     runs-on: ubuntu-latest
@@ -127,38 +101,25 @@ jobs:
         uses: actions/cache/restore@v6
         with:
           path: |
-          models/nomic-embed-code-v1.5.int8.onnx
-          models/nomic-embed-code-v1.5.int8.onnx.data
-          key: embed-code-model-${{ hashFiles("scripts/export-model.py", "models/model-descriptor.json") }}-v3
+            models/nomic-embed-code-v1.5.int8.onnx
+            models/nomic-embed-code-v1.5.int8.onnx.data
+          key: embed-code-model-${{ hashFiles('scripts/export-model.py', 'models/model-descriptor.json') }}-v4
           fail-on-cache-miss: true
 
       - name: Run benchmark
-        run: |
-          npx tsx scripts/benchmark-ci.js \
-            --json benchmark-report.json \
-            --md benchmark-report.md \
-            --html benchmark-report.html
+        run: npx tsx scripts/benchmark-ci.js --verbose
         timeout-minutes: 10
         env:
           EMBED_CODE_MODEL_PATH: models/nomic-embed-code-v1.5.int8.onnx
-          BENCH_ITERATIONS: 10
+          BENCH_ITERATIONS: 5
 
       - name: Accuracy Gate
         run: node scripts/ci-benchmark-check.js --verbose
 
       - name: Upload benchmark artifact
         uses: actions/upload-artifact@v7
-        with:
-          name: benchmark-report
-          path: |
-            benchmark-report.json
-            benchmark-report.md
-            benchmark-report.html
-          retention-days: 7
+        with: { name: benchmark-report, path: benchmark-report.json, retention-days: 7 }
 
-  # ═══════════════════════════════════════════════════════════════════════
-  # GitHub Pages — API docs + coverage + benchmarks on push to master
-  # ═══════════════════════════════════════════════════════════════════════
   deploy-pages:
     if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main' || github.event_name == 'schedule')
     needs: [lint, unit-test, build, integration-test, benchmark]
@@ -180,31 +141,23 @@ jobs:
 
       - name: Generate API documentation
         run: npx typedoc
+        continue-on-error: true
 
       - name: Download benchmark report
         uses: actions/download-artifact@v4
-        with:
-          name: benchmark-report
-          path: docs/benchmark
+        with: { name: benchmark-report, path: docs/benchmark }
         continue-on-error: true
 
       - name: Download coverage report
         uses: actions/download-artifact@v4
-        with:
-          name: coverage-report
-          path: docs/coverage
+        with: { name: coverage-report, path: docs/coverage }
         continue-on-error: true
 
       - name: Prepare pages
         run: node scripts/prepare-pages.js
 
-      - name: Setup Pages
-        uses: actions/configure-pages@v4
-
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+      - uses: actions/configure-pages@v4
+      - uses: actions/upload-pages-artifact@v3
         with: { path: docs }
-
-      - name: Deploy to GitHub Pages
+      - uses: actions/deploy-pages@v4
         id: deployment
-        uses: actions/deploy-pages@v4
