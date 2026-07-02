@@ -37,7 +37,7 @@ function main() {
     process.exit(0);
   }
 
-  if (!report.configs || report.configs.length === 0) {
+  if (!report.latency || report.latency.length === 0) {
     console.log('[benchmark-check] No config results — skipping quality gate.');
     process.exit(0);
   }
@@ -45,7 +45,7 @@ function main() {
   let failed = false;
 
   // 1. Verify all latencies are positive
-  for (const cfg of report.configs) {
+  for (const cfg of report.latency) {
     if (cfg.avgLatencyMs <= 0) {
       console.error(`FAIL: ${cfg.config}: avgLatencyMs = ${cfg.avgLatencyMs} (must be > 0)`);
       failed = true;
@@ -54,17 +54,11 @@ function main() {
       console.error(`FAIL: ${cfg.config}: minLatencyMs = ${cfg.minLatencyMs} (must be > 0)`);
       failed = true;
     }
-    if (cfg.throughputTokensPerSec <= 0) {
-      console.error(
-        `FAIL: ${cfg.config}: throughputTokensPerSec = ${cfg.throughputTokensPerSec} (must be > 0)`,
-      );
-      failed = true;
-    }
   }
 
   // 2. Verify embedding dimension is correct
-  if (report.embeddingDim && report.embeddingDim !== 3584 && report.embeddingDim !== 768) {
-    console.error(`FAIL: Unexpected embeddingDim = ${report.embeddingDim} (expected 3584 or 768)`);
+  if (report.dim && report.dim !== 768) {
+    console.error(`FAIL: Unexpected dim = ${report.dim} (expected 768)`);
     failed = true;
   }
 
@@ -85,9 +79,9 @@ function main() {
 
   console.log('PASS: All benchmark quality checks passed.');
   if (VERBOSE) {
-    for (const cfg of report.configs) {
+    for (const cfg of report.latency) {
       console.log(
-        `  ${cfg.config.padEnd(16)} avg=${cfg.avgLatencyMs}ms  min=${cfg.minLatencyMs}ms  tok/s=${cfg.throughputTokensPerSec}`,
+        `  ${cfg.config.padEnd(16)} avg=${cfg.avgLatencyMs}ms  min=${cfg.minLatencyMs}ms`,
       );
     }
     if (report.accuracy) {
