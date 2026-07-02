@@ -93,7 +93,6 @@ jobs:
       - name: Run tests with coverage
         run: npm run test:coverage
 
-
       - name: Ensure coverage directory exists
         if: always()
         run: |
