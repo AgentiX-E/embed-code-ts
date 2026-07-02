@@ -57,6 +57,16 @@ function writeCoverageIndex() {
 
 function writeRootLandingPage() {
   ensureDir('docs');
+  const hasBenchmark = fs.existsSync(path.join('docs', 'benchmark', 'benchmark-report.html'));
+  const hasCoverage = fs.existsSync(path.join('docs', 'coverage', 'index.html'));
+  const hasApi = fs.existsSync(path.join('docs', 'api', 'index.html'));
+
+  const cards = [];
+  if (hasApi) cards.push('<div class="card"><h2>📚 <a href="api/index.html">API Documentation</a></h2><p>TypeDoc reference for all packages</p></div>');
+  if (hasBenchmark) cards.push('<div class="card"><h2>📊 <a href="benchmark/benchmark-report.html">Benchmark Report</a></h2><p>Inference latency, throughput &amp; accuracy</p></div>');
+  if (hasCoverage) cards.push('<div class="card"><h2>📈 <a href="coverage/">Test Coverage</a></h2><p>Code coverage reports</p></div>');
+  cards.push('<div class="card"><h2>📖 <a href="https://github.com/AgentiX-E/embed-code-ts">Source Code</a></h2><p>GitHub repository</p></div>');
+
   const html = [
     '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>embed-code-ts · Docs</title>',
     '<style>',
@@ -67,9 +77,7 @@ function writeRootLandingPage() {
     '.card p{color:#6b7280;margin:.5rem 0 0}',
     '</style></head><body>',
     '<h1>🚀 embed-code-ts</h1><p>Pure-TypeScript code embeddings — ONNX Runtime, int8 quantized.</p>',
-    '<div class="card"><h2>📚 <a href="api/index.html">API Documentation</a></h2><p>TypeDoc reference for all packages</p></div>',
-    '<div class="card"><h2>📈 <a href="coverage/">Test Coverage</a></h2><p>Code coverage reports</p></div>',
-    '<div class="card"><h2>📖 <a href="https://github.com/AgentiX-E/embed-code-ts">Source Code</a></h2><p>GitHub repository</p></div>',
+    ...cards,
     '</body></html>',
   ].join('\n');
   fs.writeFileSync('docs/index.html', html);

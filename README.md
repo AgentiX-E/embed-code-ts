@@ -3,6 +3,9 @@
 > ONNX-powered code embeddings for Node.js and browser — int8 quantized, zero network dependency after install.
 
 [![CI](https://github.com/AgentiX-E/embed-code-ts/actions/workflows/ci.yml/badge.svg)](https://github.com/AgentiX-E/embed-code-ts/actions/workflows/ci.yml)
+[![Docs](https://img.shields.io/badge/docs-TypeDoc-blue)](https://agentix-e.github.io/embed-code-ts/api/)
+[![Benchmark Report](https://img.shields.io/badge/benchmark-latest-blue)](https://agentix-e.github.io/embed-code-ts/benchmark/)
+[![Coverage](https://img.shields.io/badge/coverage-report-blue)](https://agentix-e.github.io/embed-code-ts/coverage/)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/Node.js-%3E%3D22-green)](https://nodejs.org/)
 
@@ -86,8 +89,14 @@ For optimal retrieval performance, prefix inputs:
 | `onnxruntime-web`  | WASM     | ~50ms   |
 | `onnxruntime-web`  | WebGPU   | ~20ms   |
 
+## Documentation & Reports
+
+| Resource | Description | URL |
+|---|---|---|
+| 📚 **API Docs** | Full TypeDoc reference for all packages | [agentix-e.github.io/embed-code-ts/api/](https://agentix-e.github.io/embed-code-ts/api/) |
+| 📊 **Benchmark** | Inference latency, throughput & accuracy reports | [agentix-e.github.io/embed-code-ts/benchmark/](https://agentix-e.github.io/embed-code-ts/benchmark/) |
+| 📈 **Coverage** | Line, branch, function & statement coverage | [agentix-e.github.io/embed-code-ts/coverage/](https://agentix-e.github.io/embed-code-ts/coverage/) |
+
 ## License
 
 Apache 2.0. Model weights from [nomic-ai/nomic-embed-text-v1.5](https://huggingface.co/nomic-ai/nomic-embed-text-v1.5) (Apache 2.0).
-
-**CI Status**: [![CI](https://github.com/AgentiX-E/embed-code-ts/actions/workflows/ci.yml/badge.svg)](https://github.com/AgentiX-E/embed-code-ts/actions/workflows/ci.yml)

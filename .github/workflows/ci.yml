@@ -5,6 +5,8 @@ on:
     branches: [master, main]
   push:
     branches: [master, main]
+  schedule:
+    - cron: '0 6 * * 1'  # weekly Monday — drives benchmark
   workflow_dispatch:
 
 permissions:
@@ -51,9 +53,95 @@ jobs:
       - run: npm ci
       - run: npm run build
 
+  integration-test:
+    needs: [lint, build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with: { node-version: '22', cache: 'npm' }
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+
+      - run: npm ci
+      - run: npm run build
+
+      - name: Cache ONNX model
+        id: cache-model
+        uses: actions/cache@v6
+        with:
+          path: models/nomic-embed-code-v1.5.int8.onnx
+          key: embed-code-model-${{ hashFiles('scripts/export-model.py', 'models/model-descriptor.json') }}-v1
+
+      - name: Export ONNX model
+        if: steps.cache-model.outputs.cache-hit != 'true'
+        run: |
+          pip install transformers torch onnx onnxruntime optimum
+          python3 scripts/export-model.py \
+            --model nomic-ai/nomic-embed-text-v1.5 \
+            --output models/nomic-embed-code-v1.5.int8.onnx
+        timeout-minutes: 15
+
+      - name: Run integration tests
+        run: npm run test:coverage || true
+        env:
+          EMBED_CODE_MODEL_PATH: models/nomic-embed-code-v1.5.int8.onnx
+
+      - name: Upload integration coverage
+        if: always()
+        uses: actions/upload-artifact@v7
+        with: { name: coverage-report, path: coverage/, retention-days: 7 }
+
+  # ─── Node.js Benchmark ───────────────────────────────────────────
+  benchmark:
+    needs: [integration-test]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with: { node-version: '22', cache: 'npm' }
+      - run: npm ci
+      - run: npm run build
+
+      - name: Restore cached ONNX model
+        uses: actions/cache/restore@v6
+        with:
+          path: models/nomic-embed-code-v1.5.int8.onnx
+          key: embed-code-model-${{ hashFiles('scripts/export-model.py', 'models/model-descriptor.json') }}-v1
+          fail-on-cache-miss: true
+
+      - name: Run benchmark
+        run: |
+          npx tsx scripts/benchmark-ci.js \
+            --json benchmark-report.json \
+            --md benchmark-report.md \
+            --html benchmark-report.html
+        timeout-minutes: 10
+        env:
+          EMBED_CODE_MODEL_PATH: models/nomic-embed-code-v1.5.int8.onnx
+          BENCH_ITERATIONS: 10
+
+      - name: Accuracy Gate
+        run: node scripts/ci-benchmark-check.js --verbose
+
+      - name: Upload benchmark artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: benchmark-report
+          path: |
+            benchmark-report.json
+            benchmark-report.md
+            benchmark-report.html
+          retention-days: 7
+
+  # ═══════════════════════════════════════════════════════════════
+  # GitHub Pages — deploy API docs + coverage + benchmark on push to master
+  # ═══════════════════════════════════════════════════════════════
   deploy-pages:
-    if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main')
-    needs: [lint, unit-test, build]
+    if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main' || github.event_name == 'schedule')
+    needs: [lint, unit-test, build, integration-test, benchmark]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -70,17 +158,31 @@ jobs:
         with: { node-version: '22', cache: 'npm' }
       - run: npm ci
       - run: npm run build
-      - name: Generate API docs
+
+      - name: Generate API documentation
         run: npx typedoc
         continue-on-error: true
-      - name: Download coverage
+
+      - name: Download benchmark report
+        uses: actions/download-artifact@v4
+        with: { name: benchmark-report, path: docs/benchmark }
+        continue-on-error: true
+
+      - name: Download coverage report
         uses: actions/download-artifact@v4
         with: { name: coverage-report, path: docs/coverage }
         continue-on-error: true
+
       - name: Prepare pages
         run: node scripts/prepare-pages.js
-      - uses: actions/configure-pages@v4
-      - uses: actions/upload-pages-artifact@v3
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
         with: { path: docs }
-      - uses: actions/deploy-pages@v4
+
+      - name: Deploy to GitHub Pages
         id: deployment
+        uses: actions/deploy-pages@v4
