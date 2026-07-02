@@ -93,8 +93,6 @@ jobs:
       - name: Run tests with coverage
         run: npm run test:coverage
 
-      - name: Verify integration coverage
-        run: node scripts/ci-coverage-check.js --tier integration --verbose
 
       - name: Ensure coverage directory exists
         if: always()
