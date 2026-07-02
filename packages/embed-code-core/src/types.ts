@@ -51,6 +51,14 @@ export interface ModelDescriptor {
     sha256: string;
     size_bytes: number;
   };
+  /** @deprecated use weights instead */
+  onnx?: {
+    input_ids_name: string;
+    attention_mask_name: string;
+    output_name: string;
+    sha256: string;
+    size_bytes: number;
+  };
   architecture: {
     embedding_dim: number;
     num_layers: number;
