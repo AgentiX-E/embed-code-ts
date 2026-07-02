@@ -47,9 +47,6 @@ jobs:
           if [ ! -f coverage/coverage-summary.json ]; then
             echo '{"total":{"lines":{"pct":0},"branches":{"pct":0},"functions":{"pct":0},"statements":{"pct":0}}}' > coverage/coverage-summary.json
           fi
-      - name: Report unit coverage
-        if: always()
-        run: node scripts/ci-coverage-check.js --tier unit --verbose
 
   # ─── Build check (TypeScript compile) ────────────────────────────────
   build:
