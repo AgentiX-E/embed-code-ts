@@ -8,6 +8,11 @@
     "skipLibCheck": true,
     "ignoreDeprecations": "6.0"
   },
-  "references": [{ "path": "./packages/embed-code-core" }],
+  "references": [
+    { "path": "./packages/embed-code-core" },
+    { "path": "./packages/embed-code-node" },
+    { "path": "./packages/embed-code-web" },
+    { "path": "./packages/embed-code-cli" }
+  ],
   "files": []
 }
