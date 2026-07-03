@@ -41,8 +41,10 @@ export class WebEmbedder implements IEmbedder {
     const tokenizer = WordPieceTokenizer.fromJSON(tokenizerJson, 512);
     let buffer: ArrayBuffer;
     if (modelUrl.startsWith('file://')) {
-      const fs = await import('node:fs');
-      const raw = fs.readFileSync(modelUrl.replace('file://', ''));
+      // Node.js file:// protocol — dynamic import of fs (not available in browser)
+      // @ts-expect-error 2307 — node:fs module only exists in Node.js runtime
+      const { readFileSync } = await import('node:fs');
+      const raw = readFileSync(modelUrl.replace('file://', ''));
       buffer = raw.buffer.slice(raw.byteOffset, raw.byteOffset + raw.byteLength);
     } else {
       const resp = await fetch(modelUrl);
