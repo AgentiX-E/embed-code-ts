@@ -5,45 +5,57 @@
 const fs = require('fs');
 
 const args = process.argv.slice(2);
-function getArg(flag) { const i = args.indexOf(flag); return i >= 0 ? args[i + 1] : null; }
+function getArg(flag) {
+  const i = args.indexOf(flag);
+  return i >= 0 ? args[i + 1] : null;
+}
 
 const nodePath = getArg('--node') || 'docs/benchmark/benchmark-report.json';
 const webPath = getArg('--web') || 'docs/web-benchmark/web-benchmark-report.json';
 const outPath = getArg('--out') || 'docs/benchmark/index.html';
 
 if (!fs.existsSync(nodePath) || !fs.existsSync(webPath)) {
-    console.log('[generate-combined-report] Missing report files — skipping');
-    process.exit(0);
+  console.log('[generate-combined-report] Missing report files — skipping');
+  process.exit(0);
 }
 
 const node = JSON.parse(fs.readFileSync(nodePath, 'utf-8'));
-const web  = JSON.parse(fs.readFileSync(webPath, 'utf-8'));
+const web = JSON.parse(fs.readFileSync(webPath, 'utf-8'));
 
-const nodeRows = (node.latency || []).map(c =>
-    `<tr><td>${c.config}</td><td>${c.avgLatencyMs}</td><td>${c.minLatencyMs}</td><td>${c.maxLatencyMs || '-'}</td></tr>`
-).join('\n');
+const nodeRows = (node.latency || [])
+  .map(
+    (c) =>
+      `<tr><td>${c.config}</td><td>${c.avgLatencyMs}</td><td>${c.minLatencyMs}</td><td>${c.maxLatencyMs || '-'}</td></tr>`,
+  )
+  .join('\n');
 
-const webRows = (web.latency || []).map(c =>
-    `<tr><td>${c.config}</td><td>${c.avgLatencyMs}</td><td>${c.minLatencyMs}</td><td>${c.maxLatencyMs || '-'}</td></tr>`
-).join('\n');
+const webRows = (web.latency || [])
+  .map(
+    (c) =>
+      `<tr><td>${c.config}</td><td>${c.avgLatencyMs}</td><td>${c.minLatencyMs}</td><td>${c.maxLatencyMs || '-'}</td></tr>`,
+  )
+  .join('\n');
 
 // Speedup
 const speedups = [];
 const nodeLat = node.latency || [];
-const webLat  = web.latency || [];
+const webLat = web.latency || [];
 for (let i = 0; i < Math.min(nodeLat.length, webLat.length); i++) {
-    const nLat = nodeLat[i].avgLatencyMs;
-    const wLat = webLat[i].avgLatencyMs;
-    speedups.push({
-        config: nodeLat[i].config.replace('-wasm', ''),
-        nodeMs: nLat,
-        webMs: wLat,
-        speedup: nLat > 0 ? (wLat / nLat).toFixed(2) + 'x' : 'N/A',
-    });
+  const nLat = nodeLat[i].avgLatencyMs;
+  const wLat = webLat[i].avgLatencyMs;
+  speedups.push({
+    config: nodeLat[i].config.replace('-wasm', ''),
+    nodeMs: nLat,
+    webMs: wLat,
+    speedup: nLat > 0 ? (wLat / nLat).toFixed(2) + 'x' : 'N/A',
+  });
 }
-const speedupRows = speedups.map(s =>
-    `<tr><td>${s.config}</td><td>${s.nodeMs}ms</td><td>${s.webMs}ms</td><td>${s.speedup}</td></tr>`
-).join('\n');
+const speedupRows = speedups
+  .map(
+    (s) =>
+      `<tr><td>${s.config}</td><td>${s.nodeMs}ms</td><td>${s.webMs}ms</td><td>${s.speedup}</td></tr>`,
+  )
+  .join('\n');
 
 const html = `<!DOCTYPE html>
 <html lang="en">

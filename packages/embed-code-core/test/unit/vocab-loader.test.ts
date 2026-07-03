@@ -8,7 +8,7 @@ describe('loadVocab', () => {
   it('loads basic vocab with special tokens', () => {
     const json = {
       model: {
-        vocab: { '[PAD]': 0, '[UNK]': 1, '[CLS]': 2, '[SEP]': 3, 'hello': 4, 'world': 5, '##ing': 6 },
+        vocab: { '[PAD]': 0, '[UNK]': 1, '[CLS]': 2, '[SEP]': 3, hello: 4, world: 5, '##ing': 6 },
       },
       added_tokens: [
         { content: '[PAD]', id: 0, special: true },
@@ -25,7 +25,7 @@ describe('loadVocab', () => {
   });
 
   it('handles missing special tokens gracefully', () => {
-    const json = { model: { vocab: { 'hello': 5 } } };
+    const json = { model: { vocab: { hello: 5 } } };
     const info = loadVocab(json);
     expect(info.padTokenId).toBe(0); // default fallback
   });
