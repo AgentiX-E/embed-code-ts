@@ -1,0 +1,37 @@
+{
+  "model": "nomic-embed-code-v1.5.int8.onnx",
+  "torchModule": "onnxruntime-web",
+  "dim": 768,
+  "timestamp": "2026-07-03T04:49:56.362Z",
+  "system": {
+    "nodeVersion": "v22.23.1",
+    "platform": "linux",
+    "arch": "x64",
+    "cpuModel": "AMD EPYC 9K65 192-Core Processor",
+    "cpuCores": 32,
+    "ramGB": "123.3",
+    "backend": "wasm"
+  },
+  "memory": {
+    "heapUsedMB": 13,
+    "rssMB": 1482
+  },
+  "latency": [
+    {
+      "config": "single-short-wasm",
+      "avgLatencyMs": 1972.51,
+      "minLatencyMs": 1971.1,
+      "maxLatencyMs": 1973.91
+    },
+    {
+      "config": "single-medium-wasm",
+      "avgLatencyMs": 2005.58,
+      "minLatencyMs": 2000.63,
+      "maxLatencyMs": 2010.54
+    }
+  ],
+  "accuracy": {
+    "queryDocSimilarity": 0.5945,
+    "queryUnrelatedSimilarity": 0.4429
+  }
+}

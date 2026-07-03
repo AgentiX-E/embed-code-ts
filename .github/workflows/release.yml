@@ -65,8 +65,7 @@ jobs:
         with:
           path: |
             models/nomic-embed-code-v1.5.int8.onnx
-            models/nomic-embed-code-v1.5.int8.onnx.data
-          key: embed-code-model-${{ hashFiles("scripts/export-model.py", "models/model-descriptor.json") }}-v4
+          key: embed-code-model-${{ hashFiles("scripts/export-model.py", "models/model-descriptor.json") }}-v5
 
       - name: Export ONNX model
         if: ${{ !inputs.skip_tests && steps.cache-model.outputs.cache-hit != 'true' }}
@@ -120,8 +119,7 @@ jobs:
         with:
           path: |
             models/nomic-embed-code-v1.5.int8.onnx
-            models/nomic-embed-code-v1.5.int8.onnx.data
-          key: embed-code-model-${{ hashFiles("scripts/export-model.py", "models/model-descriptor.json") }}-v4
+          key: embed-code-model-${{ hashFiles("scripts/export-model.py", "models/model-descriptor.json") }}-v5
           fail-on-cache-miss: true
           fail-on-cache-miss: true
 

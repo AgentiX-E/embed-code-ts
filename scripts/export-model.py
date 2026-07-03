@@ -42,5 +42,12 @@ def main():
     print(f"Exported: {args.output} ({size_mb:.1f} MB)")
     print(f"  Dim: {D}, Layers: {model.config.num_hidden_layers}")
 
+    # Rewrite as single file (no external data) — required for onnxruntime-web
+    import onnx
+    m = onnx.load(args.output, load_external_data=True)
+    onnx.save(m, args.output, save_as_external_data=False)
+    final_mb = os.path.getsize(args.output) / 1024 / 1024
+    print(f"  Merged to single file: {final_mb:.1f} MB")
+
 if __name__ == "__main__":
     main()
