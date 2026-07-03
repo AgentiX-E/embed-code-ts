@@ -18,12 +18,12 @@ Text → [WordPiece Tokenizer] → [ONNX Runtime] → [Mean Pool] → [L2 Norm] 
 
 ## Packages
 
-| Package                      | Platform  | Runtime                                         | Size   |
-| ---------------------------- | --------- | ----------------------------------------------- | ------ |
-| `@agentix-e/embed-code-core` | Universal | Pure TypeScript (tokenizer, pooler, interfaces) | ~50KB  |
-| `@agentix-e/embed-code-node` | Node.js   | `onnxruntime-node` (AVX2 native)                | ~137MB |
-| `@agentix-e/embed-code-web`  | Browser   | `onnxruntime-web` (WASM/WebGPU)                 | ~137MB |
-| `@agentix-e/embed-code-cli`  | CLI       | Model lifecycle management                      | ~50KB  |
+| Package                           | npm                                                                                                                                                  | Description                                                          |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| `@agentix-e/embed-code-core`      | [![npm](https://img.shields.io/npm/v/@agentix-e/embed-code-core?color=blue)](https://www.npmjs.com/package/@agentix-e/embed-code-core)               | Pure TypeScript core: WordPiece tokenizer, pooler, interfaces        |
+| `@agentix-e/embed-code-node`      | [![npm](https://img.shields.io/npm/v/@agentix-e/embed-code-node?color=blue)](https://www.npmjs.com/package/@agentix-e/embed-code-node)               | **Node.js** ONNX Runtime inference engine (onnxruntime-node, AVX2)   |
+| `@agentix-e/embed-code-web`       | [![npm](https://img.shields.io/npm/v/@agentix-e/embed-code-web?color=orange)](https://www.npmjs.com/package/@agentix-e/embed-code-web)               | **Browser** inference engine (onnxruntime-web: WASM / WebGPU)        |
+| `@agentix-e/embed-code-cli`       | [![npm](https://img.shields.io/npm/v/@agentix-e/embed-code-cli?color=blue)](https://www.npmjs.com/package/@agentix-e/embed-code-cli)                 | CLI tool: download, convert, quantize, verify & embed                |
 
 ## Quick Start
 

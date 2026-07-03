@@ -159,13 +159,13 @@ jobs:
           cache: 'npm'
 
       - run: npm ci
-      - run: npm run build
+      - run: npm run build:all
 
       - name: Publish packages to npm (OIDC)
         run: |
           for pkg in embed-code-core embed-code-node embed-code-web embed-code-cli; do
             cd "packages/${pkg}"
-            npm publish --access public --provenance || echo "[release] ${pkg} publish skipped (version already exists)"
+            npm publish --access public --provenance
             cd ../..
           done
 
