@@ -22,12 +22,15 @@ export default defineConfig({
       include: [
         'packages/embed-code-core/src/**/*.ts',
         'packages/embed-code-node/src/**/*.ts',
+        'packages/embed-code-web/src/**/*.ts',
         'packages/embed-code-cli/src/**/*.ts',
       ],
       exclude: [
         'packages/*/src/index.ts',
         'packages/embed-code-cli/src/cli.ts',
         'packages/embed-code-core/src/types.ts',
+        'packages/embed-code-core/src/embedder-interface.ts',
+        'packages/embed-code-core/src/ort-backend-interface.ts',
         'packages/*/src/types/**/*.d.ts',
       ],
       reporter: ['text', 'html', 'json-summary', 'lcov'],
