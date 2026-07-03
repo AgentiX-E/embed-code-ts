@@ -103,7 +103,7 @@ jobs:
           fail-on-cache-miss: true
 
       - name: Run benchmark (Node.js native)
-        run: npx tsx scripts/benchmark-ci.js --verbose
+        run: npx tsx scripts/benchmark-ci.js --verbose --json benchmark-report.json --md benchmark-report.md --html benchmark-report.html
         timeout-minutes: 10
         env:
           EMBED_CODE_MODEL_PATH: models/nomic-embed-code-v1.5.int8.onnx
@@ -114,7 +114,13 @@ jobs:
 
       - name: Upload benchmark artifact
         uses: actions/upload-artifact@v7
-        with: { name: benchmark-report, path: benchmark-report.json, retention-days: 7 }
+        with:
+          name: benchmark-report
+          path: |
+            benchmark-report.json
+            benchmark-report.md
+            benchmark-report.html
+          retention-days: 7
 
   web-benchmark:
     needs: [integration-test]
@@ -135,7 +141,7 @@ jobs:
           fail-on-cache-miss: true
 
       - name: Run web benchmark (WASM)
-        run: npx tsx scripts/web-benchmark-ci.js --verbose
+        run: npx tsx scripts/web-benchmark-ci.js --verbose --json web-benchmark-report.json --md web-benchmark-report.md --html web-benchmark-report.html
         timeout-minutes: 10
         env:
           EMBED_CODE_MODEL_PATH: models/nomic-embed-code-v1.5.int8.onnx
@@ -143,7 +149,13 @@ jobs:
 
       - name: Upload web benchmark artifact
         uses: actions/upload-artifact@v7
-        with: { name: web-benchmark-report, path: web-benchmark-report.json, retention-days: 7 }
+        with:
+          name: web-benchmark-report
+          path: |
+            web-benchmark-report.json
+            web-benchmark-report.md
+            web-benchmark-report.html
+          retention-days: 7
 
   deploy-pages:
     if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main' || github.event_name == 'schedule')
@@ -181,6 +193,19 @@ jobs:
       - name: Download coverage report
         uses: actions/download-artifact@v4
         with: { name: coverage-report, path: docs/coverage }
+        continue-on-error: true
+
+      - name: Generate combined benchmark report
+        run: |
+          if [ -f docs/benchmark/benchmark-report.json ] && [ -f docs/web-benchmark/web-benchmark-report.json ]; then
+            node scripts/generate-combined-report.js \
+              --node docs/benchmark/benchmark-report.json \
+              --web docs/web-benchmark/web-benchmark-report.json \
+              --out docs/benchmark/index.html
+            echo "[deploy-pages] Combined benchmark report generated"
+          else
+            echo "[deploy-pages] Skipping combined benchmark (missing benchmark data)"
+          fi
         continue-on-error: true
 
       - name: Prepare pages
