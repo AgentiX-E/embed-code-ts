@@ -14,7 +14,7 @@
     "build:cli": "cd packages/embed-code-cli && npx tsc",
     "build:node": "cd packages/embed-code-node && npx tsc",
     "build:web": "cd packages/embed-code-web && npx tsc",
-    "build:all": "npm run build && npm run build:cli && npm run build:node && npm run build:web",
+    "build:all": "npm run build && npm run build:node && npm run build:web && npm run build:cli",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:unit": "vitest run --config vitest.unit.config.ts",
