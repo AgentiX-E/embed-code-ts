@@ -66,9 +66,8 @@ jobs:
         id: cache-model
         uses: actions/cache@v6
         with:
-          path: |
-            models/nomic-embed-code-v1.5.int8.onnx
-          key: embed-code-model-${{ hashFiles('scripts/export-model.py', 'models/model-descriptor.json') }}-v5
+          path: models/nomic-embed-code-v1.5.int8.onnx
+          key: embed-code-model-${{ hashFiles('scripts/export-model.py', 'models/model-descriptor.json') }}-v6
 
       - name: Export ONNX model
         if: steps.cache-model.outputs.cache-hit != 'true'
@@ -99,12 +98,11 @@ jobs:
       - name: Restore cached ONNX model
         uses: actions/cache/restore@v6
         with:
-          path: |
-            models/nomic-embed-code-v1.5.int8.onnx
-          key: embed-code-model-${{ hashFiles('scripts/export-model.py', 'models/model-descriptor.json') }}-v5
+          path: models/nomic-embed-code-v1.5.int8.onnx
+          key: embed-code-model-${{ hashFiles('scripts/export-model.py', 'models/model-descriptor.json') }}-v6
           fail-on-cache-miss: true
 
-      - name: Run benchmark
+      - name: Run benchmark (Node.js native)
         run: npx tsx scripts/benchmark-ci.js --verbose
         timeout-minutes: 10
         env:
@@ -128,18 +126,21 @@ jobs:
         with: { node-version: '22', cache: 'npm' }
       - run: npm ci
       - run: npm run build
+
       - name: Restore cached ONNX model
         uses: actions/cache/restore@v6
         with:
           path: models/nomic-embed-code-v1.5.int8.onnx
-          key: embed-code-model-${{ hashFiles('scripts/export-model.py', 'models/model-descriptor.json') }}-v5
+          key: embed-code-model-${{ hashFiles('scripts/export-model.py', 'models/model-descriptor.json') }}-v6
           fail-on-cache-miss: true
+
       - name: Run web benchmark (WASM)
         run: npx tsx scripts/web-benchmark-ci.js --verbose
         timeout-minutes: 10
         env:
           EMBED_CODE_MODEL_PATH: models/nomic-embed-code-v1.5.int8.onnx
           BENCH_ITERATIONS: 5
+
       - name: Upload web benchmark artifact
         uses: actions/upload-artifact@v7
         with: { name: web-benchmark-report, path: web-benchmark-report.json, retention-days: 7 }
@@ -168,12 +169,13 @@ jobs:
         continue-on-error: true
 
       - name: Download benchmark report
+        uses: actions/download-artifact@v4
+        with: { name: benchmark-report, path: docs/benchmark }
+        continue-on-error: true
+
       - name: Download web benchmark report
         uses: actions/download-artifact@v4
         with: { name: web-benchmark-report, path: docs/web-benchmark }
-        continue-on-error: true
-        uses: actions/download-artifact@v4
-        with: { name: benchmark-report, path: docs/benchmark }
         continue-on-error: true
 
       - name: Download coverage report
