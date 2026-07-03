@@ -8,3 +8,5 @@ models/*.zip
 *.log
 pnpm-lock.yaml
 models/tokenizer.json
+web-benchmark-report.json
+benchmark-report.json
