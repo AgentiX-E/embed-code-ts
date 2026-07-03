@@ -42,7 +42,6 @@ jobs:
 
       - name: Unit Tests (no ONNX model needed)
         run: npm run test:unit:coverage
-        continue-on-error: true
 
       - name: Upload unit coverage
         if: always()
@@ -81,12 +80,10 @@ jobs:
         run: npm run test:coverage
         env:
           EMBED_CODE_MODEL_PATH: models/nomic-embed-code-v1.5.int8.onnx
-        continue-on-error: true
 
       - name: Check coverage thresholds
         if: ${{ !inputs.skip_tests }}
         run: node scripts/ci-coverage-check.js --tier release --verbose
-        continue-on-error: true
 
       - name: Upload integration coverage
         if: always()
@@ -121,11 +118,10 @@ jobs:
             models/nomic-embed-code-v1.5.int8.onnx
           key: embed-code-model-${{ hashFiles("scripts/export-model.py", "models/model-descriptor.json") }}-v5
           fail-on-cache-miss: true
-          fail-on-cache-miss: true
 
       - name: Run benchmark
         run: |
-          npx tsx scripts/benchmark-ci.js
+          npx tsx scripts/benchmark-ci.js --verbose --json benchmark-report.json --md benchmark-report.md --html benchmark-report.html
         timeout-minutes: 10
         env:
           EMBED_CODE_MODEL_PATH: models/nomic-embed-code-v1.5.int8.onnx
@@ -133,13 +129,15 @@ jobs:
 
       - name: Accuracy gate
         run: node scripts/ci-benchmark-check.js --verbose
-        continue-on-error: true
 
       - name: Upload benchmark artifact
         uses: actions/upload-artifact@v7
         with:
           name: benchmark-report
-          path: benchmarks/
+          path: |
+            benchmark-report.json
+            benchmark-report.md
+            benchmark-report.html
           retention-days: 7
 
   # ═══════════════════════════════════════════════════════════════════
@@ -193,7 +191,6 @@ jobs:
       contents: read
       pages: write
       id-token: write
-    continue-on-error: true
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -209,21 +206,18 @@ jobs:
 
       - name: Generate API documentation
         run: npx typedoc
-        continue-on-error: true
 
       - name: Download benchmark report
         uses: actions/download-artifact@v4
         with:
           name: benchmark-report
           path: docs/benchmark
-        continue-on-error: true
 
       - name: Download coverage report
         uses: actions/download-artifact@v4
         with:
           name: coverage-report
           path: docs/coverage
-        continue-on-error: true
 
       - name: Prepare pages
         run: node scripts/prepare-pages.js

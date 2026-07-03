@@ -45,8 +45,28 @@ describe('isPunctuation', () => {
     expect(isPunctuation(',')).toBe(true);
   });
 
+  it('range 33-47: exclamation mark', () => {
+    expect(isPunctuation('!')).toBe(true);
+  });
+
+  it('range 58-64: colon', () => {
+    expect(isPunctuation(':')).toBe(true);
+  });
+
+  it('range 91-96: backslash', () => {
+    expect(isPunctuation('\\')).toBe(true);
+  });
+
+  it('range 123-126: tilde', () => {
+    expect(isPunctuation('~')).toBe(true);
+  });
+
   it('returns false for letters', () => {
     expect(isPunctuation('a')).toBe(false);
     expect(isPunctuation('Z')).toBe(false);
+  });
+
+  it('returns false for digits', () => {
+    expect(isPunctuation('5')).toBe(false);
   });
 });

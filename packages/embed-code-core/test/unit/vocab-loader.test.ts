@@ -29,4 +29,24 @@ describe('loadVocab', () => {
     const info = loadVocab(json);
     expect(info.padTokenId).toBe(0); // default fallback
   });
+
+  it('recognizes continuation subwords from added_tokens', () => {
+    const json = {
+      model: { vocab: { hello: 1, world: 2 } },
+      added_tokens: [
+        { content: '##ing', id: 3, special: false },
+        { content: '##ly', id: 4, special: false },
+      ],
+    };
+    const info = loadVocab(json);
+    expect(info.isContinuation(3)).toBe(true);
+    expect(info.isContinuation(4)).toBe(true);
+    expect(info.isContinuation(1)).toBe(false);
+  });
+
+  it('handles empty model.vocab', () => {
+    const info = loadVocab({ model: { vocab: {} } });
+    expect(info.size).toBe(0);
+    expect(info.padTokenId).toBe(0); // fallback to 0
+  });
 });

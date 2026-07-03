@@ -78,4 +78,14 @@ describe('cosineSimilarity', () => {
   it('dimension mismatch produces 0', () => {
     expect(cosineSimilarity([1, 2], [1, 2, 3])).toBe(0);
   });
+
+  it('zero vectors produce 0', () => {
+    expect(cosineSimilarity([0, 0], [0, 0])).toBe(0);
+  });
+
+  it('handles Float32Array inputs', () => {
+    const a = new Float32Array([1, 0]);
+    const b = new Float32Array([0, 1]);
+    expect(cosineSimilarity(a, b)).toBeCloseTo(0.0);
+  });
 });
