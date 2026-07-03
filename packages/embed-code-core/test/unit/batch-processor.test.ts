@@ -36,7 +36,7 @@ describe('processBatch', () => {
     const progress: number[] = [];
     await processBatch([1, 2, 3], async () => {}, {
       concurrency: 1,
-      onProgress: (completed, total) => progress.push(completed),
+      onProgress: (completed, _total) => progress.push(completed),
     });
     expect(progress).toEqual([1, 2, 3]);
   });
