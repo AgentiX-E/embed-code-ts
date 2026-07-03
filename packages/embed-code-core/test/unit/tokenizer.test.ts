@@ -37,6 +37,17 @@ describe('WordPieceTokenizer', () => {
     });
   });
 
+  describe('static constructors', () => {
+    it('fromBuffer works with ArrayBuffer', () => {
+      if (!hasTokenizer) return;
+      const raw = fs.readFileSync(TOKENIZER_PATH);
+      const buf = raw.buffer.slice(raw.byteOffset, raw.byteOffset + raw.byteLength);
+      const tok = WordPieceTokenizer.fromBuffer(buf, 512);
+      expect(tok.clsTokenId).toBe(101);
+      expect(tok.sepTokenId).toBe(102);
+    });
+  });
+
   describe('basic tokenization', () => {
     let tok: WordPieceTokenizer;
 

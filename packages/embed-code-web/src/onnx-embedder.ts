@@ -39,8 +39,15 @@ export class WebEmbedder implements IEmbedder {
 
   static async create(modelUrl: string, tokenizerJson: Record<string, any>): Promise<WebEmbedder> {
     const tokenizer = WordPieceTokenizer.fromJSON(tokenizerJson, 512);
-    const resp = await fetch(modelUrl);
-    const buffer = await resp.arrayBuffer();
+    let buffer: ArrayBuffer;
+    if (modelUrl.startsWith('file://')) {
+      const fs = await import('node:fs');
+      const raw = fs.readFileSync(modelUrl.replace('file://', ''));
+      buffer = raw.buffer.slice(raw.byteOffset, raw.byteOffset + raw.byteLength);
+    } else {
+      const resp = await fetch(modelUrl);
+      buffer = await resp.arrayBuffer();
+    }
     const embedder = new WebEmbedder(tokenizer, buffer);
 
     const ort = await getOrt();

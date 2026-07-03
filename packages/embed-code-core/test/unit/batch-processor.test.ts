@@ -65,4 +65,35 @@ describe('processBatch', () => {
     });
     expect(results.length).toBe(2);
   });
+
+  it('uses default concurrency from os.cpus()', async () => {
+    const results: number[] = [];
+    // No concurrency option — triggers importNodeCores() path
+    await processBatch([10, 20, 30], async (n) => {
+      results.push(n);
+    });
+    expect(new Set(results)).toEqual(new Set([10, 20, 30]));
+  });
+
+  it('times out on slow items', async () => {
+    const results: number[] = [];
+    await processBatch(
+      [1, 2],
+      async (n) => {
+        if (n === 1) await new Promise((r) => setTimeout(r, 200));
+        results.push(n);
+      },
+      { concurrency: 2, timeout: 50 },
+    );
+    // Item 1 should have timed out, item 2 should complete
+    expect(results).toContain(2);
+    expect(results).not.toContain(1);
+  });
+
+  it('handles items exactly at concurrency boundary', async () => {
+    const results: number[] = [];
+    // concurrency=2, items=2: worker loop breaks at i>=2 immediately
+    await processBatch([5, 6], async (n) => results.push(n), { concurrency: 3 });
+    expect(results).toEqual([5, 6]);
+  });
 });

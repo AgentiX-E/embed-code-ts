@@ -79,6 +79,9 @@ jobs:
       - name: Run tests with coverage
         run: npm run test:coverage
 
+      - name: Coverage threshold check
+        run: node scripts/ci-coverage-check.js --tier integration --verbose
+
       - name: Upload coverage artifact
         if: always()
         uses: actions/upload-artifact@v7
@@ -178,22 +181,18 @@ jobs:
 
       - name: Generate API documentation
         run: npx typedoc
-        continue-on-error: true
 
       - name: Download benchmark report
         uses: actions/download-artifact@v4
         with: { name: benchmark-report, path: docs/benchmark }
-        continue-on-error: true
 
       - name: Download web benchmark report
         uses: actions/download-artifact@v4
         with: { name: web-benchmark-report, path: docs/web-benchmark }
-        continue-on-error: true
 
       - name: Download coverage report
         uses: actions/download-artifact@v4
         with: { name: coverage-report, path: docs/coverage }
-        continue-on-error: true
 
       - name: Generate combined benchmark report
         run: |
@@ -206,7 +205,6 @@ jobs:
           else
             echo "[deploy-pages] Skipping combined benchmark (missing benchmark data)"
           fi
-        continue-on-error: true
 
       - name: Prepare pages
         run: node scripts/prepare-pages.js

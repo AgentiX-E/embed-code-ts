@@ -157,6 +157,91 @@ describe('resolveModelConfig', () => {
     fs.rmSync(tmpDir, { recursive: true, force: true });
   });
 
+  it('resolves config with weights field instead of onnx', () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'embed-test-'));
+    const modelPath = path.join(tmpDir, 'model.weights.bin');
+    fs.writeFileSync(modelPath, 'dummy content');
+
+    const descriptor = {
+      schema: 1,
+      model: {
+        name: 'nomic-embed-code',
+        version: 'v1',
+        base_architecture: 'BERT-base',
+        hf_repository: 'nomic-ai/nomic-embed-code',
+        hf_revision: 'abc123',
+        exported_at: '2026-01-01T00:00:00Z',
+        precision: 'int8',
+      },
+      weights: {
+        input_ids_name: 'custom_input_ids',
+        attention_mask_name: 'custom_attention_mask',
+        output_name: 'custom_output',
+      },
+      architecture: {
+        embedding_dim: 768,
+        num_layers: 12,
+        num_heads: 12,
+        num_kv_heads: 0,
+        head_dim: 64,
+        hidden_size: 768,
+        intermediate_size: 3072,
+        vocab_size: 40856,
+        max_position_embeddings: 8192,
+        rope_theta: 0,
+        sliding_window: null,
+        attention_dropout: 0.0,
+        use_sliding_window: false,
+      },
+      tokenizer: {
+        type: 'bpe',
+        vocab_size: 40856,
+        max_length: 8192,
+        pad_token: '<|endoftext|>',
+        pad_token_id: 0,
+        bos_token: null,
+        bos_token_id: null,
+        eos_token: '<|endoftext|>',
+        eos_token_id: 0,
+        unk_token: null,
+        unk_token_id: null,
+      },
+      pooling: { strategy: 'mean', normalize: true },
+      task_prefixes: { query: 'search_query: ', document: 'search_document: ' },
+    };
+
+    fs.writeFileSync(path.join(tmpDir, 'model-descriptor.json'), JSON.stringify(descriptor));
+
+    const { config } = resolveModelConfig(modelPath);
+    expect(config.inputIdsName).toBe('custom_input_ids');
+    expect(config.attentionMaskName).toBe('custom_attention_mask');
+    expect(config.outputName).toBe('custom_output');
+
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  it('falls back when descriptor has no weights or onnx', () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'embed-test-'));
+    const modelPath = path.join(tmpDir, 'model.weights.bin');
+    fs.writeFileSync(modelPath, 'dummy content');
+
+    const descriptor = {
+      schema: 1,
+      model: { name: 'test' },
+      architecture: { embedding_dim: 768, max_position_embeddings: 8192 },
+      pooling: { strategy: 'mean', normalize: true },
+      task_prefixes: { query: 'q', document: 'd' },
+    };
+
+    fs.writeFileSync(path.join(tmpDir, 'model-descriptor.json'), JSON.stringify(descriptor));
+
+    const { config } = resolveModelConfig(modelPath);
+    expect(config.inputIdsName).toBe('input_ids'); // fallback
+    expect(config.attentionMaskName).toBe('attention_mask');
+    expect(config.outputName).toBe('last_hidden_state');
+
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  });
   it('uses explicit fallback config when provided', () => {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'embed-test-'));
     const modelPath = path.join(tmpDir, 'model.weights.bin');
