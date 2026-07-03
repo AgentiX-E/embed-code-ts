@@ -4,7 +4,7 @@
 
 [![CI](https://github.com/AgentiX-E/embed-code-ts/actions/workflows/ci.yml/badge.svg)](https://github.com/AgentiX-E/embed-code-ts/actions/workflows/ci.yml)
 [![Docs](https://img.shields.io/badge/docs-TypeDoc-blue)](https://agentix-e.github.io/embed-code-ts/api/)
-[![Benchmark Report](https://img.shields.io/badge/benchmark-latest-blue)](https://agentix-e.github.io/embed-code-ts/benchmark/)
+[![Benchmark Report](https://img.shields.io/badge/benchmark-latest-blue)](https://agentix-e.github.io/embed-code-ts/benchmark/benchmark-report.html)
 [![Coverage](https://img.shields.io/badge/coverage-report-blue)](https://agentix-e.github.io/embed-code-ts/coverage/)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/Node.js-%3E%3D22-green)](https://nodejs.org/)
@@ -91,11 +91,11 @@ For optimal retrieval performance, prefix inputs:
 
 ## Documentation & Reports
 
-| Resource         | Description                                      | URL                                                                                                  |
-| ---------------- | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
-| 📚 **API Docs**  | Full TypeDoc reference for all packages          | [agentix-e.github.io/embed-code-ts/api/](https://agentix-e.github.io/embed-code-ts/api/)             |
-| 📊 **Benchmark** | Inference latency, throughput & accuracy reports | [agentix-e.github.io/embed-code-ts/benchmark/](https://agentix-e.github.io/embed-code-ts/benchmark/) |
-| 📈 **Coverage**  | Line, branch, function & statement coverage      | [agentix-e.github.io/embed-code-ts/coverage/](https://agentix-e.github.io/embed-code-ts/coverage/)   |
+| Resource         | Description                                      | URL                                                                                                                                            |
+| ---------------- | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| 📚 **API Docs**  | Full TypeDoc reference for all packages          | [agentix-e.github.io/embed-code-ts/api/](https://agentix-e.github.io/embed-code-ts/api/)                                                       |
+| 📊 **Benchmark** | Inference latency, throughput & accuracy reports | [agentix-e.github.io/embed-code-ts/benchmark/benchmark-report.html](https://agentix-e.github.io/embed-code-ts/benchmark/benchmark-report.html) |
+| 📈 **Coverage**  | Line, branch, function & statement coverage      | [agentix-e.github.io/embed-code-ts/coverage/](https://agentix-e.github.io/embed-code-ts/coverage/)                                             |
 
 ## License
 

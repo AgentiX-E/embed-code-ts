@@ -3,7 +3,7 @@
 > Command-line interface for nomic-embed-code — download models and generate code embeddings.
 
 [![npm](https://img.shields.io/npm/v/@agentix-e/embed-code-cli?color=blue)](https://www.npmjs.com/package/@agentix-e/embed-code-cli)
-[![API Docs](https://img.shields.io/badge/docs-TypeDoc-blue)](https://agentix-e.github.io/embed-code-ts/api/modules/embed-code-cli.html)
+[![API Docs](https://img.shields.io/badge/docs-TypeDoc-blue)](https://agentix-e.github.io/embed-code-ts/api/modules/embed-code-cli_src_cli.html)
 
 ## Overview
 
@@ -57,7 +57,7 @@ The `embed` command resolves the model in this order:
 
 ## API Documentation
 
-📚 **Full API reference**: [agentix-e.github.io/embed-code-ts/api/modules/embed-code-cli.html](https://agentix-e.github.io/embed-code-ts/api/modules/embed-code-cli.html)
+📚 **Full API reference**: [agentix-e.github.io/embed-code-ts/api/modules/embed-code-cli_src_cli.html](https://agentix-e.github.io/embed-code-ts/api/modules/embed-code-cli_src_cli.html)
 
 Key exports:
 

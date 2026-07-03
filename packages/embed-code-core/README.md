@@ -3,7 +3,7 @@
 > Core inference engine for nomic-embed-code — int8 code embeddings for Node.js pure-TypeScript incbin inference.
 
 [![npm](https://img.shields.io/npm/v/@agentix-e/embed-code-core?color=blue)](https://www.npmjs.com/package/@agentix-e/embed-code-core)
-[![API Docs](https://img.shields.io/badge/docs-TypeDoc-blue)](https://agentix-e.github.io/embed-code-ts/api/modules/embed-code-core.html)
+[![API Docs](https://img.shields.io/badge/docs-TypeDoc-blue)](https://agentix-e.github.io/embed-code-ts/api/modules/embed-code-core_src.html)
 
 ## Overview
 
@@ -51,7 +51,7 @@ await embedder.dispose();
 
 ## API Documentation
 
-📚 **Full API reference**: [agentix-e.github.io/embed-code-ts/api/modules/embed-code-core.html](https://agentix-e.github.io/embed-code-ts/api/modules/embed-code-core.html)
+📚 **Full API reference**: [agentix-e.github.io/embed-code-ts/api/modules/embed-code-core_src.html](https://agentix-e.github.io/embed-code-ts/api/modules/embed-code-core_src.html)
 
 Key exports:
 

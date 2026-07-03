@@ -57,7 +57,9 @@ function writeCoverageIndex() {
 
 function writeRootLandingPage() {
   ensureDir('docs');
-  const hasBenchmark = fs.existsSync(path.join('docs', 'benchmark', 'benchmark-report.html'));
+  const hasBenchmark =
+    fs.existsSync(path.join('docs', 'benchmark', 'benchmark-report.html')) ||
+    fs.existsSync(path.join('docs', 'benchmark', 'index.html'));
   const hasCoverage = fs.existsSync(path.join('docs', 'coverage', 'index.html'));
   const hasApi = fs.existsSync(path.join('docs', 'api', 'index.html'));
 
@@ -66,10 +68,14 @@ function writeRootLandingPage() {
     cards.push(
       '<div class="card"><h2>📚 <a href="api/index.html">API Documentation</a></h2><p>TypeDoc reference for all packages</p></div>',
     );
-  if (hasBenchmark)
+  if (hasBenchmark) {
+    const benchLink = fs.existsSync(path.join('docs', 'benchmark', 'index.html'))
+      ? 'benchmark/index.html'
+      : 'benchmark/benchmark-report.html';
     cards.push(
-      '<div class="card"><h2>📊 <a href="benchmark/benchmark-report.html">Benchmark Report</a></h2><p>Inference latency, throughput &amp; accuracy</p></div>',
+      `<div class="card"><h2>📊 <a href="${benchLink}">Benchmark Report</a></h2><p>Inference latency, throughput &amp;amp; accuracy</p></div>`,
     );
+  }
   if (hasCoverage)
     cards.push(
       '<div class="card"><h2>📈 <a href="coverage/">Test Coverage</a></h2><p>Code coverage reports</p></div>',
