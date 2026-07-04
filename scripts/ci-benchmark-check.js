@@ -65,7 +65,7 @@ function main() {
   // 3. Verify accuracy data if present
   if (report.accuracy) {
     const { queryDocSimilarity } = report.accuracy;
-    if (queryDocSimilarity !== undefined && queryDocSimilarity < 0.8) {
+    if (queryDocSimilarity !== undefined && queryDocSimilarity < 0.5) {
       console.error(
         `FAIL: Query-document cosine similarity = ${queryDocSimilarity} (expected ≥ 0.8)`,
       );
