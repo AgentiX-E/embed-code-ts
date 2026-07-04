@@ -4,20 +4,47 @@
  * Implements IEmbedder using onnxruntime-web (WASM default, WebGPU auto-upgrade).
  */
 import type { IEmbedder, BatchOptions, ModelInfo } from '@agentix-e/embed-code-core';
-import { WordPieceTokenizer, meanPool, l2Normalize } from '@agentix-e/embed-code-core';
+import {
+  WordPieceTokenizer,
+  meanPool,
+  l2Normalize,
+  int32ToBigInt64,
+  processBatch,
+} from '@agentix-e/embed-code-core';
 
 export { type IEmbedder, type ModelInfo, type BatchOptions };
 
+// Type-safe wrapper interface for onnxruntime-web
+// Manual types avoid the complex onnxruntime-web type hierarchy
+interface OrtInstance {
+  InferenceSession: {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    create(path: ArrayBuffer | string, options?: Record<string, any>): Promise<OrtSession>;
+  };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  Tensor: new (
+    type: string,
+    data: any,
+    dims: number[],
+  ) => { type: string; dims: readonly number[]; data: unknown };
+}
+
+interface OrtSession {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  run(feeds: Record<string, any>): Promise<Record<string, any>>;
+  release(): void;
+}
+
 // Dynamic imports: onnxruntime-web is loaded lazily in browser context
-let ortWeb: any = null;
-async function getOrt(): Promise<any> {
+let ortWeb: OrtInstance | null = null;
+async function getOrt(): Promise<OrtInstance> {
   if (ortWeb) return ortWeb;
-  ortWeb = await import('onnxruntime-web');
+  ortWeb = (await import('onnxruntime-web')) as unknown as OrtInstance;
   return ortWeb;
 }
 
 export class WebEmbedder implements IEmbedder {
-  private session: any = null;
+  private session: OrtSession | null = null;
   readonly dimensions = 768;
   readonly maxSequenceLength = 512;
   readonly modelInfo: ModelInfo;
@@ -73,12 +100,11 @@ export class WebEmbedder implements IEmbedder {
     const tokens = this.tokenizer.tokenize(text);
 
     const ort = await getOrt();
-    const toBInt64 = (arr: Int32Array) => BigInt64Array.from(Array.from(arr).map((v) => BigInt(v)));
 
     const feeds = {
-      input_ids: new ort.Tensor('int64', toBInt64(tokens.inputIds), [1, 512]),
-      attention_mask: new ort.Tensor('int64', toBInt64(tokens.attentionMask), [1, 512]),
-      token_type_ids: new ort.Tensor('int64', toBInt64(tokens.tokenTypeIds), [1, 512]),
+      input_ids: new ort.Tensor('int64', int32ToBigInt64(tokens.inputIds), [1, 512]),
+      attention_mask: new ort.Tensor('int64', int32ToBigInt64(tokens.attentionMask), [1, 512]),
+      token_type_ids: new ort.Tensor('int64', int32ToBigInt64(tokens.tokenTypeIds), [1, 512]),
     };
 
     const outputs = await this.session.run(feeds);
@@ -90,14 +116,14 @@ export class WebEmbedder implements IEmbedder {
   }
 
   async embedBatch(texts: string[], options?: BatchOptions): Promise<Float32Array[]> {
-    const results: Float32Array[] = [];
-    let completed = 0;
-    for (const text of texts) {
-      const r = await this.embed(text);
-      results.push(r);
-      completed++;
-      options?.onProgress?.(completed, texts.length);
-    }
+    const results: Float32Array[] = new Array(texts.length);
+    await processBatch(
+      texts,
+      async (text, index) => {
+        results[index] = await this.embed(text);
+      },
+      options,
+    );
     return results;
   }
 

@@ -18,9 +18,10 @@ export type {
 export { WordPieceTokenizer } from './tokenizer/wordpiece-tokenizer';
 export { loadVocab } from './tokenizer/vocab-loader';
 export { preTokenize, isPunctuation } from './tokenizer/pre-tokenizer';
-export { meanPool } from './pooler';
+export { meanPool, clsPool, lastTokenPool } from './pooler';
 export { l2Normalize, cosineSimilarity } from './normalizer';
 export { processBatch } from './batch-processor';
+export { int32ToBigInt64 } from './int64-utils';
 
 export {
   EmbedCodeError,

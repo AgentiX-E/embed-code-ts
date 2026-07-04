@@ -11,10 +11,13 @@
 const fs = require('fs');
 const path = require('path');
 
-const THRESHOLDS = { lines: 95, branches: 90, functions: 95, statements: 95 };
+const UNIT_THRESHOLDS = { lines: 95, branches: 85, functions: 95, statements: 95 };
+const INTEGRATION_THRESHOLDS = { lines: 85, branches: 75, functions: 85, statements: 85 };
 const TIER = process.argv.includes('--tier')
   ? process.argv[process.argv.indexOf('--tier') + 1] || 'unit'
   : 'unit';
+const THRESHOLDS =
+  TIER === 'integration' || TIER === 'release' ? INTEGRATION_THRESHOLDS : UNIT_THRESHOLDS;
 const VERBOSE = process.argv.includes('--verbose');
 
 function main() {

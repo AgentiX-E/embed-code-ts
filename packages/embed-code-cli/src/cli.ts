@@ -74,31 +74,82 @@ program
 
 program
   .command('download')
-  .description('Download model from HuggingFace Hub')
-  .argument('<model-id>', 'HuggingFace model ID (e.g., nomic-ai/nomic-embed-code-v1.5)')
-  .option('-o, --output <path>', 'Output directory', 'models/')
+  .description('Download ONNX model from HuggingFace Hub')
+  .argument(
+    '[model-id]',
+    'HuggingFace model ID (e.g., nomic-ai/nomic-embed-text-v1.5)',
+    'nomic-ai/nomic-embed-text-v1.5',
+  )
+  .option('-o, --output <path>', 'Output directory')
   .option('--proxy-url <url>', 'Proxy URL for corporate firewall')
   .option('--proxy-username <user>', 'Proxy authentication username')
-  .option('--proxy-password <pass>', 'Proxy auth password (prefer env var)')
-  .action(async (modelId: string, opts: Record<string, string>) => {
+  .option(
+    '--proxy-password <pass>',
+    'Proxy auth password (prefer env var EMBED_CODE_PROXY_PASSWORD)',
+  )
+  .option('--force', 'Force re-download even if cached')
+  .option('--no-progress', 'Disable progress output')
+  .action(async (modelId: string, opts: Record<string, string | boolean>) => {
     try {
-      console.log(`Downloading ${modelId}...`);
-      console.log(`  Output: ${opts.output}`);
+      const { downloadModel } = await import('./download.js');
+      const proxyUrl = opts.proxyUrl as string | undefined;
+      const proxyUsername = opts.proxyUsername as string | undefined;
+      const proxyPassword = opts.proxyPassword as string | undefined;
 
-      // Use huggingface_hub or direct HTTP download
-      // For now, show instructions since onnxruntime-node download needs the actual runtime
-      console.log();
-      console.log('To download the ONNX model:');
-      console.log(`  pip install huggingface_hub`);
-      console.log(`  python3 -c "`);
-      console.log(`    from huggingface_hub import hf_hub_download`);
-      console.log(`    path = hf_hub_download('${modelId}', 'onnx/model_int8.onnx')`);
-      console.log(
-        `    import shutil; shutil.copy(path, '${opts.output}/nomic-embed-code-v1.5.int8.onnx')`,
-      );
-      console.log(`  "`);
-      console.log();
-      console.log('Or use embed-code convert to export from a local HuggingFace cache.');
+      const hasProxy = proxyUrl || proxyUsername || proxyPassword;
+
+      await downloadModel({
+        modelId,
+        outputDir: opts.output as string | undefined,
+        force: !!opts.force,
+        proxy: hasProxy
+          ? { url: proxyUrl ?? '', username: proxyUsername, password: proxyPassword }
+          : undefined,
+        onProgress:
+          opts.progress !== false
+            ? (received, total, speed) => {
+                process.stdout.write(
+                  `\r  ${received.toFixed(1)} / ${total.toFixed(1)} MB @ ${speed.toFixed(1)} MB/s`,
+                );
+              }
+            : undefined,
+      });
+      if (opts.progress !== false) console.log(); // newline after progress
+    } catch (err) {
+      console.error('Error:', err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
+  });
+
+// ─── setup — download model + show info ───────────────────────
+
+program
+  .command('setup')
+  .description('Download model and show setup info')
+  .option('--proxy-url <url>', 'Proxy URL')
+  .option('--proxy-username <user>', 'Proxy username')
+  .option('--proxy-password <pass>', 'Proxy password')
+  .action(async (opts: Record<string, string>) => {
+    try {
+      const { downloadModel } = await import('./download.js');
+      const hasProxy = opts.proxyUrl || opts.proxyUsername || opts.proxyPassword;
+
+      console.log('Setting up nomic-embed-code model...');
+      const modelPath = await downloadModel({
+        proxy: hasProxy
+          ? { url: opts.proxyUrl ?? '', username: opts.proxyUsername, password: opts.proxyPassword }
+          : undefined,
+        onProgress: (received, total, speed) => {
+          process.stdout.write(
+            `\r  ${received.toFixed(1)} / ${total.toFixed(1)} MB @ ${speed.toFixed(1)} MB/s`,
+          );
+        },
+      });
+      console.log(); // newline
+      console.log(`Model: ${modelPath}`);
+      console.log('Setup complete! You can now use:');
+      console.log(`  import { NodeEmbedder } from "@agentix-e/embed-code-node";`);
+      console.log(`  const embedder = await NodeEmbedder.create({ modelPath: "${modelPath}" });`);
     } catch (err) {
       console.error('Error:', err instanceof Error ? err.message : String(err));
       process.exit(1);

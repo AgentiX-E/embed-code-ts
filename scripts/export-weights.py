@@ -5,6 +5,7 @@ Export nomic-embed-code weights from HuggingFace to embed-code-ts binary format.
 Extracts all PyTorch model weights, quantizes them to int8 (per-channel),
 and writes a single binary file with header + offset table + payload.
 
+Generates .weights.bin format (legacy format, ONNX is the current approach).
 The output file is directly consumable by WeightBuffer in TypeScript.
 
 Usage:

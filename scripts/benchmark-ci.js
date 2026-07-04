@@ -194,9 +194,8 @@ async function main() {
     console.log(`  Stability failed: ${e.message}`);
   }
 
-  session.release();
-
   const mem = process.memoryUsage();
+  session.release();
   const report = {
     model: path.basename(MODEL_PATH),
     torchModule: 'onnxruntime',

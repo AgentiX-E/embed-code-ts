@@ -65,29 +65,57 @@ export function resolveModelConfig(
   const modelDir = path.dirname(modelPath);
   const descriptorPath = path.join(modelDir, 'model-descriptor.json');
 
+  let descriptor: ModelDescriptor;
   try {
     const raw = fs.readFileSync(descriptorPath, 'utf-8');
-    const descriptor: ModelDescriptor = JSON.parse(raw);
-
-    // Build ModelConfig from descriptor — try `weights`, fall back to `onnx` for compat
-    const d = descriptor;
-    const w = d.weights ?? d.onnx;
-    const config: ModelConfig = {
-      embeddingDim: d.architecture.embedding_dim,
-      maxTokens: d.architecture.max_position_embeddings,
-      poolingStrategy: d.pooling.strategy,
-      normalize: d.pooling.normalize,
-      inputIdsName: w?.input_ids_name ?? 'input_ids',
-      attentionMaskName: w?.attention_mask_name ?? 'attention_mask',
-      outputName: w?.output_name ?? 'last_hidden_state',
-      taskPrefixes: d.task_prefixes,
-    };
-
-    return { config: Object.freeze(config), descriptor };
+    descriptor = JSON.parse(raw);
   } catch {
-    // Descriptor not found or invalid — use fallback
+    // Descriptor not found or unparseable — use fallback
+    console.warn(
+      '[embed-code-core] Model descriptor not found or invalid, using fallback configuration.',
+    );
     return { config: fallbackConfig, descriptor: null };
   }
+
+  // Validate critical descriptor values
+  const arch = descriptor.architecture;
+  if (typeof arch.embedding_dim !== 'number' || arch.embedding_dim <= 0) {
+    throw new Error(
+      `[embed-code-core] Invalid descriptor: embedding_dim=${arch.embedding_dim}, must be > 0`,
+    );
+  }
+  if (typeof arch.max_position_embeddings !== 'number' || arch.max_position_embeddings <= 0) {
+    throw new Error(
+      `[embed-code-core] Invalid descriptor: max_position_embeddings=${arch.max_position_embeddings}, must be > 0`,
+    );
+  }
+  const validStrategies = ['mean', 'cls', 'last_token'];
+  const strategy = descriptor.pooling?.strategy;
+  if (strategy !== undefined && !validStrategies.includes(strategy)) {
+    throw new Error(
+      `[embed-code-core] Invalid descriptor: pooling.strategy="${strategy}", must be one of: ${validStrategies.join(', ')}`,
+    );
+  }
+
+  // Build ModelConfig from descriptor — try `weights`, fall back to `onnx` for compat
+  const d = descriptor;
+  const w = d.weights ?? d.onnx;
+  const config: ModelConfig = {
+    embeddingDim: d.architecture.embedding_dim,
+    maxTokens: d.architecture.max_position_embeddings,
+    poolingStrategy: d.pooling.strategy,
+    normalize: d.pooling.normalize,
+    inputIdsName: w?.input_ids_name ?? 'input_ids',
+    attentionMaskName: w?.attention_mask_name ?? 'attention_mask',
+    outputName: w?.output_name ?? 'last_hidden_state',
+    taskPrefixes: d.task_prefixes,
+  };
+
+  const frozenConfig: ModelConfig = {
+    ...config,
+    taskPrefixes: Object.freeze({ ...config.taskPrefixes }),
+  };
+  return { config: Object.freeze(frozenConfig), descriptor };
 }
 
 /**

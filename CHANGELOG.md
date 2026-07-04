@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - **`docs/ARCHITECTURE.md`** — comprehensive architecture documentation covering component design, data flow, type system, and design principles
-- **`docs/MODEL-UPDATE.md`** — model update guide with dual-channel release architecture, incbin weight flow, and troubleshooting
+- **`docs/MODEL-UPDATE.md`** — model update guide with ONNX Runtime-based release architecture, and troubleshooting
 - **`docs/index.html`** — GitHub Pages landing page with navigation cards for API docs, benchmarks, coverage, and source code
 - **`docs/GETTING-STARTED.md`** — comprehensive usage documentation with quick start, API usage, CLI tools, configuration reference, output description, troubleshooting, and performance guide
 - **Restructured README** — aligned with project standards: badges, architecture diagram, packages table, quick start (3 options), config reference, output shape reference, project structure, development guide, references, known limitations, documentation & reports links, system requirements, CLI quick reference, license with compatibility table
@@ -24,9 +24,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Initial project scaffold with 2-package monorepo
+- Initial project scaffold with 4-package monorepo
 - Int8 pure-TypeScript model inference engine (`@agentix-e/embed-code-core`)
-- BPE tokenizer with code-aware vocabulary
+- WordPiece tokenizer with code-aware vocabulary
 - CLI tool with `embed-code setup` and `embed-code embed` commands (`@agentix-e/embed-code-cli`)
 - Model downloader with proxy support (3-tier cascade: options → env vars → standard vars)
 - SHA-256 checksum verification for downloaded models

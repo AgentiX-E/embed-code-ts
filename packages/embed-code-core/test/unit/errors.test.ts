@@ -66,7 +66,7 @@ describe('Error classes', () => {
 
   it('EmbedCodeError supports cause chaining', () => {
     const inner = new Error('inner error');
-    const err = new EmbedCodeError('outer error', inner);
+    const err = new EmbedCodeError('outer error', { cause: inner });
     expect(err.cause).toBe(inner);
     expect(err.message).toBe('outer error');
   });

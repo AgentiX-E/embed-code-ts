@@ -27,18 +27,6 @@ const HTML_OUT = process.argv.includes('--html')
   : null;
 const VERBOSE = process.argv.includes('--verbose');
 
-function cos(a, b) {
-  let d = 0,
-    na = 0,
-    nb = 0;
-  for (let i = 0; i < a.length; i++) {
-    d += a[i] * b[i];
-    na += a[i] ** 2;
-    nb += b[i] ** 2;
-  }
-  return na * nb === 0 ? 0 : d / Math.sqrt(na * nb);
-}
-
 async function main() {
   if (!MODEL_PATH || !fs.existsSync(MODEL_PATH)) {
     console.error('Model not found. Export with: python3 scripts/export-model.py');
@@ -58,7 +46,7 @@ async function main() {
   });
 
   // Tokenizer + pooling
-  const { WordPieceTokenizer, meanPool, l2Normalize } = require(
+  const { WordPieceTokenizer, meanPool, l2Normalize, cosineSimilarity } = require(
     path.resolve(__dirname, '..', 'packages/embed-code-core/dist/index.cjs'),
   );
   const tok = WordPieceTokenizer.fromFile(
@@ -110,9 +98,23 @@ async function main() {
       name: 'single-medium-wasm',
       text: 'search_document: def factorial(n): return 1 if n <= 1 else n * factorial(n - 1)',
     },
+    {
+      name: 'single-long-wasm',
+      text:
+        'search_document: ' +
+        'function fib(n) { return n <= 1 ? n : fib(n-1) + fib(n-2); } '.repeat(5),
+    },
   ];
 
   const results = [];
+
+  // Cold start
+  if (VERBOSE) console.log('Cold start:');
+  const cs0 = performance.now();
+  await embedOne(configs[0].text);
+  const coldMs = performance.now() - cs0;
+  if (VERBOSE) console.log(`  cold_start_ms = ${coldMs.toFixed(1)}`);
+
   for (const cfg of configs) {
     const latencies = [];
     await embedOne(cfg.text);
@@ -128,11 +130,13 @@ async function main() {
       avgLatencyMs: Math.round(avg * 100) / 100,
       minLatencyMs: Math.round(latencies[0] * 100) / 100,
       maxLatencyMs: Math.round(latencies[latencies.length - 1] * 100) / 100,
+      coldStartMs: cfg.name === 'single-short-wasm' ? Math.round(coldMs * 100) / 100 : undefined,
     });
     console.log(`  ${cfg.name.padEnd(20)} avg=${avg.toFixed(1)}ms`);
   }
 
   // Accuracy
+  console.log('\nAccuracy:');
   let accuracy = null;
   try {
     const qe = await embedOne('search_query: Recursive factorial implementation');
@@ -142,20 +146,45 @@ async function main() {
     const ue = await embedOne(
       'search_document: class BinaryTree { constructor(v) { this.v = v; } }',
     );
+    const qdSim = cosineSimilarity(Array.from(qe), Array.from(de));
+    const quSim = cosineSimilarity(Array.from(qe), Array.from(ue));
     accuracy = {
-      queryDocSimilarity: Math.round(cos(Array.from(qe), Array.from(de)) * 10000) / 10000,
-      queryUnrelatedSimilarity: Math.round(cos(Array.from(qe), Array.from(ue)) * 10000) / 10000,
+      queryDocSimilarity: Math.round(qdSim * 10000) / 10000,
+      queryUnrelatedSimilarity: Math.round(quSim * 10000) / 10000,
+      betterThanUnrelated: qdSim > quSim,
     };
     console.log(
-      `  Accuracy: query-doc=${accuracy.queryDocSimilarity} query-unrelated=${accuracy.queryUnrelatedSimilarity} PASS`,
+      `  query-doc: ${qdSim.toFixed(4)}  query-unrelated: ${quSim.toFixed(4)}  ${qdSim > quSim ? 'PASS' : 'FAIL'}`,
     );
   } catch (e) {
     console.log(`  Accuracy failed: ${e.message}`);
   }
 
-  session.release();
+  // Stability
+  console.log('\nStability:');
+  let stability = null;
+  try {
+    const memorySnapshots = [];
+    const texts = configs.map((c) => c.text);
+    for (let i = 0; i < 100; i++) {
+      await embedOne(texts[i % texts.length]);
+      if (i % 25 === 0) {
+        memorySnapshots.push(process.memoryUsage().heapUsed);
+      }
+    }
+    stability = {
+      memorySnapshots,
+      finalHeapMB:
+        Math.round((memorySnapshots[memorySnapshots.length - 1] / 1024 / 1024) * 100) / 100,
+    };
+    console.log(`  finalHeap=${stability.finalHeapMB.toFixed(1)}MB`);
+  } catch (e) {
+    console.log(`  Stability failed: ${e.message}`);
+  }
 
   const mem = process.memoryUsage();
+  session.release();
+
   const report = {
     model: path.basename(MODEL_PATH),
     torchModule: 'onnxruntime-web',
@@ -168,6 +197,7 @@ async function main() {
     },
     latency: results,
     accuracy,
+    stability,
   };
 
   fs.writeFileSync(JSON_OUT, JSON.stringify(report, null, 2));

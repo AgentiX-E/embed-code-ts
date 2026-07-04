@@ -193,7 +193,7 @@ def embed(input_ids, mask):
 def main():
     global wr
     parser = argparse.ArgumentParser()
-    parser.add_argument("--weights", default="models/nomic-embed-code-v1-int8.weights.bin")
+    parser.add_argument("--weights", default="models/nomic-embed-code-v1.5.int8.weights.bin")
     parser.add_argument("--tokenizer", default="models/tokenizer.json")
     parser.add_argument("--output", default="models/reference-pre-norm.json")
     args = parser.parse_args()

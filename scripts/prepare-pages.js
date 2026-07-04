@@ -73,7 +73,7 @@ function writeRootLandingPage() {
       ? 'benchmark/index.html'
       : 'benchmark/benchmark-report.html';
     cards.push(
-      `<div class="card"><h2>📊 <a href="${benchLink}">Benchmark Report</a></h2><p>Inference latency, throughput &amp;amp; accuracy</p></div>`,
+      `<div class="card"><h2>📊 <a href="${benchLink}">Benchmark Report</a></h2><p>Inference latency, throughput &amp; accuracy</p></div>`,
     );
   }
   if (hasCoverage)

@@ -2,7 +2,7 @@
  * Unit tests for pooler + normalizer.
  */
 import { describe, it, expect } from 'vitest';
-import { meanPool } from '../../src/pooler';
+import { meanPool, clsPool, lastTokenPool } from '../../src/pooler';
 import { l2Normalize, cosineSimilarity } from '../../src/normalizer';
 
 describe('meanPool', () => {
@@ -41,6 +41,52 @@ describe('meanPool', () => {
   });
 });
 
+describe('clsPool', () => {
+  it('extracts first token (CLS)', () => {
+    const h = new Float32Array([1.0, 2.0, 3.0, 4.0, 5.0, 6.0]);
+    const r = clsPool(h, 1, 3, 2);
+    expect(r[0]).toBe(1.0);
+    expect(r[1]).toBe(2.0);
+  });
+
+  it('handles batch', () => {
+    const h = new Float32Array([1, 2, 3, 4, 5, 6, 7, 8]);
+    const r = clsPool(h, 2, 2, 2);
+    expect(r[0]).toBe(1);
+    expect(r[1]).toBe(2);
+    expect(r[2]).toBe(5);
+    expect(r[3]).toBe(6);
+  });
+});
+
+describe('lastTokenPool', () => {
+  it('extracts last non-padding token', () => {
+    const h = new Float32Array([1.0, 2.0, 3.0, 4.0, 5.0, 6.0]);
+    const mask = new Int32Array([1, 1, 0]);
+    const r = lastTokenPool(h, mask, 1, 3, 2);
+    expect(r[0]).toBe(3.0);
+    expect(r[1]).toBe(4.0);
+  });
+
+  it('falls back to position 0 when all padding', () => {
+    const h = new Float32Array([1.0, 2.0, 3.0, 4.0]);
+    const mask = new Int32Array([0, 0]);
+    const r = lastTokenPool(h, mask, 1, 2, 2);
+    expect(r[0]).toBe(1.0);
+    expect(r[1]).toBe(2.0);
+  });
+
+  it('handles batch', () => {
+    const h = new Float32Array([1, 2, 3, 4, 5, 6, 7, 8]);
+    const mask = new Int32Array([1, 1, 1, 0]);
+    const r = lastTokenPool(h, mask, 2, 2, 2);
+    expect(r[0]).toBe(3);
+    expect(r[1]).toBe(4);
+    expect(r[2]).toBe(5);
+    expect(r[3]).toBe(6);
+  });
+});
+
 describe('l2Normalize', () => {
   it('normalizes to unit norm', () => {
     const e = new Float32Array([3.0, 4.0]);
@@ -75,8 +121,8 @@ describe('cosineSimilarity', () => {
     expect(cosineSimilarity([1, 0], [0, 1])).toBeCloseTo(0.0);
   });
 
-  it('dimension mismatch produces 0', () => {
-    expect(cosineSimilarity([1, 2], [1, 2, 3])).toBe(0);
+  it('throws on dimension mismatch', () => {
+    expect(() => cosineSimilarity([1, 2], [1, 2, 3])).toThrow(/Dimension mismatch/i);
   });
 
   it('zero vectors produce 0', () => {

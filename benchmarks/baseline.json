@@ -1,7 +1,7 @@
 {
   "model": "nomic-embed-code",
   "precision": "int8",
-  "embeddingDim": 3584,
+  "embeddingDim": 768,
   "created": "2026-06-30T12:00:00Z",
   "description": "Performance baseline for regression detection. Auto-populated on first benchmark run. Updated manually or via CI after validated releases.",
   "latency": [],

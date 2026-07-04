@@ -66,24 +66,30 @@ export function loadVocab(tokenizerJson: Record<string, any>): VocabInfo {
     }
   }
 
+  if (!modelVocab && (!addedTokens || addedTokens.length === 0)) {
+    throw new Error('Vocabulary is empty: no model.vocab and no added_tokens found');
+  }
+
   // Resolve special token IDs from the vocab map (most reliable)
-  const findId = (...candidates: string[]): number => {
+  const findId = (label: string, ...candidates: string[]): number => {
     for (const c of candidates) {
       const id = vocab.get(c);
       if (id !== undefined) return id;
     }
-    return 0; // fallback to PAD or 0
+    throw new Error(
+      `Missing special token in vocabulary: ${label}. Candidates: [${candidates.join(', ')}]`,
+    );
   };
 
   return {
     vocab,
     reverseVocab,
     size: vocab.size,
-    padTokenId: findId('[PAD]', '<|endoftext|>', ''),
-    clsTokenId: findId('[CLS]'),
-    sepTokenId: findId('[SEP]'),
-    unkTokenId: findId('[UNK]'),
-    maskTokenId: findId('[MASK]'),
+    padTokenId: findId('pad', '[PAD]', '<|endoftext|>'),
+    clsTokenId: findId('cls', '[CLS]'),
+    sepTokenId: findId('sep', '[SEP]'),
+    unkTokenId: findId('unk', '[UNK]'),
+    maskTokenId: findId('mask', '[MASK]'),
     isContinuation: (id: number) => continuationSet.has(id),
   };
 }
