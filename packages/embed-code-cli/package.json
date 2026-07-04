@@ -1,6 +1,6 @@
 {
   "name": "@agentix-e/embed-code-cli",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "description": "CLI for nomic-embed-code — code embeddings from the command line",
   "main": "./dist/cli.js",

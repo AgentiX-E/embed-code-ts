@@ -1,6 +1,6 @@
 {
   "name": "agentix-embed-code-ts",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "nomic-embed-code int8 weights in a TypeScript npm package — ONNX Runtime code embeddings for Node.js and browser",
   "workspaces": [

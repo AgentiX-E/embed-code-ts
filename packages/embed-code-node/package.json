@@ -1,6 +1,6 @@
 {
   "name": "@agentix-e/embed-code-node",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "description": "Node.js ONNX Runtime adapter for nomic-embed-code — AVX2 native acceleration",
   "main": "./dist/index.js",

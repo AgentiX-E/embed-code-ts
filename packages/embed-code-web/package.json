@@ -1,6 +1,6 @@
 {
   "name": "@agentix-e/embed-code-web",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "description": "Browser ONNX Runtime adapter for nomic-embed-code — WASM + WebGPU",
   "main": "./dist/index.js",
