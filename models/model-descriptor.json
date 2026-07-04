@@ -5,8 +5,8 @@
     "version": "v1",
     "base_architecture": "BERT-base",
     "hf_repository": "nomic-ai/nomic-embed-text-v1.5",
-    "hf_revision": "",
-    "exported_at": "2026-07-01T01:44:09Z",
+    "hf_revision": "e9b6763023c676ca8431644204f50c2b100d9aab",
+    "exported_at": "2026-07-04T05:51:00Z",
     "precision": "int8"
   },
   "weights": {
