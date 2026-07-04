@@ -66,8 +66,28 @@ jobs:
             models/nomic-embed-code-v1.5.int8.onnx
           key: embed-code-model-${{ hashFiles('scripts/export-model.py', 'models/model-descriptor.json') }}-v7
 
-      - name: Export ONNX model
+      - name: Download model from GitHub Release (cache miss fallback)
         if: ${{ !inputs.skip_tests && steps.cache-model.outputs.cache-hit != 'true' }}
+        run: |
+          echo "Cache miss — downloading from GitHub Release..."
+          if gh release download embed-code-latest \
+            --pattern "embed-code-int8-v1.5.zip" \
+            --dir models/ \
+            --repo "$GITHUB_REPOSITORY" \
+            --skip-existing 2>/dev/null; then
+            cd models
+            unzip -o embed-code-int8-v1.5.zip
+            echo "Model downloaded from GitHub Release"
+          else
+            echo "GitHub Release not found, falling back to export from HuggingFace"
+            echo "EXPORT_NEEDED=true" >> "$GITHUB_ENV"
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
+      - name: Export ONNX model (final fallback)
+        if: ${{ !inputs.skip_tests && steps.cache-model.outputs.cache-hit != 'true' && env.EXPORT_NEEDED == 'true' }}
         run: |
           pip install transformers torch onnx onnxruntime optimum
           python3 scripts/export-model.py \

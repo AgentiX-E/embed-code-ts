@@ -11,6 +11,8 @@ export interface DownloadOptions {
   onProgress?: (received: number, total: number, speed: number) => void;
   force?: boolean;
   logger?: (msg: string) => void;
+  /** Download source preference: 'github' (default, pre-built) or 'hf' (HuggingFace raw) */
+  source?: 'github' | 'hf';
 }
 
 export async function downloadModel(options: DownloadOptions = {}): Promise<string> {
@@ -20,6 +22,7 @@ export async function downloadModel(options: DownloadOptions = {}): Promise<stri
 
   const modelFile = path.join(outputDir, 'nomic-embed-code-v1.5.int8.onnx');
   const descriptorFile = path.join(outputDir, 'model-descriptor.json');
+  const tokenizerFile = path.join(outputDir, 'tokenizer.json');
 
   if (fs.existsSync(modelFile) && !options.force) {
     log(`Model already cached at ${modelFile}`);
@@ -44,25 +47,49 @@ export async function downloadModel(options: DownloadOptions = {}): Promise<stri
     log(`Using proxy: ${proxyUrl.replace(/\/\/.*@/, '//***@')}`);
   }
 
-  // Download from HuggingFace Hub
+  const downloadOpts = { proxyUrl, proxyUsername, proxyPassword, onProgress: options.onProgress };
+
+  // Try GitHub Release first (pre-built, pre-validated) unless forced to HF
+  if (options.source !== 'hf') {
+    const ghReleaseUrl =
+      'https://github.com/AgentiX-E/embed-code-ts/releases/download/embed-code-latest/embed-code-int8-v1.5.zip';
+    try {
+      log('Downloading from GitHub Release (pre-built int8 model)...');
+
+      const tempZip = path.join(outputDir, '.download.zip');
+      await downloadFile(ghReleaseUrl, tempZip, downloadOpts);
+
+      // Extract zip
+      const { execSync } = await import('node:child_process');
+      execSync(`unzip -o "${tempZip}" -d "${outputDir}"`, { stdio: 'pipe' });
+      fs.unlinkSync(tempZip);
+
+      if (fs.existsSync(modelFile)) {
+        log(`Model extracted from GitHub Release: ${modelFile}`);
+        // Also copy tokenizer to local models dir if not present
+        if (!fs.existsSync(tokenizerFile) && fs.existsSync(path.join('models', 'tokenizer.json'))) {
+          fs.copyFileSync(path.join('models', 'tokenizer.json'), tokenizerFile);
+        }
+        return modelFile;
+      }
+      log('GitHub Release download succeeded but model file not found in archive.');
+    } catch (err) {
+      log(
+        `GitHub Release download failed: ${err instanceof Error ? err.message : String(err)} — falling back to HuggingFace`,
+      );
+    }
+  }
+
+  // Fallback: Download from HuggingFace Hub
   const hfUrl = `https://huggingface.co/${modelId}/resolve/main/onnx/model_int8.onnx`;
   log(`Downloading from ${hfUrl}...`);
 
-  await downloadFile(hfUrl, modelFile, {
-    proxyUrl,
-    proxyUsername,
-    proxyPassword,
-    onProgress: options.onProgress,
-  });
+  await downloadFile(hfUrl, modelFile, downloadOpts);
 
   // Download model-descriptor.json
   const descriptorUrl = `https://huggingface.co/${modelId}/resolve/main/model-descriptor.json`;
   try {
-    await downloadFile(descriptorUrl, descriptorFile, {
-      proxyUrl,
-      proxyUsername,
-      proxyPassword,
-    });
+    await downloadFile(descriptorUrl, descriptorFile, downloadOpts);
   } catch {
     log('Model descriptor not found on HuggingFace, using local copy if available.');
   }
