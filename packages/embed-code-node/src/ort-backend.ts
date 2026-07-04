@@ -2,6 +2,7 @@
  * ORT backend adapter for onnxruntime-node.
  */
 import type { IOrtBackend, IOrtSession, IOrtTensor } from '@agentix-e/embed-code-core';
+import { int32ToBigInt64 } from '@agentix-e/embed-code-core';
 import * as ort from 'onnxruntime-node';
 
 export class NodeOrtBackend implements IOrtBackend {
@@ -23,8 +24,7 @@ export class NodeOrtBackend implements IOrtBackend {
   ): IOrtTensor {
     let tensorData: any;
     if (type === 'int64') {
-      const arr = data instanceof Int32Array ? Array.from(data) : (data as number[]);
-      tensorData = BigInt64Array.from(arr.map((v: number) => BigInt(v)));
+      tensorData = int32ToBigInt64(data as Int32Array | number[]);
     } else {
       tensorData = data;
     }
@@ -60,7 +60,11 @@ class NodeOrtTensor implements IOrtTensor {
     return this.tensor.dims;
   }
   get data(): Float32Array | Int32Array | BigInt64Array {
-    return this.tensor.data as Float32Array;
+    return this.tensor.data as Float32Array | Int32Array | BigInt64Array;
   }
-  dispose(): void {}
+  dispose(): void {
+    if (this.tensor && typeof (this.tensor as any).dispose === 'function') {
+      (this.tensor as any).dispose();
+    }
+  }
 }

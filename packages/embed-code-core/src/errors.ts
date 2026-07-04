@@ -6,11 +6,8 @@
  */
 
 export class EmbedCodeError extends Error {
-  constructor(
-    message: string,
-    override readonly cause?: Error,
-  ) {
-    super(message);
+  constructor(message: string, options?: { cause?: Error }) {
+    super(message, options);
     this.name = 'EmbedCodeError';
   }
 }
@@ -51,14 +48,14 @@ export class ProxyAuthError extends EmbedCodeError {
 
 export class InferenceError extends EmbedCodeError {
   constructor(message: string, cause?: Error) {
-    super(message, cause);
+    super(message, { cause });
     this.name = 'InferenceError';
   }
 }
 
 export class TokenizationError extends EmbedCodeError {
-  constructor(message: string) {
-    super(message);
+  constructor(message: string, options?: { cause?: Error }) {
+    super(message, options);
     this.name = 'TokenizationError';
   }
 }

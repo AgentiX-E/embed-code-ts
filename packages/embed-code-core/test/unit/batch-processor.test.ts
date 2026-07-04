@@ -42,12 +42,13 @@ describe('processBatch', () => {
   });
 
   it('handles empty items', async () => {
-    await expect(processBatch([], async () => {})).resolves.toBeUndefined();
+    const result = await processBatch([], async () => {});
+    expect(result.errors).toEqual([]);
   });
 
   it('continues on individual item failure', async () => {
     const results: string[] = [];
-    await processBatch(
+    const result = await processBatch(
       ['ok', 'fail', 'ok2'],
       async (s) => {
         if (s === 'fail') throw new Error('fail');
@@ -56,6 +57,8 @@ describe('processBatch', () => {
       { concurrency: 1 },
     );
     expect(results).toEqual(['ok', 'ok2']);
+    expect(result.errors.length).toBe(1);
+    expect(result.errors[0]!.index).toBe(1);
   });
 
   it('defaults concurrency when not specified', async () => {

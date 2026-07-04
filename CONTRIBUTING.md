@@ -16,11 +16,13 @@ npm install && npm run build:all
 embed-code-ts/
 ├── packages/
 │   ├── embed-code-core/       # Core inference engine
+│   ├── embed-code-node/       # Node.js ONNX Runtime backend
+│   ├── embed-code-web/        # Web ONNX Runtime backend
 │   └── embed-code-cli/        # CLI tool
 ├── docs/                      # Documentation
 ├── scripts/                   # Pipeline/export scripts
 ├── .github/workflows/         # CI/CD automation
-└── models/                    # Model descriptors (weights gitignored)
+└── models/                    # Model descriptors (ONNX files gitignored)
 ```
 
 ## Development Workflow
@@ -66,20 +68,17 @@ Before submitting a PR, ensure:
 
 ### Setting Up the Weights File Locally
 
-For integration tests and benchmarks, you need the ~137 MB int8 weights file:
+For integration tests and benchmarks, you need the ONNX model file:
 
 ```bash
 # Option A: One-click pipeline (exports model, runs tests, runs benchmarks)
 npm run pipeline
 
 # Option B: Export only (requires Python 3.10+ and PyTorch)
-python3 scripts/export-weights.py --output models/nomic-embed-text-v1.5-int8.weights.bin
-
-# Option C: Download from GitHub Releases (requires network)
-node -e "const {downloadModel}=require('@agentix-e/embed-code-core');downloadModel({dest:'./models/nomic-embed-text-v1.5-int8.weights.bin'})"
+python3 scripts/export-model.py --model nomic-ai/nomic-embed-text-v1.5 --output models/nomic-embed-code-v1.5.int8.onnx
 ```
 
-The model file is gitignored — it should be at `models/nomic-embed-text-v1.5-int8.weights.bin` for local development.
+The ONNX model file is gitignored — it should be at `models/nomic-embed-code-v1.5.int8.onnx` for local development.
 
 ### Pre-commit Hook
 
@@ -161,6 +160,6 @@ npx changeset version
 npx changeset publish
 ```
 
-Both packages (`embed-code-core`, `embed-code-cli`) are **fixed together** — they always share the same version number.
+All 4 packages (`embed-code-core`, `embed-code-node`, `embed-code-web`, `embed-code-cli`) are **versioned together** — they always share the same version number.
 
 **Important**: CI automatically publishes to npm when release tags are pushed. The release workflow handles OIDC-based npm provenance attestation.

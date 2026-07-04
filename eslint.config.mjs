@@ -28,14 +28,12 @@ export default tseslint.config(
       'no-var': 'error',
     },
   })),
-  // Relaxed (non-type-checked) rules for ONNX engine, EmbedCode, model-downloader,
-  // and descriptor (use `any` for onnxruntime-node, undici, JSON parsing)
+  // Relaxed (non-type-checked) rules for ONNX engine and descriptor
+  // (use `any` for onnxruntime-node, undici, JSON parsing)
   ...tseslint.configs.recommended.map((c) => ({
     ...c,
     files: [
-      'packages/embed-code-core/src/embed-code.ts',
       'packages/embed-code-core/src/inference/onnx-engine.ts',
-      'packages/embed-code-core/src/model-downloader.ts',
       'packages/embed-code-core/src/model-descriptor.ts',
       'packages/embed-code-core/src/tokenizer.ts',
     ],

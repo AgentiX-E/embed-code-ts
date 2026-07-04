@@ -20,7 +20,8 @@ export function l2Normalize(embeddings: Float32Array, batch: number, dim: number
  * Cosine similarity between two embedding vectors.
  */
 export function cosineSimilarity(a: Float32Array | number[], b: Float32Array | number[]): number {
-  if (a.length !== b.length) return 0;
+  if (a.length !== b.length)
+    throw new Error(`Dimension mismatch in cosineSimilarity: ${a.length} vs ${b.length}`);
   let dot = 0,
     normA = 0,
     normB = 0;

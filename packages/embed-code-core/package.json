@@ -2,7 +2,7 @@
   "name": "@agentix-e/embed-code-core",
   "version": "0.1.0",
   "type": "module",
-  "description": "Pure-TypeScript BERT-base code embedding engine — int8 weights embedded incbin-style, zero native deps",
+  "description": "BERT-base code embedding core — WordPiece tokenizer, pooling, normalization, platform-agnostic interfaces",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -36,7 +36,6 @@
     "int8",
     "quantized",
     "typescript",
-    "incbin",
     "pure-ts",
     "embedding",
     "semantic-search",

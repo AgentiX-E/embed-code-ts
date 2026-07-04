@@ -3,7 +3,7 @@
  *
  * BertPreTokenizer: splits input text into word-like units by
  * separating on whitespace and punctuation. This handles
- * Unicode normalization (NFC), lowercase, and Chinese character
+ * Unicode normalization (NFKD), lowercase, and Chinese character
  * splitting (per the tokenizer.json BertNormalizer config).
  *
  * The output is a list of strings ready for WordPiece subword
@@ -35,7 +35,11 @@ export function preTokenize(text: string): string[] {
     if (
       (code >= 0x4e00 && code <= 0x9fff) || // CJK Unified
       (code >= 0x3400 && code <= 0x4dbf) || // CJK Extension A
-      (code >= 0xf900 && code <= 0xfaff) // CJK Compatibility
+      (code >= 0xf900 && code <= 0xfaff) || // CJK Compatibility
+      (code >= 0x30a0 && code <= 0x30ff) || // Katakana
+      (code >= 0x3040 && code <= 0x309f) || // Hiragana
+      (code >= 0xac00 && code <= 0xd7af) || // Hangul Syllables
+      (code >= 0x2f800 && code <= 0x2fa1f) // CJK Compatibility Supplement
     ) {
       cjkSplit.push(' ' + ch + ' ');
     } else {

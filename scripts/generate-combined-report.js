@@ -22,17 +22,25 @@ if (!fs.existsSync(nodePath) || !fs.existsSync(webPath)) {
 const node = JSON.parse(fs.readFileSync(nodePath, 'utf-8'));
 const web = JSON.parse(fs.readFileSync(webPath, 'utf-8'));
 
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
 const nodeRows = (node.latency || [])
   .map(
     (c) =>
-      `<tr><td>${c.config}</td><td>${c.avgLatencyMs}</td><td>${c.minLatencyMs}</td><td>${c.maxLatencyMs || '-'}</td></tr>`,
+      `<tr><td>${escapeHtml(c.config)}</td><td>${c.avgLatencyMs}</td><td>${c.minLatencyMs}</td><td>${c.maxLatencyMs || '-'}</td></tr>`,
   )
   .join('\n');
 
 const webRows = (web.latency || [])
   .map(
     (c) =>
-      `<tr><td>${c.config}</td><td>${c.avgLatencyMs}</td><td>${c.minLatencyMs}</td><td>${c.maxLatencyMs || '-'}</td></tr>`,
+      `<tr><td>${escapeHtml(c.config)}</td><td>${c.avgLatencyMs}</td><td>${c.minLatencyMs}</td><td>${c.maxLatencyMs || '-'}</td></tr>`,
   )
   .join('\n');
 
@@ -53,7 +61,7 @@ for (let i = 0; i < Math.min(nodeLat.length, webLat.length); i++) {
 const speedupRows = speedups
   .map(
     (s) =>
-      `<tr><td>${s.config}</td><td>${s.nodeMs}ms</td><td>${s.webMs}ms</td><td>${s.speedup}</td></tr>`,
+      `<tr><td>${escapeHtml(s.config)}</td><td>${s.nodeMs}ms</td><td>${s.webMs}ms</td><td>${s.speedup}</td></tr>`,
   )
   .join('\n');
 
@@ -74,7 +82,7 @@ th{background:#f5f5f5}
 </head>
 <body>
 <h1>📊 embed-code-ts Benchmark Report</h1>
-<p class="meta">Model: ${node.model || 'unknown'} | Dim: ${node.dim || 768} | ${node.timestamp || ''}</p>
+<p class="meta">Model: ${escapeHtml(node.model || 'unknown')} | Dim: ${node.dim || 768} | ${escapeHtml(node.timestamp || '')}</p>
 
 <h2>🔵 Node.js Native (onnxruntime-node, AVX2)</h2>
 <table><tr><th>Config</th><th>Avg (ms)</th><th>Min (ms)</th><th>Max (ms)</th></tr>${nodeRows}</table>

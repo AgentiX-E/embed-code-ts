@@ -72,4 +72,28 @@ describe('NodeEmbedder', () => {
     expect(embedder.modelInfo.quantization).toBe('int8');
     await embedder.dispose();
   });
+
+  it('handles dispose safely when called twice', async () => {
+    if (!hasModel) return;
+    const embedder = await NodeEmbedder.create({ modelPath: MODEL_PATH });
+    await embedder.dispose();
+    // Second dispose should not throw
+    await expect(embedder.dispose()).resolves.not.toThrow();
+  });
+
+  it('returns valid embeddings for empty string', async () => {
+    if (!hasModel) return;
+    const embedder = await NodeEmbedder.create({ modelPath: MODEL_PATH });
+    try {
+      const result = await embedder.embed('');
+      expect(result).toBeInstanceOf(Float32Array);
+      expect(result.length).toBe(768);
+      // Check no NaN values
+      for (const v of result) {
+        expect(Number.isNaN(v)).toBe(false);
+      }
+    } finally {
+      await embedder.dispose();
+    }
+  });
 });

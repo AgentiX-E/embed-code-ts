@@ -44,6 +44,7 @@ export interface ModelDescriptor {
     exported_at: string;
     precision: string;
   };
+  /** @deprecated use onnx instead */
   weights?: {
     input_ids_name: string;
     attention_mask_name: string;
@@ -51,7 +52,6 @@ export interface ModelDescriptor {
     sha256: string;
     size_bytes: number;
   };
-  /** @deprecated use weights instead */
   onnx?: {
     input_ids_name: string;
     attention_mask_name: string;

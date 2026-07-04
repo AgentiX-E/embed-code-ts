@@ -23,8 +23,6 @@ export default defineConfig({
         'packages/embed-code-core/src/types.ts',
         'packages/embed-code-core/src/embedder-interface.ts',
         'packages/embed-code-core/src/ort-backend-interface.ts',
-        'packages/embed-code-core/src/model-descriptor.ts',
-        'packages/embed-code-core/src/model-downloader.ts',
         'packages/*/src/types/**/*.d.ts',
       ],
       reporter: ['text', 'text-summary', 'json-summary', 'lcov', 'html'],

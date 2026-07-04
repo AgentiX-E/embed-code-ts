@@ -9,7 +9,12 @@ import type {
   ModelInfo,
   TokenizedInput,
 } from '@agentix-e/embed-code-core';
-import { WordPieceTokenizer, meanPool, l2Normalize } from '@agentix-e/embed-code-core';
+import {
+  WordPieceTokenizer,
+  meanPool,
+  l2Normalize,
+  processBatch,
+} from '@agentix-e/embed-code-core';
 import { NodeOrtBackend } from './ort-backend.js';
 import * as path from 'node:path';
 import * as fs from 'node:fs';
@@ -28,16 +33,21 @@ export class NodeEmbedder implements IEmbedder {
   private tokenizer: WordPieceTokenizer;
   private _modelPath: string;
 
-  private constructor(options: NodeEmbedderOptions, tokenizer: WordPieceTokenizer) {
+  private constructor(
+    options: NodeEmbedderOptions,
+    tokenizer: WordPieceTokenizer,
+    dimensions: number,
+    maxSequenceLength: number,
+  ) {
     this._modelPath = options.modelPath;
     this.tokenizer = tokenizer;
-    this.dimensions = 768;
-    this.maxSequenceLength = 512;
+    this.dimensions = dimensions;
+    this.maxSequenceLength = maxSequenceLength;
     this.modelInfo = {
       name: 'nomic-embed-code',
       version: 'v1.5',
-      dimensions: 768,
-      maxSequenceLength: 512,
+      dimensions,
+      maxSequenceLength,
       vocabSize: tokenizer.vocabSize,
       quantization: 'int8',
     };
@@ -50,8 +60,24 @@ export class NodeEmbedder implements IEmbedder {
     if (!fs.existsSync(tokenizerPath)) {
       throw new Error(`Tokenizer not found: ${tokenizerPath}`);
     }
-    const tokenizer = WordPieceTokenizer.fromFile(tokenizerPath, 512);
-    const embedder = new NodeEmbedder(options, tokenizer);
+    const descriptorPath = path.join(path.dirname(options.modelPath), 'model-descriptor.json');
+    let dimensions = 768;
+    let maxSequenceLength = 512;
+    if (fs.existsSync(descriptorPath)) {
+      try {
+        const raw = fs.readFileSync(descriptorPath, 'utf-8');
+        const descriptor = JSON.parse(raw);
+        dimensions = descriptor.architecture?.embedding_dim ?? dimensions;
+        maxSequenceLength = Math.min(
+          descriptor.tokenizer?.max_length ?? maxSequenceLength,
+          maxSequenceLength,
+        );
+      } catch {
+        // Use defaults
+      }
+    }
+    const tokenizer = WordPieceTokenizer.fromFile(tokenizerPath, maxSequenceLength);
+    const embedder = new NodeEmbedder(options, tokenizer, dimensions, maxSequenceLength);
     embedder.session = await embedder.backend.createSession(options.modelPath);
     return embedder;
   }
@@ -84,28 +110,14 @@ export class NodeEmbedder implements IEmbedder {
   }
 
   async embedBatch(texts: string[], options?: BatchOptions): Promise<Float32Array[]> {
-    const results: Float32Array[] = [];
-    const concurrency = options?.concurrency ?? 4;
-    let completed = 0;
-
-    const processChunk = async (start: number, end: number) => {
-      for (let i = start; i < end; i++) {
-        const r = await this.embed(texts[i]!);
-        results[i] = r;
-        completed++;
-        options?.onProgress?.(completed, texts.length);
-      }
-    };
-
-    const chunkSize = Math.ceil(texts.length / concurrency);
-    const workers: Promise<void>[] = [];
-    for (let i = 0; i < concurrency; i++) {
-      const start = i * chunkSize;
-      if (start >= texts.length) break;
-      const end = Math.min(start + chunkSize, texts.length);
-      workers.push(processChunk(start, end));
-    }
-    await Promise.all(workers);
+    const results: Float32Array[] = new Array(texts.length);
+    await processBatch(
+      texts,
+      async (text, index) => {
+        results[index] = await this.embed(text);
+      },
+      options,
+    );
     return results;
   }
 

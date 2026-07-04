@@ -20,7 +20,7 @@ npx @agentix-e/embed-code-cli embed "your code here"
 ## Quick Start
 
 ```bash
-# Download model (first time only, ~7 GB)
+# Download model (first time only, ~137 MB)
 embed-code setup
 
 # With proxy (corporate network)
@@ -40,10 +40,10 @@ embed-code embed "function add(a, b) { return a + b; }"
 embed-code embed -f source.py
 
 # Custom model path and options
-embed-code embed -m ./custom.weights.bin -f source.ts --pooling mean
+embed-code embed -m ./custom.int8.onnx -f source.ts --pooling mean
 
 # Show model info
-embed-code info -m ./models/nomic-embed-text-v1.5-int8.weights.bin
+embed-code info -m ./models/nomic-embed-code-v1.5.int8.onnx
 ```
 
 ## Model Path Resolution
@@ -54,6 +54,23 @@ The `embed` command resolves the model in this order:
 2. `EMBED_CODE_MODEL_PATH` environment variable
 3. Default cache (`~/.cache/embed-code-ts/`)
 4. Auto-download
+
+## Commands
+
+### `setup`
+
+Downloads and caches the ONNX model file for offline inference.
+
+```bash
+# Default: download to cache directory
+embed-code setup
+
+# Custom cache path
+embed-code setup --cache-dir ~/.cache/embed-code-ts
+
+# With proxy
+embed-code setup --proxy-url http://proxy.company.com:8080
+```
 
 ## API Documentation
 

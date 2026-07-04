@@ -59,7 +59,7 @@ describe('EMBED_TEXT_V15_CONFIG', () => {
 describe('resolveModelConfig', () => {
   it('falls back to default config when no descriptor found', () => {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'embed-test-'));
-    const modelPath = path.join(tmpDir, 'nonexistent.weights.bin');
+    const modelPath = path.join(tmpDir, 'nonexistent.onnx');
 
     const { config, descriptor } = resolveModelConfig(modelPath);
     expect(descriptor).toBeNull();
@@ -72,7 +72,7 @@ describe('resolveModelConfig', () => {
 
   it('resolves config from valid model-descriptor.json', () => {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'embed-test-'));
-    const modelPath = path.join(tmpDir, 'model.weights.bin');
+    const modelPath = path.join(tmpDir, 'model.onnx');
     fs.writeFileSync(modelPath, 'dummy content');
 
     const descriptor = {
@@ -112,7 +112,7 @@ describe('resolveModelConfig', () => {
         use_sliding_window: false,
       },
       tokenizer: {
-        type: 'bpe',
+        type: 'wordpiece',
         vocab_size: 40856,
         max_length: 8192,
         pad_token: '<|endoftext|>',
@@ -146,7 +146,7 @@ describe('resolveModelConfig', () => {
 
   it('falls back on invalid JSON descriptor', () => {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'embed-test-'));
-    const modelPath = path.join(tmpDir, 'model.weights.bin');
+    const modelPath = path.join(tmpDir, 'model.onnx');
     fs.writeFileSync(modelPath, 'dummy content');
     fs.writeFileSync(path.join(tmpDir, 'model-descriptor.json'), '{invalid json');
 
@@ -159,7 +159,7 @@ describe('resolveModelConfig', () => {
 
   it('resolves config with weights field instead of onnx', () => {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'embed-test-'));
-    const modelPath = path.join(tmpDir, 'model.weights.bin');
+    const modelPath = path.join(tmpDir, 'model.onnx');
     fs.writeFileSync(modelPath, 'dummy content');
 
     const descriptor = {
@@ -194,7 +194,7 @@ describe('resolveModelConfig', () => {
         use_sliding_window: false,
       },
       tokenizer: {
-        type: 'bpe',
+        type: 'wordpiece',
         vocab_size: 40856,
         max_length: 8192,
         pad_token: '<|endoftext|>',
@@ -222,7 +222,7 @@ describe('resolveModelConfig', () => {
 
   it('falls back when descriptor has no weights or onnx', () => {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'embed-test-'));
-    const modelPath = path.join(tmpDir, 'model.weights.bin');
+    const modelPath = path.join(tmpDir, 'model.onnx');
     fs.writeFileSync(modelPath, 'dummy content');
 
     const descriptor = {
@@ -244,7 +244,7 @@ describe('resolveModelConfig', () => {
   });
   it('uses explicit fallback config when provided', () => {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'embed-test-'));
-    const modelPath = path.join(tmpDir, 'model.weights.bin');
+    const modelPath = path.join(tmpDir, 'model.onnx');
 
     const { config, descriptor } = resolveModelConfig(modelPath, EMBED_TEXT_V15_CONFIG);
     expect(descriptor).toBeNull();
