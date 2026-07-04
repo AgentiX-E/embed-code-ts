@@ -75,7 +75,7 @@ jobs:
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 title: '[Model Update] New nomic-embed-text-v1.5 revision detected',
-                body: 'A new HuggingFace revision was detected. The model-release workflow has been triggered.',
+                body: 'A new HuggingFace revision was detected for nomic-embed-text-v1.5. Please update `models/model-descriptor.json` `hf_revision` field to match the latest commit SHA, then trigger a CI run to re-export the ONNX model with updated weights.',
                 labels: ['model-update'],
               });
             }
