@@ -26,6 +26,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+      - name: Install requests
+        run: pip install requests
       - name: Detect if new HuggingFace revision
         id: detect
         run: |
