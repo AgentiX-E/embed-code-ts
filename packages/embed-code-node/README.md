@@ -4,6 +4,7 @@
 
 [![npm](https://img.shields.io/npm/v/@agentix-e/embed-code-node?color=blue)](https://www.npmjs.com/package/@agentix-e/embed-code-node)
 [![API Docs](https://img.shields.io/badge/docs-TypeDoc-blue)](https://agentix-e.github.io/embed-code-ts/api/modules/embed-code-node_src_onnx-embedder.html)
+[![Benchmark](https://img.shields.io/badge/benchmark-report-blue)](https://agentix-e.github.io/embed-code-ts/benchmark/)
 
 ## Overview
 
