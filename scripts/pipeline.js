@@ -79,8 +79,8 @@ async function main() {
       warn('Python3 not found. Skipping weights export.');
       info('The weights file must already exist at: ' + MODEL_PATH);
     } else {
-      const cmd = `python3 scripts/export-weights.py --output ${MODEL_PATH} --model ${HF_MODEL}`;
-      run(cmd, { label: 'python3 export-weights.py', timeout: 1800_000 });
+      const cmd = `python3 scripts/export-model.py --output ${MODEL_PATH} --model ${HF_MODEL}`;
+      run(cmd, { label: 'python3 export-model.py', timeout: 1800_000 });
     }
   }
 
