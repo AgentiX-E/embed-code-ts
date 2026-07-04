@@ -67,7 +67,7 @@ jobs:
         uses: actions/cache@v6
         with:
           path: models/nomic-embed-code-v1.5.int8.onnx
-          key: embed-code-model-${{ hashFiles('scripts/export-model.py', 'models/model-descriptor.json') }}-v6
+          key: embed-code-model-${{ hashFiles('scripts/export-model.py', 'models/model-descriptor.json') }}-v7
 
       - name: Export ONNX model
         if: steps.cache-model.outputs.cache-hit != 'true'
@@ -102,7 +102,7 @@ jobs:
         uses: actions/cache/restore@v6
         with:
           path: models/nomic-embed-code-v1.5.int8.onnx
-          key: embed-code-model-${{ hashFiles('scripts/export-model.py', 'models/model-descriptor.json') }}-v6
+          key: embed-code-model-${{ hashFiles('scripts/export-model.py', 'models/model-descriptor.json') }}-v7
           fail-on-cache-miss: true
 
       - name: Run benchmark (Node.js native)
@@ -140,7 +140,7 @@ jobs:
         uses: actions/cache/restore@v6
         with:
           path: models/nomic-embed-code-v1.5.int8.onnx
-          key: embed-code-model-${{ hashFiles('scripts/export-model.py', 'models/model-descriptor.json') }}-v6
+          key: embed-code-model-${{ hashFiles('scripts/export-model.py', 'models/model-descriptor.json') }}-v7
           fail-on-cache-miss: true
 
       - name: Run web benchmark (WASM)
