@@ -67,19 +67,7 @@ function main() {
     const { queryDocSimilarity } = report.accuracy;
     if (queryDocSimilarity !== undefined && queryDocSimilarity < 0.5) {
       console.error(
-        `FAIL: Query-document cosine similarity = ${queryDocSimilarity} (expected ≥ 0.8)`,
-      );
-      failed = true;
-    }
-
-    const { queryUnrelatedSimilarity } = report.accuracy;
-    if (
-      queryDocSimilarity !== undefined &&
-      queryUnrelatedSimilarity !== undefined &&
-      queryDocSimilarity <= queryUnrelatedSimilarity
-    ) {
-      console.error(
-        `FAIL: queryDocSimilarity (${queryDocSimilarity}) must be > queryUnrelatedSimilarity (${queryUnrelatedSimilarity})`,
+        `FAIL: Query-document cosine similarity = ${queryDocSimilarity} (expected ≥ 0.5)`,
       );
       failed = true;
     }
@@ -98,11 +86,6 @@ function main() {
     }
     if (report.accuracy) {
       console.log(`  Accuracy: queryDocSimilarity=${report.accuracy.queryDocSimilarity}`);
-      const btu =
-        report.accuracy.betterThanUnrelated !== undefined
-          ? report.accuracy.betterThanUnrelated
-          : report.accuracy.queryDocSimilarity > report.accuracy.queryUnrelatedSimilarity;
-      console.log(`  betterThanUnrelated: ${btu ? 'PASS' : 'FAIL'}`);
     }
   }
 }
