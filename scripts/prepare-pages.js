@@ -6,6 +6,7 @@
  *   2. docs/coverage/index.html     — Coverage dashboard
  *   3. docs/robots.txt             — Search engine crawling rules
  *   4. docs/sitemap.xml            — XML sitemap for search engines
+ *   5. docs/llms.txt / docs/llms-full.txt — AI crawler discovery files (copied from root)
  *
  * Used by the CI deploy-pages job.
  */
@@ -108,6 +109,18 @@ function writeCoverageIndex() {
   console.log('[prepare-pages] Coverage index generated');
 }
 
+function copyLlmsFiles() {
+  const files = ['llms.txt', 'llms-full.txt'];
+  for (const file of files) {
+    if (fs.existsSync(file)) {
+      fs.copyFileSync(file, path.join('docs', file));
+      console.log(`[prepare-pages] ${file} copied to docs/`);
+    } else {
+      console.warn(`[prepare-pages] ${file} not found at repo root, skipping`);
+    }
+  }
+}
+
 function writeRootLandingPage() {
   ensureDir('docs');
   const hasBenchmark =
@@ -204,6 +217,7 @@ function writeRootLandingPage() {
 
 writeRobotsTxt();
 writeSitemap();
+copyLlmsFiles();
 writeCoverageIndex();
 writeRootLandingPage();
 console.log('[prepare-pages] All pages generated with SEO metadata.');
