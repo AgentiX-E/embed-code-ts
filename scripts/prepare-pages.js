@@ -69,7 +69,7 @@ function writeCoverageIndex() {
       '<meta property="og:description" content="Test coverage dashboard for embed-code-ts — ONNX-powered code embeddings for Node.js and browser.">',
       '<meta property="og:url" content="https://agentix-e.github.io/embed-code-ts/coverage/">',
       '<meta property="og:type" content="website">',
-      '<meta name="google-site-verification" content="kD2WXDZJEAkp_4Sjd55rGyHypMWzs_7oddb6PbHy_JE"/>',
+      '<meta name="google-site-verification" content="kD2WXDZJEAkp_4Sjd55rGyHypMWzs_7oddb6PbHy_JE" />',
       '<meta name="twitter:card" content="summary">',
       '<title>Coverage · embed-code-ts</title>',
       '<style>',
