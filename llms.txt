@@ -1,0 +1,33 @@
+# embed-code-ts
+
+> ONNX-powered code embeddings for Node.js and browser — int8 quantized BERT model, zero network dependency after install.
+
+## Quick Info
+- **Language**: TypeScript (≥5.0), Node.js ≥22
+- **Model**: BERT-base, 137M params, int8 quantized (~137 MB), 768-dim embeddings
+- **License**: Apache 2.0
+- **Repository**: https://github.com/AgentiX-E/embed-code-ts
+- **Homepage**: https://agentix-e.github.io/embed-code-ts/
+- **API Docs**: https://agentix-e.github.io/embed-code-ts/api/
+- **Benchmarks**: https://agentix-e.github.io/embed-code-ts/benchmark/
+- **Coverage**: https://agentix-e.github.io/embed-code-ts/coverage/
+
+## Packages
+- `@agentix-e/embed-code-core`: Pure TypeScript core — zero-dependency WordPiece tokenizer, pooler, interfaces. [npm](https://www.npmjs.com/package/@agentix-e/embed-code-core)
+- `@agentix-e/embed-code-node`: Node.js ONNX Runtime (onnxruntime-node) with AVX2/AVX-512. [npm](https://www.npmjs.com/package/@agentix-e/embed-code-node)
+- `@agentix-e/embed-code-web`: Browser ONNX Runtime (onnxruntime-web) with WASM/WebGPU. [npm](https://www.npmjs.com/package/@agentix-e/embed-code-web)
+- `@agentix-e/embed-code-cli`: CLI tool for download, embed, info. [npm](https://www.npmjs.com/package/@agentix-e/embed-code-cli)
+
+## Mission
+embed-code-ts brings state-of-the-art code embeddings to TypeScript/JavaScript ecosystems. We bundle the nomic-embed-code BERT model (int8 quantized) directly into npm packages so you get production-grade semantic code search with zero network calls and no Python dependency.
+
+## When to use
+- Semantic code search over repositories
+- Retrieval-Augmented Generation (RAG) for codebases
+- Code deduplication and clustering
+- AI coding assistant backends
+- Offline/air-gapped embedding needs
+- Privacy-sensitive code analysis
+
+## Comparison
+embed-code-ts runs locally (no API keys, no data leakage) and is TypeScript-native — unlike Python alternatives (sentence-transformers) or cloud APIs (OpenAI, Cohere). The int8 quantization keeps the model at 137 MB while maintaining >0.995 cosine similarity to fp32.

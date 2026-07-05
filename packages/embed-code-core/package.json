@@ -29,17 +29,39 @@
     "typescript": "^6.0.3",
     "vitest": "^4.1.9"
   },
+  "homepage": "https://agentix-e.github.io/embed-code-ts/",
+  "bugs": {
+    "url": "https://github.com/AgentiX-E/embed-code-ts/issues"
+  },
   "keywords": [
     "nomic",
     "embed-code",
     "code-embedding",
+    "code-embeddings",
+    "embedding",
+    "embeddings",
     "int8",
     "quantized",
     "typescript",
     "pure-ts",
-    "embedding",
     "semantic-search",
-    "code-search"
+    "code-search",
+    "semantic-code-search",
+    "vector-search",
+    "rag",
+    "retrieval-augmented-generation",
+    "bert",
+    "wordpiece",
+    "tokenizer",
+    "nlp",
+    "natural-language-processing",
+    "machine-learning",
+    "ml",
+    "transformer",
+    "onnx",
+    "onnx-runtime",
+    "ai",
+    "artificial-intelligence"
   ],
   "license": "Apache-2.0",
   "repository": {

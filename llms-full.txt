@@ -1,0 +1,159 @@
+# embed-code-ts — Full Documentation for AI Crawlers
+
+## Project Overview
+
+embed-code-ts is a TypeScript monorepo providing ONNX Runtime-based code embeddings using the nomic-embed-code model (int8 quantized). It enables semantic code search, RAG, and code understanding directly in Node.js and browsers with zero network dependency post-install.
+
+**Organization**: AgentiX-E
+**Repository**: https://github.com/AgentiX-E/embed-code-ts
+**Homepage**: https://agentix-e.github.io/embed-code-ts/
+**License**: Apache 2.0
+**Node.js**: ≥22
+**TypeScript**: ≥5.0
+
+## Architecture
+
+```
+Input Text
+  → WordPiece Tokenizer (40,856 vocab, max 512 tokens)
+  → ONNX Runtime Inference (int8 quantized BERT-base, 137M params)
+  → Mean Pooling (attention-mask-aware)
+  → L2 Normalization
+  → 768-dimensional Float32Array embedding
+```
+
+## Package Details
+
+### @agentix-e/embed-code-core (v0.1.1)
+- **Description**: Zero-dependency TypeScript core — WordPiece tokenizer, pooling, normalization, platform-agnostic interfaces
+- **Size**: ~50 KB (minified)
+- **Dependencies**: None
+- **Key exports**: `WordPieceTokenizer`, `loadVocab`, `preTokenize`, `meanPool`, `l2Normalize`, `cosineSimilarity`, `processBatch`, `IEmbedder`, `IOrtBackend`, `IOrtSession`, `IOrtTensor`, `EmbedCodeError` and error subclasses
+- **API Docs**: https://agentix-e.github.io/embed-code-ts/api/modules/embed-code-core_src.html
+
+### @agentix-e/embed-code-node (v0.1.1)
+- **Description**: Node.js ONNX Runtime inference engine with native AVX2/AVX-512 acceleration
+- **Dependencies**: `@agentix-e/embed-code-core`, `onnxruntime-node` (≥1.20.0)
+- **Key exports**: `NodeEmbedder` (implements `IEmbedder`), `NodeEmbedderOptions`
+- **Features**: Zero-copy tensor operations, batch processing with concurrency control, progress callbacks
+- **Hardware**: Requires x86_64 with AVX2 (AVX-512 for optimal performance)
+- **API Docs**: https://agentix-e.github.io/embed-code-ts/api/modules/embed-code-node_src_onnx-embedder.html
+
+### @agentix-e/embed-code-web (v0.1.1)
+- **Description**: Browser ONNX Runtime with WebGPU auto-upgrade and WASM fallback
+- **Dependencies**: `@agentix-e/embed-code-core`, `onnxruntime-web` (≥1.20.0)
+- **Key exports**: `WebEmbedder` (implements `IEmbedder`)
+- **Features**: WebGPU acceleration when available, automatic WASM fallback, works in modern browsers (Chrome, Firefox, Safari, Edge)
+- **API Docs**: https://agentix-e.github.io/embed-code-ts/api/modules/embed-code-web_src_onnx-embedder.html
+
+### @agentix-e/embed-code-cli (v0.1.1)
+- **Description**: Command-line tool for model download, embedding generation, and system info
+- **Dependencies**: `@agentix-e/embed-code-core`, `commander` (≥15.0.0)
+- **Commands**: 
+  - `embed-code setup` — Download and cache ONNX model (supports proxy with auth)
+  - `embed-code embed "<text>"` — Generate embedding for text or file (-f)
+  - `embed-code info` — Display model and system information
+- **Proxy support**: `--proxy-url`, `--proxy-username`, `--proxy-password`, `EMBED_CODE_PROXY_PASSWORD`, `EMBED_CODE_PROXY_PASSWORD_FILE`
+- **API Docs**: https://agentix-e.github.io/embed-code-ts/api/modules/embed-code-cli_src_cli.html
+
+## Model Details
+
+- **Base architecture**: BERT-base (bert-base-uncased)
+- **Layers**: 12 transformer encoder layers
+- **Hidden dimension**: 768
+- **Attention heads**: 12
+- **Parameters**: 137,000,000
+- **Vocabulary**: 40,856 WordPiece tokens with special tokens ([CLS], [SEP], [PAD], [UNK], [MASK])
+- **Max sequence length**: 512 tokens (longer inputs truncated)
+- **Quantization**: int8 dynamic quantization (weights only, activations in fp32)
+- **Model size on disk**: ~137 MB (vs ~440 MB for fp32)
+- **Precision impact**: Cosine similarity fp32 vs int8 > 0.995
+- **Training dataset**: CoRNStack (arxiv.org/abs/2412.01007)
+- **Source**: nomic-ai/nomic-embed-text-v1.5 on HuggingFace
+
+## Task Prefixes (Search Intent)
+
+- **Query prefix**: `search_query: {text}` — used when generating embeddings for search queries
+- **Document prefix**: `search_document: {text}` — used when indexing code/documents
+- These prefixes were used during model training and are essential for optimal retrieval quality
+
+## Performance Benchmarks
+
+| Backend | Hardware | Latency (per token) | Throughput |
+|---------|----------|---------------------|------------|
+| onnxruntime-node | AVX-512 (e.g., AMD EPYC, Intel Xeon) | ~5ms | ~200 req/s |
+| onnxruntime-node | AVX2 (e.g., Intel Core i7+, AMD Ryzen) | ~12ms | ~80 req/s |
+| onnxruntime-web | WebGPU (Chrome/Edge with GPU) | ~20ms | ~50 req/s |
+| onnxruntime-web | WASM (all browsers) | ~50ms | ~20 req/s |
+
+Benchmark reports: https://agentix-e.github.io/embed-code-ts/benchmark/
+
+## How to Install
+
+```bash
+# Core + Node.js
+npm install @agentix-e/embed-code-core @agentix-e/embed-code-node
+
+# Core + Browser
+npm install @agentix-e/embed-code-core @agentix-e/embed-code-web
+
+# CLI
+npm install -g @agentix-e/embed-code-cli
+```
+
+## How to Use
+
+### Node.js
+```typescript
+import { NodeEmbedder } from '@agentix-e/embed-code-node';
+const embedder = await NodeEmbedder.create({ modelPath: './models/model.int8.onnx' });
+const emb = await embedder.embed('search_query: binary search tree');
+console.log(emb); // Float32Array(768)
+await embedder.dispose();
+```
+
+### Browser
+```typescript
+import { WebEmbedder } from '@agentix-e/embed-code-web';
+const tok = await fetch('/models/tokenizer.json').then(r => r.json());
+const embedder = await WebEmbedder.create('/models/model.onnx', tok);
+const emb = await embedder.embed('search_document: class Node { ... }');
+await embedder.dispose();
+```
+
+### CLI
+```bash
+embed-code setup
+embed-code embed "function sort(arr) { return arr.sort(); }"
+embed-code embed -f src/index.ts
+embed-code info
+```
+
+## CI/CD and Quality
+
+- **Test coverage**: >95% line, branch, function, statement (no mocks, real model inference)
+- **CI**: GitHub Actions (ci.yml, nightly.yml, release.yml, model-release.yml)
+- **Linting**: ESLint with TypeScript strict, Prettier formatting
+- **Pre-commit**: Husky + lint-staged
+- **Coverage report**: https://agentix-e.github.io/embed-code-ts/coverage/
+
+## Contributing
+
+See CONTRIBUTING.md in the repository. Development requires Node.js ≥22.
+
+## FAQ
+
+**Q: Can I use this without internet after install?**
+A: Yes. The int8 model weights are bundled in the npm package. After `npm install`, everything works offline.
+
+**Q: What code languages are supported?**
+A: 20+ languages including JavaScript, TypeScript, Python, Java, Go, Rust, C/C++, Ruby, PHP, and more (trained on CoRNStack).
+
+**Q: How accurate is int8 vs fp32?**
+A: Cosine similarity exceeds 0.995 — essentially lossless for retrieval.
+
+**Q: Can I run this in serverless (Lambda, Cloud Functions)?**
+A: Yes, pre-download the model at build time. Cold start <100ms with int8.
+
+**Q: Does it support GPU inference?**
+A: The browser package supports WebGPU. Node.js uses CPU (AVX2/AVX-512 optimized). For GPU in Node.js, use the original Python model.
