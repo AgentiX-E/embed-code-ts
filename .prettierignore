@@ -11,3 +11,5 @@ pnpm-lock.yaml
 models/tokenizer.json
 web-benchmark-report.json
 benchmark-report.json
+llms.txt
+llms-full.txt

@@ -28,13 +28,10 @@ Works in all modern browsers: Chrome, Firefox, Safari, Edge.
 import { WebEmbedder } from '@agentix-e/embed-code-web';
 
 // Load tokenizer (fetch from your server or bundle inline)
-const tokenizerJson = await fetch('/models/tokenizer.json').then(r => r.json());
+const tokenizerJson = await fetch('/models/tokenizer.json').then((r) => r.json());
 
 // Create embedder — auto-selects WebGPU or WASM
-const embedder = await WebEmbedder.create(
-  '/models/nomic-embed-code-v1.5.int8.onnx',
-  tokenizerJson,
-);
+const embedder = await WebEmbedder.create('/models/nomic-embed-code-v1.5.int8.onnx', tokenizerJson);
 
 // Generate embedding
 const embedding = await embedder.embed('const memo = new Map();');
@@ -66,21 +63,21 @@ No configuration needed — the library handles backend selection transparently.
 
 ## Performance
 
-| Backend | Hardware | Latency (per token) | Throughput |
-| --- | --- | --- | --- |
-| `onnxruntime-web` | WebGPU | ~20ms | ~50 req/s |
-| `onnxruntime-web` | WASM | ~50ms | ~20 req/s |
+| Backend           | Hardware | Latency (per token) | Throughput |
+| ----------------- | -------- | ------------------- | ---------- |
+| `onnxruntime-web` | WebGPU   | ~20ms               | ~50 req/s  |
+| `onnxruntime-web` | WASM     | ~50ms               | ~20 req/s  |
 
 Benchmarks updated on every CI run: [Live Benchmark Report](https://agentix-e.github.io/embed-code-ts/benchmark/)
 
 ## Browser Support
 
-| Browser | WebGPU | WASM | Status |
-| --- | --- | --- | --- |
-| Chrome 113+ | ✅ | ✅ | Fully supported |
-| Edge 113+ | ✅ | ✅ | Fully supported |
-| Firefox 120+ | ⚠️ (nightly) | ✅ | WASM only |
-| Safari 17+ | ⚠️ (experimental) | ✅ | WASM only |
+| Browser      | WebGPU            | WASM | Status          |
+| ------------ | ----------------- | ---- | --------------- |
+| Chrome 113+  | ✅                | ✅   | Fully supported |
+| Edge 113+    | ✅                | ✅   | Fully supported |
+| Firefox 120+ | ⚠️ (nightly)      | ✅   | WASM only       |
+| Safari 17+   | ⚠️ (experimental) | ✅   | WASM only       |
 
 ## API Documentation
 

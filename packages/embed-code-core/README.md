@@ -55,13 +55,13 @@ const similarity = cosineSimilarity(embeddingA, embeddingB);
 
 ## Key Exports
 
-| Category | Exports |
-| --- | --- |
-| **Types** | `IEmbedder`, `BatchOptions`, `ModelInfo`, `TokenizedInput`, `EmbeddingResult`, `EmbedProgress`, `DownloadOptions`, `ProxyConfig`, `IOrtBackend`, `IOrtSession`, `IOrtTensor` |
-| **Tokenizer** | `WordPieceTokenizer`, `loadVocab`, `preTokenize`, `isPunctuation` |
-| **Post-processing** | `meanPool`, `l2Normalize`, `cosineSimilarity`, `clsPool`, `lastTokenPool` |
-| **Batch** | `processBatch` |
-| **Errors** | `EmbedCodeError`, `ModelNotFoundError`, `DownloadError`, `ChecksumMismatchError`, `ProxyAuthError`, `InferenceError`, `TokenizationError`, `ModelNotCompiledError` |
+| Category            | Exports                                                                                                                                                                      |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Types**           | `IEmbedder`, `BatchOptions`, `ModelInfo`, `TokenizedInput`, `EmbeddingResult`, `EmbedProgress`, `DownloadOptions`, `ProxyConfig`, `IOrtBackend`, `IOrtSession`, `IOrtTensor` |
+| **Tokenizer**       | `WordPieceTokenizer`, `loadVocab`, `preTokenize`, `isPunctuation`                                                                                                            |
+| **Post-processing** | `meanPool`, `l2Normalize`, `cosineSimilarity`, `clsPool`, `lastTokenPool`                                                                                                    |
+| **Batch**           | `processBatch`                                                                                                                                                               |
+| **Errors**          | `EmbedCodeError`, `ModelNotFoundError`, `DownloadError`, `ChecksumMismatchError`, `ProxyAuthError`, `InferenceError`, `TokenizationError`, `ModelNotCompiledError`           |
 
 ## Use Cases
 

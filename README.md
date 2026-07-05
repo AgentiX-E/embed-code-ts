@@ -28,12 +28,12 @@ Text → [WordPiece Tokenizer] → [ONNX Runtime] → [Mean Pool] → [L2 Norm] 
 
 ## Packages
 
-| Package | npm | Description |
-| --- | --- | --- |
+| Package                      | npm                                                                                                                                    | Description                                                                           |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
 | `@agentix-e/embed-code-core` | [![npm](https://img.shields.io/npm/v/@agentix-e/embed-code-core?color=blue)](https://www.npmjs.com/package/@agentix-e/embed-code-core) | Pure TypeScript core: WordPiece tokenizer, pooler, interfaces — **zero dependencies** |
-| `@agentix-e/embed-code-node` | [![npm](https://img.shields.io/npm/v/@agentix-e/embed-code-node?color=blue)](https://www.npmjs.com/package/@agentix-e/embed-code-node) | **Node.js** ONNX Runtime inference (onnxruntime-node, AVX2/AVX-512) |
-| `@agentix-e/embed-code-web` | [![npm](https://img.shields.io/npm/v/@agentix-e/embed-code-web?color=orange)](https://www.npmjs.com/package/@agentix-e/embed-code-web) | **Browser** inference (onnxruntime-web: WASM / WebGPU auto-upgrade) |
-| `@agentix-e/embed-code-cli` | [![npm](https://img.shields.io/npm/v/@agentix-e/embed-code-cli?color=blue)](https://www.npmjs.com/package/@agentix-e/embed-code-cli) | CLI tool: `embed-code setup`, `embed-code embed`, `embed-code info` |
+| `@agentix-e/embed-code-node` | [![npm](https://img.shields.io/npm/v/@agentix-e/embed-code-node?color=blue)](https://www.npmjs.com/package/@agentix-e/embed-code-node) | **Node.js** ONNX Runtime inference (onnxruntime-node, AVX2/AVX-512)                   |
+| `@agentix-e/embed-code-web`  | [![npm](https://img.shields.io/npm/v/@agentix-e/embed-code-web?color=orange)](https://www.npmjs.com/package/@agentix-e/embed-code-web) | **Browser** inference (onnxruntime-web: WASM / WebGPU auto-upgrade)                   |
+| `@agentix-e/embed-code-cli`  | [![npm](https://img.shields.io/npm/v/@agentix-e/embed-code-cli?color=blue)](https://www.npmjs.com/package/@agentix-e/embed-code-cli)   | CLI tool: `embed-code setup`, `embed-code embed`, `embed-code info`                   |
 
 ## Quick Start
 
@@ -57,7 +57,7 @@ await embedder.dispose();
 ```typescript
 import { WebEmbedder } from '@agentix-e/embed-code-web';
 
-const tokenizerJson = await fetch('/models/tokenizer.json').then(r => r.json());
+const tokenizerJson = await fetch('/models/tokenizer.json').then((r) => r.json());
 const embedder = await WebEmbedder.create('/models/model.onnx', tokenizerJson);
 const embedding = await embedder.embed('const x = 42;');
 ```
@@ -74,9 +74,9 @@ embed-code info                            # Model + system info
 
 For optimal retrieval performance, prefix inputs with search intent:
 
-| Role | Prefix | Example |
-| --- | --- | --- |
-| **Query** (what you search) | `search_query: ` | `search_query: sort array by date` |
+| Role                          | Prefix              | Example                                            |
+| ----------------------------- | ------------------- | -------------------------------------------------- |
+| **Query** (what you search)   | `search_query: `    | `search_query: sort array by date`                 |
 | **Document** (what you index) | `search_document: ` | `search_document: function quickSort(arr) { ... }` |
 
 ## Model
@@ -92,20 +92,20 @@ For optimal retrieval performance, prefix inputs with search intent:
 
 ## Performance (int8 ONNX)
 
-| Backend | Hardware | Latency per token | Throughput |
-| --- | --- | --- | --- |
-| `onnxruntime-node` | AVX-512 | ~5ms | ~200 req/s |
-| `onnxruntime-node` | AVX2 | ~12ms | ~80 req/s |
-| `onnxruntime-web` | WebGPU | ~20ms | ~50 req/s |
-| `onnxruntime-web` | WASM | ~50ms | ~20 req/s |
+| Backend            | Hardware | Latency per token | Throughput |
+| ------------------ | -------- | ----------------- | ---------- |
+| `onnxruntime-node` | AVX-512  | ~5ms              | ~200 req/s |
+| `onnxruntime-node` | AVX2     | ~12ms             | ~80 req/s  |
+| `onnxruntime-web`  | WebGPU   | ~20ms             | ~50 req/s  |
+| `onnxruntime-web`  | WASM     | ~50ms             | ~20 req/s  |
 
 ## Documentation & Reports
 
-| Resource | Description | URL |
-| --- | --- | --- |
-| 📚 **API Docs** | Full TypeDoc reference for all packages | [agentix-e.github.io/embed-code-ts/api/](https://agentix-e.github.io/embed-code-ts/api/) |
+| Resource         | Description                                      | URL                                                                                                  |
+| ---------------- | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
+| 📚 **API Docs**  | Full TypeDoc reference for all packages          | [agentix-e.github.io/embed-code-ts/api/](https://agentix-e.github.io/embed-code-ts/api/)             |
 | 📊 **Benchmark** | Inference latency, throughput & accuracy reports | [agentix-e.github.io/embed-code-ts/benchmark/](https://agentix-e.github.io/embed-code-ts/benchmark/) |
-| 📈 **Coverage** | Line, branch, function & statement coverage | [agentix-e.github.io/embed-code-ts/coverage/](https://agentix-e.github.io/embed-code-ts/coverage/) |
+| 📈 **Coverage**  | Line, branch, function & statement coverage      | [agentix-e.github.io/embed-code-ts/coverage/](https://agentix-e.github.io/embed-code-ts/coverage/)   |
 
 ## FAQ
 
@@ -144,16 +144,16 @@ Yes. All packages pass their CI pipeline with >95% test coverage (line, branch, 
 
 ## Comparison
 
-| Feature | embed-code-ts | OpenAI Embeddings | Cohere Embed | Sentence Transformers (Python) |
-| --- | --- | --- | --- | --- |
-| **Offline** | ✅ Yes | ❌ API only | ❌ API only | ✅ Yes |
-| **Language** | TypeScript | REST API | REST API | Python |
-| **Model size** | 137 MB (int8) | N/A | N/A | 400+ MB (fp32) |
-| **Node.js** | ✅ Native | ✅ HTTP | ✅ HTTP | ❌ |
-| **Browser** | ✅ WASM/WebGPU | ❌ | ❌ | ❌ |
-| **Cost** | Free | Per-token | Per-token | Free |
-| **Privacy** | Local only | Data sent to API | Data sent to API | Local only |
-| **License** | Apache 2.0 | Proprietary | Proprietary | Apache 2.0 |
+| Feature        | embed-code-ts  | OpenAI Embeddings | Cohere Embed     | Sentence Transformers (Python) |
+| -------------- | -------------- | ----------------- | ---------------- | ------------------------------ |
+| **Offline**    | ✅ Yes         | ❌ API only       | ❌ API only      | ✅ Yes                         |
+| **Language**   | TypeScript     | REST API          | REST API         | Python                         |
+| **Model size** | 137 MB (int8)  | N/A               | N/A              | 400+ MB (fp32)                 |
+| **Node.js**    | ✅ Native      | ✅ HTTP           | ✅ HTTP          | ❌                             |
+| **Browser**    | ✅ WASM/WebGPU | ❌                | ❌               | ❌                             |
+| **Cost**       | Free           | Per-token         | Per-token        | Free                           |
+| **Privacy**    | Local only     | Data sent to API  | Data sent to API | Local only                     |
+| **License**    | Apache 2.0     | Proprietary       | Proprietary      | Apache 2.0                     |
 
 ## Contributing
 

@@ -20,13 +20,9 @@ function ensureDir(dirPath) {
 }
 
 function writeRobotsTxt() {
-  const content = [
-    'User-agent: *',
-    'Allow: /',
-    '',
-    `Sitemap: ${BASE_URL}/sitemap.xml`,
-    '',
-  ].join('\n');
+  const content = ['User-agent: *', 'Allow: /', '', `Sitemap: ${BASE_URL}/sitemap.xml`, ''].join(
+    '\n',
+  );
   fs.writeFileSync('docs/robots.txt', content);
   console.log('[prepare-pages] robots.txt generated');
 }

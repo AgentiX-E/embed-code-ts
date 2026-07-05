@@ -64,10 +64,10 @@ await embedder.dispose();
 
 ## Performance
 
-| Backend | Hardware | Latency (per token) | Throughput |
-| --- | --- | --- | --- |
-| `onnxruntime-node` | AVX-512 (Xeon/EPYC) | ~5ms | ~200 req/s |
-| `onnxruntime-node` | AVX2 (Core i7+/Ryzen) | ~12ms | ~80 req/s |
+| Backend            | Hardware              | Latency (per token) | Throughput |
+| ------------------ | --------------------- | ------------------- | ---------- |
+| `onnxruntime-node` | AVX-512 (Xeon/EPYC)   | ~5ms                | ~200 req/s |
+| `onnxruntime-node` | AVX2 (Core i7+/Ryzen) | ~12ms               | ~80 req/s  |
 
 Benchmarks updated on every CI run: [Live Benchmark Report](https://agentix-e.github.io/embed-code-ts/benchmark/)
 
