@@ -181,7 +181,7 @@ jobs:
           retention-days: 7
 
   deploy-pages:
-    if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main' || github.event_name == 'schedule')
+    if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
     needs: [lint, unit-test, build, integration-test, benchmark, web-benchmark]
     runs-on: ubuntu-latest
     timeout-minutes: 10
