@@ -69,7 +69,6 @@ function writeCoverageIndex() {
       '<meta property="og:description" content="Test coverage dashboard for embed-code-ts — ONNX-powered code embeddings for Node.js and browser.">',
       '<meta property="og:url" content="https://agentix-e.github.io/embed-code-ts/coverage/">',
       '<meta property="og:type" content="website">',
-      '<meta name="google-site-verification" content="kD2WXDZJEAkp_4Sjd55rGyHypMWzs_7oddb6PbHy_JE" />',
       '<meta name="twitter:card" content="summary">',
       '<title>Coverage · embed-code-ts</title>',
       '<style>',
@@ -173,6 +172,8 @@ function writeRootLandingPage() {
     '<meta name="twitter:card" content="summary_large_image">',
     '<meta name="twitter:title" content="embed-code-ts · ONNX Code Embeddings">',
     '<meta name="twitter:description" content="TypeScript-first code embeddings — int8 quantized, zero network dependency. Works in Node.js and browser.">',
+    // Google Search
+    '<meta name="google-site-verification" content="kD2WXDZJEAkp_4Sjd55rGyHypMWzs_7oddb6PbHy_JE" />',
     // Schema.org structured data for LLMs
     '<script type="application/ld+json">',
     JSON.stringify({
